@@ -256,6 +256,7 @@ func (sd *MemServiceDiscovery) AddEndpoint(service model.Hostname, servicePortNa
 }
 
 // SetEndpoints update the list of endpoints for a service, similar with K8S controller.
+// SetEndpoints更新一个service的一系列endpoints，和k8s controller相似
 func (sd *MemServiceDiscovery) SetEndpoints(service string, endpoints []*model.IstioEndpoint) {
 
 	sh := model.Hostname(service)

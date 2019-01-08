@@ -29,6 +29,7 @@ import (
 )
 
 // TestSetup store data for a test.
+// TestSetup存储测试的数据
 type TestSetup struct {
 	t      *testing.T
 	epoch  int
@@ -48,22 +49,28 @@ type TestSetup struct {
 	FiltersBeforeMixer string
 
 	// EnvoyTemplate is the bootstrap config used by envoy.
+	// EnvoyTemplate是供envoy使用的启动配置
 	EnvoyTemplate string
 
 	// EnvoyParams contain extra envoy parameters to pass in the CLI (cluster, node)
+	// EnvoyParams包含了额外的envoy参数
 	EnvoyParams []string
 
 	// EnvoyConfigOpt allows passing additional parameters to the EnvoyTemplate
+	// EnvoyConfigOpt允许为EnvoyTemplate传递额外的参数
 	EnvoyConfigOpt map[string]interface{}
 
 	// IstioSrc is the base directory of istio sources. May be set for finding testdata or
 	// other files in the source tree
+	// IstioSrc是istio源码的base directory，会被设置用于在source tree中找到testdata或者其他文件
 	IstioSrc string
 
 	// IstioOut is the base output directory.
+	// IstioOut是基本的输出文件
 	IstioOut string
 
 	// AccessLogPath is the access log path for Envoy
+	// AccessLogPath用于访问Envoy的日志文件
 	AccessLogPath string
 }
 

@@ -28,6 +28,7 @@ const (
 type Handler func(model.Config, model.Event)
 
 // Monitor provides methods of manipulating changes in the config store
+// Monitor提供了操作config store中的变更的方法
 type Monitor interface {
 	Run(<-chan struct{})
 	AppendEventHandler(string, Handler)
@@ -47,6 +48,7 @@ type configstoreMonitor struct {
 }
 
 // NewMonitor returns new Monitor implementation with a default event buffer size.
+// NewMonitor返回一个新的Monitor实现并且有着默认的event buffer size
 func NewMonitor(store model.ConfigStore) Monitor {
 	return NewBufferedMonitor(store, BufferSize)
 }

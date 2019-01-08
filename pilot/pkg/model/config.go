@@ -89,6 +89,8 @@ type ConfigMeta struct {
 // Config is a configuration unit consisting of the type of configuration, the
 // key identifier that is unique per type, and the content represented as a
 // protobuf message.
+// Config是一个配置单元，由配置类型，每个类型都不同的key identifier以及由protobuf message表示的
+// content组成
 type Config struct {
 	ConfigMeta
 
@@ -98,10 +100,13 @@ type Config struct {
 
 // ConfigStore describes a set of platform agnostic APIs that must be supported
 // by the underlying platform to store and retrieve Istio configuration.
+// ConfigStore描述了一系列平台无关的API，它们必须被底层平台支持用于存储和获取Istio配置
 //
 // Configuration key is defined to be a combination of the type, name, and
 // namespace of the configuration object. The configuration key is guaranteed
 // to be unique in the store.
+// Configuration key被定义为configuration object的type, name以及namespace的组合
+// configuration key保证在store中唯一
 //
 // The storage interface presented here assumes that the underlying storage
 // layer supports _Get_ (list), _Update_ (update), _Create_ (create) and
@@ -123,6 +128,8 @@ type Config struct {
 //
 // Object references supplied and returned from this interface should be
 // treated as read-only. Modifying them violates thread-safety.
+// 在Kubernetes下，ConfigStore利用client-go从Kubernetes获取route rule, virtual service
+// 等CRD，转化为model下的Config对象，同时对外提供Get，List，Create，Update，Delete等CRUD服务
 type ConfigStore interface {
 	// ConfigDescriptor exposes the configuration type schema known by the config store.
 	// The type schema defines the bidrectional mapping between configuration
@@ -167,6 +174,10 @@ func (meta *ConfigMeta) Key() string {
 // provides a notification mechanism to receive update events. As such, the
 // notification handlers must be registered prior to calling _Run_, and the
 // cache requires initial synchronization grace period after calling  _Run_.
+// ConfigStoreCache是一个本地的对于config store的fully-replicated cache
+// 该缓存积极地从remote store同步状态并且提供通知机制用于接受update events
+// 因此，notification handlers必须在调用_Run_函数之前被调用并且cache在调用_Run_之后
+// 需要一个初始的synchronization grace period
 //
 // Update notifications require the following consistency guarantee: the view
 // in the cache must be AT LEAST as fresh as the moment notification arrives, but
@@ -180,17 +191,21 @@ type ConfigStoreCache interface {
 
 	// RegisterEventHandler adds a handler to receive config update events for a
 	// configuration type
+	// RegisterEventHandler增加一个handler用于接受一个configuration type的config update events
 	RegisterEventHandler(typ string, handler func(Config, Event))
 
 	// Run until a signal is received
 	Run(stop <-chan struct{})
 
 	// HasSynced returns true after initial cache synchronization is complete
+	// HasSynced在初始的cache synchronization已经完成之后返回true
 	HasSynced() bool
 }
 
 // ConfigDescriptor defines the bijection between the short type name and its
 // fully qualified protobuf message name
+// ConfigDescriptor定义了short type name和它的fully qualified protobuf message name
+// 之间的双射关系
 type ConfigDescriptor []ProtoSchema
 
 // ProtoSchema provides description of the configuration schema and its key function
@@ -223,6 +238,7 @@ type ProtoSchema struct {
 }
 
 // Types lists all known types in the config schema
+// Types列出在config schema中所有已知的类型
 func (descriptor ConfigDescriptor) Types() []string {
 	types := make([]string, 0, len(descriptor))
 	for _, t := range descriptor {
@@ -243,6 +259,7 @@ func (descriptor ConfigDescriptor) GetByType(name string) (ProtoSchema, bool) {
 
 // IstioConfigStore is a specialized interface to access config store using
 // Istio configuration types
+// IstioConfigStore是一个专用的接口，利用Istio configuration types访问config store
 type IstioConfigStore interface {
 	ConfigStore
 
@@ -474,6 +491,7 @@ var (
 	}
 
 	// IstioConfigTypes lists all Istio config types with schemas and validation
+	// IstioConfigTypes列举了所有的Istio config types
 	IstioConfigTypes = ConfigDescriptor{
 		VirtualService,
 		Gateway,
@@ -557,6 +575,8 @@ func MostSpecificHostMatch(needle Hostname, stack []Hostname) (Hostname, bool) {
 
 // istioConfigStore provides a simple adapter for Istio configuration types
 // from the generic config registry
+// istioConfigStore为从generic config registry获取Istio configuration types提供了
+// 一个简单的adapter
 type istioConfigStore struct {
 	ConfigStore
 }

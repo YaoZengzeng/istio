@@ -96,6 +96,7 @@ var (
 
 // MeshArgs provide configuration options for the mesh. If ConfigFile is provided, an attempt will be made to
 // load the mesh from the file. Otherwise, a default mesh will be used with optional overrides.
+// MeshArgs为mesh提供了配置选项，如果提供了ConfigFile，那么会尝试从file中加载mesh
 type MeshArgs struct {
 	ConfigFile      string
 	MixerAddress    string
@@ -105,6 +106,8 @@ type MeshArgs struct {
 // ConfigArgs provide configuration options for the configuration controller. If FileDir is set, that directory will
 // be monitored for CRD yaml files and will update the controller as those files change (This is used for testing
 // purposes). Otherwise, a CRD client is created based on the configuration.
+// ConfigArgs为configuration controller提供配置选项，如果设置了FileDir，会监听该目录的CRD yaml文件并在这些文件变化时更新controller（主要用于测试）
+// 否则，根据这些配置创建一个CRD客户端
 type ConfigArgs struct {
 	ClusterRegistriesConfigmap string
 	ClusterRegistriesNamespace string
@@ -115,6 +118,7 @@ type ConfigArgs struct {
 	DisableInstallCRDs         bool
 
 	// Controller if specified, this controller overrides the other config settings.
+	// 如果指定了controller，则controller覆盖所有其他的配置
 	Controller model.ConfigStoreCache
 }
 
@@ -126,12 +130,14 @@ type ConsulArgs struct {
 }
 
 // ServiceArgs provides the composite configuration for all service registries in the system.
+// ServiceArgs为系统中所有的service registries提供综合的配置
 type ServiceArgs struct {
 	Registries []string
 	Consul     ConsulArgs
 }
 
 // PilotArgs provides all of the configuration parameters for the Pilot discovery service.
+// PilotArgs提供了用于Pilot服务发现的所有配置参数
 type PilotArgs struct {
 	DiscoveryOptions envoy.DiscoveryServiceOptions
 	Namespace        string
@@ -144,6 +150,7 @@ type PilotArgs struct {
 }
 
 // Server contains the runtime configuration for the Pilot discovery service.
+// Server包含了Pilot服务发现所需的运行时配置
 type Server struct {
 	HTTPListeningAddr       net.Addr
 	GRPCListeningAddr       net.Addr
@@ -152,6 +159,8 @@ type Server struct {
 
 	// TODO(nmittler): Consider alternatives to exposing these directly
 	EnvoyXdsServer    *envoyv2.DiscoveryServer
+	// 在Kubernetes下，利用client-go从Kubernetes获取pod、service、node、endpoint信息
+	// 并将这些信息转化为model下的Service、ServiceInstance对象
 	ServiceController *aggregate.Controller
 
 	mesh             *meshconfig.MeshConfig
@@ -188,6 +197,7 @@ func NewServer(args PilotArgs) (*Server, error) {
 		if args.Namespace != "" {
 			args.Config.ClusterRegistriesNamespace = args.Namespace
 		} else {
+			// 默认的namespace为“istio-system”
 			args.Config.ClusterRegistriesNamespace = "istio-system"
 		}
 	}
@@ -195,6 +205,7 @@ func NewServer(args PilotArgs) (*Server, error) {
 	s := &Server{}
 
 	// Apply the arguments to the configuration.
+	// 初始化kubernetes client
 	if err := s.initKubeClient(&args); err != nil {
 		return nil, err
 	}
@@ -207,12 +218,14 @@ func NewServer(args PilotArgs) (*Server, error) {
 	if err := s.initMixerSan(&args); err != nil {
 		return nil, err
 	}
+	// 初始化config controller
 	if err := s.initConfigController(&args); err != nil {
 		return nil, err
 	}
 	if err := s.initServiceControllers(&args); err != nil {
 		return nil, err
 	}
+	// 初始化服务发现
 	if err := s.initDiscoveryService(&args); err != nil {
 		return nil, err
 	}
@@ -234,6 +247,9 @@ func NewServer(args PilotArgs) (*Server, error) {
 // If Port == 0, a port number is automatically chosen. This method returns the address on which the server is
 // listening for incoming connections. Content serving is started by this method, but is executed asynchronously.
 // Serving can be cancelled at any time by closing the provided stop channel.
+// Start在DiscoveryServiceOptions指定的端口启动Pilot的服务发现的所有组件
+// 如果Port为0，则自动选择一个端口，本方法返回server用于监听incoming connection的地址
+// Content serving由本方法启动，但是被异步执行，通过关闭提供的stop channel，服务可以在任何时候终止
 func (s *Server) Start(stop <-chan struct{}) (net.Addr, error) {
 	// Now start all of the components.
 	for _, fn := range s.startFuncs {
@@ -246,9 +262,11 @@ func (s *Server) Start(stop <-chan struct{}) (net.Addr, error) {
 }
 
 // startFunc defines a function that will be used to start one or more components of the Pilot discovery service.
+// startFunc定义了一个函数，它会被用来启动Pilot服务发现的一个或者多个组件
 type startFunc func(stop <-chan struct{}) error
 
 // initMonitor initializes the configuration for the pilot monitoring server.
+// initMonitor初始化pilot monitoring server的配置
 func (s *Server) initMonitor(args *PilotArgs) error {
 	s.addStartFunc(func(stop <-chan struct{}) error {
 		monitor, addr, err := startMonitor(args.DiscoveryOptions.MonitoringAddr, s.mux)
@@ -271,11 +289,13 @@ func (s *Server) initClusterRegistries(args *PilotArgs) (err error) {
 	s.clusterStore = clusterregistry.NewClustersStore()
 
 	if s.kubeClient == nil {
+		// 如果没有kube-client，就直接跳过cluster registries
 		log.Infof("skipping cluster registries, no kube-client created")
 		return nil
 	}
 
 	// Drop from multicluster test cases if Mock Registry is used
+	// 如果使用Mock Registry，则跳过multicluster的测试用例
 	if checkForMock(args.Service.Registries) {
 		return nil
 	}
@@ -317,6 +337,7 @@ func checkForKubernetes(registries []string) bool {
 }
 
 // GetMeshConfig fetches the ProxyMesh configuration from Kubernetes ConfigMap.
+// GetMeshConfig从Kubernetes ConfigMap中获取ProxyMesh配置
 func GetMeshConfig(kube kubernetes.Interface, namespace, name string) (*v1.ConfigMap, *meshconfig.MeshConfig, error) {
 
 	if kube == nil {
@@ -348,6 +369,7 @@ func GetMeshConfig(kube kubernetes.Interface, namespace, name string) (*v1.Confi
 }
 
 // initMesh creates the mesh in the pilotConfig from the input arguments.
+// initMesh根据PilotArgs中的输入参数创建mesh
 func (s *Server) initMesh(args *PilotArgs) error {
 	// If a config file was specified, use it.
 	if args.MeshConfig != nil {
@@ -367,6 +389,7 @@ func (s *Server) initMesh(args *PilotArgs) error {
 	if mesh == nil {
 		var err error
 		// Config file either wasn't specified or failed to load - use a default mesh.
+		// Config file没有指定或者加载失败，使用默认的mesh
 		if _, mesh, err = GetMeshConfig(s.kubeClient, kube.IstioNamespace, kube.IstioConfigMap); err != nil {
 			log.Warnf("failed to read mesh configuration: %v", err)
 			return err
@@ -391,6 +414,7 @@ func (s *Server) initMesh(args *PilotArgs) error {
 }
 
 // initMixerSan configures the mixerSAN configuration item. The mesh must already have been configured.
+// initMixerSan配置mixerSAN配置项，mesh必须已经被配置了
 func (s *Server) initMixerSan(args *PilotArgs) error {
 	if s.mesh == nil {
 		return fmt.Errorf("the mesh has not been configured before configuring mixer san")
@@ -409,6 +433,7 @@ func (s *Server) getKubeCfgFile(args *PilotArgs) (kubeCfgFile string) {
 }
 
 // initKubeClient creates the k8s client if running in an k8s environment.
+// 如果运行在一个k8s环境，则initKubeClient创建k8s client
 func (s *Server) initKubeClient(args *PilotArgs) error {
 	var needToCreateClient bool
 	for _, r := range args.Service.Registries {
@@ -418,10 +443,12 @@ func (s *Server) initKubeClient(args *PilotArgs) error {
 		}
 	}
 
+	// 注册了kube registry并且FileDir为空
 	if needToCreateClient && args.Config.FileDir == "" {
 		var client kubernetes.Interface
 		var kuberr error
 
+		// 获取kubernetes的配置文件
 		kubeCfgFile := s.getKubeCfgFile(args)
 		client, kuberr = createInterface(kubeCfgFile)
 
@@ -446,11 +473,14 @@ func (c *mockController) AppendInstanceHandler(f func(*model.ServiceInstance, mo
 func (c *mockController) Run(<-chan struct{}) {}
 
 // initConfigController creates the config controller in the pilotConfig.
+// initConfigController在pilotConfig中创建config controller
 func (s *Server) initConfigController(args *PilotArgs) error {
 	if args.Config.Controller != nil {
 		s.configController = args.Config.Controller
 	} else if args.Config.FileDir != "" {
+		// 从文件中加载config
 		store := memory.Make(model.IstioConfigTypes)
+		// configController是model.ConfigStoreCache接口的一个实现
 		configController := memory.NewController(store)
 
 		err := s.makeFileMonitor(args, configController)
@@ -467,6 +497,7 @@ func (s *Server) initConfigController(args *PilotArgs) error {
 
 		s.configController = configController
 	} else {
+		// 创建kubernetes config controller
 		controller, err := s.makeKubeConfigController(args)
 		if err != nil {
 			return err
@@ -476,6 +507,7 @@ func (s *Server) initConfigController(args *PilotArgs) error {
 	}
 
 	// Defer starting the controller until after the service is created.
+	// 将controller的创建推迟到service创建为止
 	s.addStartFunc(func(stop <-chan struct{}) error {
 		go s.configController.Run(stop)
 		return nil
@@ -507,6 +539,7 @@ func (s *Server) initConfigController(args *PilotArgs) error {
 	}
 
 	// Create the config store.
+	// 创建config store
 	s.istioConfigStore = model.MakeIstioStore(s.configController)
 
 	return nil
@@ -529,10 +562,12 @@ func (s *Server) makeKubeConfigController(args *PilotArgs) (model.ConfigStoreCac
 }
 
 func (s *Server) makeFileMonitor(args *PilotArgs, configController model.ConfigStore) error {
+	// 创建fileSnapshot和fileMonitor
 	fileSnapshot := configmonitor.NewFileSnapshot(args.Config.FileDir, model.IstioConfigTypes)
 	fileMonitor := configmonitor.NewMonitor(configController, FilepathWalkInterval, fileSnapshot.ReadConfigFiles)
 
 	// Defer starting the file monitor until after the service is created.
+	// 直到service启动之后才开始file monitor
 	s.addStartFunc(func(stop <-chan struct{}) error {
 		fileMonitor.Start(stop)
 		return nil
@@ -571,8 +606,10 @@ func (s *Server) createK8sServiceControllers(serviceControllers *aggregate.Contr
 	clusterID := string(serviceregistry.KubernetesRegistry)
 	log.Infof("Primary Cluster name: %s", clusterID)
 	args.Config.ControllerOptions.ClusterID = clusterID
+	// 创建kubernetes controller
 	kubectl := kube.NewController(s.kubeClient, args.Config.ControllerOptions)
 	s.kubeRegistry = kubectl
+	// 将controller注册到serviceControllers中
 	serviceControllers.AddRegistry(
 		aggregate.Registry{
 			Name:             serviceregistry.KubernetesRegistry,
@@ -587,6 +624,8 @@ func (s *Server) createK8sServiceControllers(serviceControllers *aggregate.Contr
 
 // initMultiClusterController initializes multi cluster controller
 // currently implemented only for kubernetes registries
+// initMultiClusterController初始化multi cluster controller
+// 当前仅在kubernetes registries中实现
 func (s *Server) initMultiClusterController(args *PilotArgs) (err error) {
 	if checkForKubernetes(args.Service.Registries) {
 		// Start secret controller which watches for runtime secret Object changes and adds secrets dynamically
@@ -613,6 +652,7 @@ func hasKubeRegistry(args *PilotArgs) bool {
 }
 
 // initServiceControllers creates and initializes the service controllers
+// initServiceControllers创建并且初始化service controllers
 func (s *Server) initServiceControllers(args *PilotArgs) error {
 	serviceControllers := aggregate.NewController()
 	registered := make(map[serviceregistry.ServiceRegistry]bool)
@@ -628,6 +668,7 @@ func (s *Server) initServiceControllers(args *PilotArgs) error {
 		case serviceregistry.ConfigRegistry:
 			s.initConfigRegistry(serviceControllers)
 		case serviceregistry.MockRegistry:
+			// 初始化memory registry
 			s.initMemoryRegistry(serviceControllers)
 		case serviceregistry.KubernetesRegistry:
 			if err := s.createK8sServiceControllers(serviceControllers, args); err != nil {
@@ -692,6 +733,7 @@ func (s *Server) initServiceControllers(args *PilotArgs) error {
 	s.ServiceController = serviceControllers
 
 	// Defer running of the service controllers.
+	// 推迟service controllers的运行
 	s.addStartFunc(func(stop <-chan struct{}) error {
 		go s.ServiceController.Run(stop)
 		return nil
@@ -702,6 +744,7 @@ func (s *Server) initServiceControllers(args *PilotArgs) error {
 
 func (s *Server) initMemoryRegistry(serviceControllers *aggregate.Controller) {
 	// MemServiceDiscovery implementation
+	// MemServiceDiscovery的实现
 	discovery1 := srmemory.NewDiscovery(
 		map[model.Hostname]*model.Service{ // srmemory.HelloService.Hostname: srmemory.HelloService,
 		}, 2)
@@ -749,6 +792,7 @@ func (s *Server) initDiscoveryService(args *PilotArgs) error {
 	}
 
 	// Set up discovery service
+	// 设置发现服务
 	discovery, err := envoy.NewDiscoveryService(
 		s.ServiceController,
 		s.configController,
@@ -763,6 +807,7 @@ func (s *Server) initDiscoveryService(args *PilotArgs) error {
 	s.mux = s.discoveryService.RestContainer.ServeMux
 
 	// For now we create the gRPC server sourcing data from Pilot's older data model.
+	// 初始化gRPC server，从Pilot的老的data model获取数据
 	s.initGrpcServer()
 
 	s.EnvoyXdsServer = envoyv2.NewDiscoveryServer(environment, istio_networking.NewConfigGenerator(args.Plugins))
@@ -813,6 +858,7 @@ func (s *Server) initDiscoveryService(args *PilotArgs) error {
 	s.addStartFunc(func(stop <-chan struct{}) error {
 		log.Infof("Discovery service started at http=%s grpc=%s", listener.Addr().String(), grpcListener.Addr().String())
 
+		// 启动各个server
 		go func() {
 			if err = s.httpServer.Serve(listener); err != nil {
 				log.Warna(err)

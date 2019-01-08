@@ -54,6 +54,7 @@ func (tp TestProxy) Panic(config interface{}) {
 }
 
 // TestStartStop tests basic start, cleanup sequence
+// TestStartStop测试基本的start, cleanup
 func TestStartStop(t *testing.T) {
 	current := -1
 	ctx, cancel := context.WithCancel(context.Background())
@@ -68,6 +69,7 @@ func TestStartStop(t *testing.T) {
 		if config != desired {
 			t.Errorf("Start got config %v, want %v", config, desired)
 		}
+		// 设置current为epoch
 		current = epoch
 		return nil
 	}
@@ -82,11 +84,13 @@ func TestStartStop(t *testing.T) {
 	}
 	a := NewAgent(TestProxy{start, cleanup, nil}, testRetry)
 	go a.Run(ctx)
+	// 通过ScheduleConfigUpdate应用新的配置
 	a.ScheduleConfigUpdate(desired)
 	<-ctx.Done()
 }
 
 // TestApplyTwice tests that scheduling the same config does not trigger a restart
+// TestApplyTwice用于测试调度同样的config不会再次触发重启
 func TestApplyTwice(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	desired := "config"
@@ -106,6 +110,7 @@ func TestApplyTwice(t *testing.T) {
 }
 
 // TestApplyThrice applies same config twice but with a bad config between them
+// TestApplyThrice两次施加同一个config，但是中间有一次bad config
 func TestApplyThrice(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	good := "good"
@@ -113,6 +118,7 @@ func TestApplyThrice(t *testing.T) {
 	applied := false
 	var a Agent
 	start := func(config interface{}, epoch int, _ <-chan error) error {
+		// bad config直接返回nil
 		if config == bad {
 			return nil
 		}
@@ -125,9 +131,12 @@ func TestApplyThrice(t *testing.T) {
 	}
 	cleanup := func(epoch int) {
 		// we should expect to see three epochs only: 0 for good, 1 for bad
+		// 我们应该只期待三个epochs：0代表good，1代表bad
 		if epoch == 1 {
 			go func() {
+				// 如果cleanup的为bad config，则直接调用ScheduleConfigUpdate(good)
 				a.ScheduleConfigUpdate(good)
+				// 最后，调用cancel，停止两个start函数
 				cancel()
 			}()
 		} else if epoch != 0 {
@@ -158,6 +167,7 @@ func TestAbort(t *testing.T) {
 		}
 		select {
 		case err := <-abort:
+			// good1和good2等待从abort接受指令
 			if config == good1 {
 				aborted1 = true
 			} else if config == good2 {
@@ -172,6 +182,7 @@ func TestAbort(t *testing.T) {
 		// first 2 with an error, then 0 and 1 with abort
 		active = active - 1
 		if active == 0 {
+			// 当bad epoch最后cleanup时，要求good1和good2已经退出
 			if !aborted1 {
 				t.Error("Expected first epoch to be aborted")
 			}
@@ -198,12 +209,15 @@ func TestStartFail(t *testing.T) {
 	start := func(config interface{}, epoch int, _ <-chan error) error {
 		if epoch == 0 && retry == 0 {
 			retry++
+			// 当epoch为0以及retry为0时，直接返回error进行重试
 			return fmt.Errorf("error on try %d", retry)
 		} else if epoch == 0 && retry == 1 {
 			retry++
+			// 当epoch为0以及retry为1时，直接返回error进行重试
 			return fmt.Errorf("error on try %d", retry)
 		} else if epoch == 0 && retry == 2 {
 			retry++
+			// 当epoch为0以及retry为2时，直接调用cancel结束
 			cancel()
 		} else {
 			t.Errorf("Unexpected epoch %d and retry %d", epoch, retry)

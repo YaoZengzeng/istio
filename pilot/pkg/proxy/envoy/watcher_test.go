@@ -42,9 +42,11 @@ func (ta TestAgent) ScheduleConfigUpdate(config interface{}) {
 }
 
 func (ta TestAgent) Run(ctx context.Context) {
+	// 等待context结束
 	<-ctx.Done()
 }
 
+// 测试reload函数
 func TestRunReload(t *testing.T) {
 	called := make(chan bool)
 	agent := TestAgent{
@@ -61,6 +63,7 @@ func TestRunReload(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// watcher starts agent and schedules a config update
+	// watcher启动agent并且调度config update
 	go watcher.Run(ctx)
 
 	select {

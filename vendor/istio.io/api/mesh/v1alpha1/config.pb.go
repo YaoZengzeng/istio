@@ -179,9 +179,11 @@ func (MeshConfig_OutboundTrafficPolicy_Mode) EnumDescriptor() ([]byte, []int) {
 }
 
 // ProxyConfig defines variables for individual Envoy instances.
+// ProxyConfig定义了单个Envoy实例等变量
 type ProxyConfig struct {
 	// Path to the generated configuration file directory.
 	// Proxy agent generates the actual configuration and stores it in this directory.
+	// Proxy agent产生真正的配置并且将它存储到ConfigPath
 	ConfigPath string `protobuf:"bytes,1,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`
 	// Path to the proxy binary
 	BinaryPath string `protobuf:"bytes,2,opt,name=binary_path,json=binaryPath,proto3" json:"binary_path,omitempty"`
@@ -397,6 +399,7 @@ func (m *ProxyConfig) GetInterceptionMode() ProxyConfig_InboundInterceptionMode 
 
 // MeshConfig defines mesh-wide variables shared by all Envoy instances in the
 // Istio service mesh.
+// MeshConfig定义了mesh范围内的变量，它供Istio service mesh中的所有Envoy实例公用
 //
 // NOTE: This configuration type should be used for the low-level global
 // configuration, such as component addresses and port numbers. It should not

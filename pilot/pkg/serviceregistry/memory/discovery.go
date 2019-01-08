@@ -29,6 +29,7 @@ var (
 )
 
 // NewDiscovery builds a memory ServiceDiscovery
+// NewDiscovery构建一个memory ServiceDiscovery
 func NewDiscovery(services map[model.Hostname]*model.Service, versions int) *ServiceDiscovery {
 	return &ServiceDiscovery{
 		services: services,
@@ -147,6 +148,7 @@ func MakeIP(service *model.Service, version int) string {
 }
 
 // ServiceDiscovery is a memory discovery interface
+// ServiceDiscovery是一个内存中的发现接口
 type ServiceDiscovery struct {
 	services                      map[model.Hostname]*model.Service
 	versions                      int

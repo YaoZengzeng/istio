@@ -40,6 +40,7 @@ var (
 	adsLog = istiolog.RegisterScope("ads", "ads debugging", 0)
 
 	// adsClients reflect active gRPC channels, for both ADS and EDS.
+	// adsClients表示活跃的gRPC连接
 	adsClients      = map[string]*XdsConnection{}
 	adsClientsMutex sync.RWMutex
 
@@ -311,6 +312,7 @@ func receiveThread(con *XdsConnection, reqChannel chan *xdsapi.DiscoveryRequest,
 }
 
 // StreamAggregatedResources implements the ADS interface.
+// StreamAggregatedResources实现了ADS接口
 func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	peerInfo, ok := peer.FromContext(stream.Context())
 	peerAddr := "0.0.0.0"
@@ -682,6 +684,7 @@ func (s *DiscoveryServer) startPush(version string, push *model.PushContext, ful
 
 	tstart := time.Now()
 	// Will keep trying to push to sidecars until another push starts.
+	// 会持续向sidecars进行push操作，直到另一个push开始
 	for {
 		if len(pending) == 0 {
 			adsLog.Infof("PushAll done %s %v", version, time.Since(tstart))

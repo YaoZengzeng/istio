@@ -23,12 +23,15 @@ import (
 )
 
 // ConfigGenerator represents the interfaces to be implemented by code that generates xDS responses
+// ConfigGenerator代表用于实现xDS responses所需实现的接口
 type ConfigGenerator interface {
 	// BuildSharedPushState precomputes shared state across all envoys such as outbound clusters, outbound listeners for sidecars,
 	// routes for sidecars/gateways etc. This state is stored in the ConfigGenerator object, and reused during the
 	// actual BuildClusters/BuildListeners/BuildHTTPRoutes calls. The plugins will not be invoked during this call
 	// as most plugins require information about the specific proxy (e.g., mixer/authn/authz). Instead, the
 	// BuildYYY functions will invoke the plugins on the precomputed objects.
+	// BuildSharedPushState会提前计算跨所有的envoy的shared state，比如对于sidecar的outbound clusters，outbound listeners
+	// 以及对于sidecars/gatewars的routes
 	BuildSharedPushState(env *model.Environment, push *model.PushContext) error
 
 	// BuildListeners returns the list of inbound/outbound listeners for the given proxy. This is the LDS output

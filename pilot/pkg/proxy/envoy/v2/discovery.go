@@ -49,28 +49,36 @@ const (
 	// Constants used for XDS
 
 	// ClusterType is used for cluster discovery. Typically first request received
+	// ClusterType用于cluster discovery，一般是第一个接受到的请求
 	ClusterType = typePrefix + "Cluster"
 	// EndpointType is used for EDS and ADS endpoint discovery. Typically second request.
+	// EndpointType用于EDS和ADS的endpoint discovery，一般是第二个请求
 	EndpointType = typePrefix + "ClusterLoadAssignment"
 	// ListenerType is sent after clusters and endpoints.
+	// ListenerType一般在clusters和endpoints之后发送
 	ListenerType = typePrefix + "Listener"
 	// RouteType is sent after listeners.
+	// RouteType在listeners之后发送
 	RouteType = typePrefix + "RouteConfiguration"
 )
 
 // DiscoveryServer is Pilot's gRPC implementation for Envoy's v2 xds APIs
+// DiscoveryServer是Pilot对于Envoy的v2 xds APIs的gRPC实现
 type DiscoveryServer struct {
 	// Env is the model environment.
 	Env *model.Environment
 
 	// MemRegistry is used for debug and load testing, allow adding services. Visible for testing.
+	// MemRegistry用于调试和loading testing，允许增加services
 	MemRegistry *MemServiceDiscovery
 
 	// ConfigGenerator is responsible for generating data plane configuration using Istio networking
 	// APIs and service registry info
+	// ConfigGenerator负责生成数据平面的配置，利用Istio的networking API以及service registry信息
 	ConfigGenerator core.ConfigGenerator
 
 	// ConfigController provides readiness info (if initial sync is complete)
+	// ConfigController提供了readiness信息（如果初始的sync已经完成了）
 	ConfigController model.ConfigStoreCache
 
 	// separate rate limiter for initial connection
@@ -92,6 +100,8 @@ type DiscoveryServer struct {
 
 	// WorkloadsById keeps track of informations about a workload, based on direct notifications
 	// from registry. This acts as a cache and allows detecting changes.
+	// WorkloadsById追踪了一个workload的信息，基于registry的直接通知
+	// 它作为cache存在并且允许检测更改
 	WorkloadsByID map[string]*Workload
 
 	// ConfigUpdater implements the debouncing and tracks the change detection.
@@ -100,6 +110,7 @@ type DiscoveryServer struct {
 	ConfigUpdater model.ConfigUpdater
 
 	// edsUpdates keeps track of all service updates since last full push.
+	// edsUpdates记录了自上次full push以来所有服务的更新
 	// Key is the hostname (servicename). Value is set when any shard part of the service is
 	// updated. This should only be used in the xDS server - will be removed/made private in 1.1,
 	// once the last v1 pieces are cleaned. For 1.0.3+ it is used only for tracking incremental
@@ -109,6 +120,7 @@ type DiscoveryServer struct {
 
 // Workload has the minimal info we need to detect if we need to push workloads, and to
 // cache data to avoid expensive model allocations.
+// Workload有着用于判断我们是否需要推送workloads的最小信息并且缓存信息用于避免昂贵的model allocations
 type Workload struct {
 	// Labels
 	Labels map[string]string
@@ -130,6 +142,7 @@ func intEnv(env string, def int) int {
 }
 
 // NewDiscoveryServer creates DiscoveryServer that sources data from Pilot's internal mesh data structures
+// NewDiscoveryServer创建DiscoveryServer，它的源数据来自Pilot的internal mesh数据结构
 func NewDiscoveryServer(env *model.Environment, generator core.ConfigGenerator) *DiscoveryServer {
 	out := &DiscoveryServer{
 		Env:                     env,
@@ -180,6 +193,7 @@ func initThrottle(name string, burst int, ratePerSecond int) chan time.Time {
 }
 
 // Register adds the ADS and EDS handles to the grpc server
+// Register在grpc server中加入对于ADS和EDS的处理
 func (s *DiscoveryServer) Register(rpcs *grpc.Server) {
 	// EDS must remain registered for 0.8, for smooth upgrade from 0.7
 	// 0.7 proxies will use this service.
@@ -205,6 +219,7 @@ func (s *DiscoveryServer) periodicRefresh() {
 	defer ticker.Stop()
 	for range ticker.C {
 		adsLog.Infof("ADS: periodic push of envoy configs %s", versionInfo())
+		// 定时推送ads
 		s.AdsPushAll(versionInfo(), s.globalPushContext(), true, nil)
 	}
 }
@@ -241,6 +256,7 @@ func (s *DiscoveryServer) periodicRefreshMetrics() {
 
 // Push is called to push changes on config updates using ADS. This is set in DiscoveryService.Push,
 // to avoid direct dependencies.
+// Push在配置更新的时候用ADS推送改变
 func (s *DiscoveryServer) Push(full bool, edsUpdates map[string]*model.EndpointShardsByService) {
 	if !full {
 		adsLog.Infof("XDS Incremental Push EDS:%d", len(edsUpdates))

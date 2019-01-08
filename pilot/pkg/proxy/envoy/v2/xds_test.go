@@ -36,18 +36,25 @@ import (
 // This file contains common helpers and initialization for the local/unit tests
 // for XDS. Tests start a Pilot, configured with an in-memory endpoint registry, and
 // using a file-based config, sourced from tests/testdata.
+// 本文件包含了对于本地测试所需的一些公共的helper以及初始化组件
 // A single instance of pilot is used by all tests - similar with the e2e environment.
 // initLocalPilotTestEnv() must be called at the start of each test to ensure the
 // environment is configured. Tests making modifications to services should use
 // unique names for the service.
+// 单个的pilot实例被所有的测试使用 - 类似于e2e环境
+// initLocalPilotTestEnv()必须在每个测试的开头被调用从而确保环境配置完成
 // The tests can also use a local envoy process - see TestEnvoy as example, to verify
 // envoy accepts the config. Most tests are changing and checking the state of pilot.
+// 测试也可以使用一个本地的envoy进程 - 参考TestEnvoy，用于确保envoy接受配置，大多数测试用于改变和检测pilot的状态
 //
 // The pilot is accessible as pilotServer, which is an instance of bootstrap.Server.
 // The server has a field EnvoyXdsServer which is the configured instance of the XDS service.
+// pilot以pilotServer的形式访问，它是bootstrap.Server的一个实例
+// server有一个EnvoyXdsServer字段，它是一个配置好的XDS service实例
 //
 // DiscoveryServer.MemRegistry has a memory registry that can be used by tests,
 // implemented in debug.go file.
+// DiscoveryServer.MemRegistry有一个内存中的registry用于测试
 
 var (
 	// mixer-style test environment, includes mixer and envoy configs.
@@ -127,9 +134,12 @@ func ingressId(ip string) string {
 
 // initLocalPilotTestEnv creates a local, in process Pilot with XDSv2 support and a set
 // of common test configs. This is a singleton server, reused for all tests in this package.
+// initLocalPilotTestEnv创建了一个本地的，位于进程中的Pilot，支持XDSv2并且有一系列公共的测试配置
+// 这是一个singleton server，被这个包里所有的测试共用
 //
 // The server will have a set of pre-defined instances and services, and read CRDs from the
 // common tests/testdata directory.
+// server有一系列预先定义的实例和services，从tests/testdata中读取
 func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	initMutex.Lock()
 	defer initMutex.Unlock()
@@ -148,6 +158,7 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	localIp = getLocalIP()
 
 	// Service and endpoints for hello.default - used in v1 pilot tests
+	// hello.default的Service和endpoints
 	hostname := model.Hostname("hello.default.svc.cluster.local")
 	server.EnvoyXdsServer.MemRegistry.AddService(hostname, &model.Service{
 		Hostname: hostname,
@@ -229,6 +240,7 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	})
 
 	// Mock ingress service
+	// 模拟ingress服务
 	server.EnvoyXdsServer.MemRegistry.AddService("istio-ingress.istio-system.svc.cluster.local", &model.Service{
 		Hostname: "istio-ingress.istio-system.svc.cluster.local",
 		Address:  "10.10.0.2",
@@ -280,6 +292,7 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	server.EnvoyXdsServer.MemRegistry.SetEndpoints(edsIncSvc,
 		newEndpointWithAccount("127.0.0.1", "hello-sa", "v1"))
 	// Set the initial workload labels
+	// 设置初始的workload labels
 	server.EnvoyXdsServer.WorkloadUpdate("127.0.0.4", map[string]string{"version": "v1"}, nil)
 
 	// Update cache

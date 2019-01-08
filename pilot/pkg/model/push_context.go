@@ -129,6 +129,7 @@ type XDSUpdater interface {
 
 // IstioEndpoint has the information about a single address+port for a specific
 // service and shard.
+// IstioEndpoint有着一个特定service和shard的信息，包括单个的address + port
 //
 // Replaces NetworkEndpoint and ServiceInstance:
 // - ServicePortName replaces ServicePort, since port number and protocol may not
@@ -149,10 +150,12 @@ type IstioEndpoint struct {
 	Family AddressFamily
 
 	// Address is the address of the endpoint, using envoy proto.
+	// Address是endpoint的地址，使用envoy proto
 	Address string
 
 	// EndpointPort is the port where the workload is listening, can be different
 	// from the service port.
+	// EndpointPort是workload正在监听的port，可能和service port不一样
 	EndpointPort uint32
 
 	// ServicePortName tracks the name of the port, to avoid 'eventual consistency' issues.
@@ -177,6 +180,8 @@ type IstioEndpoint struct {
 // EndpointShardsByService holds the set of endpoint shards of a service. Registries update
 // individual shards incrementally. The shards are aggregated and split into
 // clusters when a push for the specific cluster is needed.
+// EndpointShardsByService维护了一个service的一系列endpoint shards，Registries以增量的方式更新单个的
+// shards，当需要push一个特定的cluster时，shards会被聚合并且分裂成clusters
 type EndpointShardsByService struct {
 
 	// Shards is used to track the shards. EDS updates are grouped by shard.
@@ -195,6 +200,8 @@ type EndpointShardsByService struct {
 // EndpointShard contains all the endpoints for a single shard (subset) of a service.
 // Shards are updated atomically by registries. A registry may split a service into
 // multiple shards (for example each deployment, or smaller sub-sets).
+// EndpointShard包含了一个service的single shard所有的endpoints
+// Shards由registries自动更新，一个registry可能把一个service分割成多个shards（比如每个deployment，或者更小的sub-sets）
 type EndpointShard struct {
 	Shard   string
 	Entries []*IstioEndpoint
@@ -202,10 +209,13 @@ type EndpointShard struct {
 
 // ConfigUpdater is used to requests config updates. The updates will be debounced before
 // a push happens. Interface is implemented by the ADS server, and called by adapters.
+// ConfigUpdater用于请求config的更新，更新会被debounced在一个push发生之前
+// 接口由ADS server实现并且由adapters调用
 type ConfigUpdater interface {
 	// Push is called the global config has changed and a full push is needed.
 	// This replaces the 'cache invalidation' model. The implementation may debounce and
 	// batch changes.
+	// Push会在全局的config发生改变并且需要一个全局push的时候发生
 	ConfigUpdate(full bool)
 }
 

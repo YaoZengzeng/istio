@@ -28,6 +28,8 @@ type controller struct {
 // NewController return an implementation of model.ConfigStoreCache
 // This is a client-side monitor that dispatches events as the changes are being
 // made on the client.
+// NewController返回一个model.ConfigStoreCache的实现
+// 这是一个client端的monitor，它会分发在客户端产生的改变
 func NewController(cs model.ConfigStore) model.ConfigStoreCache {
 	out := &controller{
 		configStore: cs,
@@ -38,6 +40,7 @@ func NewController(cs model.ConfigStore) model.ConfigStoreCache {
 
 // NewBufferedController return an implementation of model.ConfigStoreCache. This differs from NewController in that it
 // allows for specifying the size of the internal event buffer.
+// NewBufferedController允许指定内部的event buffer的大小
 func NewBufferedController(cs model.ConfigStore, bufferSize int) model.ConfigStoreCache {
 	out := &controller{
 		configStore: cs,

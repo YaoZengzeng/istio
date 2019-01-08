@@ -108,6 +108,7 @@ func (m *Endpoint_HealthCheckConfig) GetPortValue() uint32 {
 }
 
 // An Endpoint that Envoy can route traffic to.
+// 一个Envoy可以路由流量的Endpoint
 type LbEndpoint struct {
 	// Upstream host identifier
 	Endpoint *Endpoint `protobuf:"bytes,1,opt,name=endpoint" json:"endpoint,omitempty"`

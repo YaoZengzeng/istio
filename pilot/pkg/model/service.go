@@ -42,6 +42,9 @@ type Hostname string
 // service can have a single load balancer/virtual IP address associated
 // with it, such that the DNS queries for the FQDN resolves to the virtual
 // IP address (a load balancer IP).
+// Service定义了一个Istio service，每个service有一个FQDN以及一个或多个ports用于service
+// 建立连接。另外一个service可以有一个相关的load balancer或者virtual IP地址，这样的话，对于
+// 一个FQDN的queries将会解析到virtual IP address
 //
 // E.g., in kubernetes, a service foo is associated with
 // foo.default.svc.cluster.local hostname, has a virtual IP of 10.0.1.1 and
@@ -51,14 +54,17 @@ type Service struct {
 	Hostname Hostname `json:"hostname"`
 
 	// Address specifies the service IPv4 address of the load balancer
+	// Address指定了load balancer的service IPv4地址
 	Address string `json:"address,omitempty"`
 
 	// ClusterVIPs specifies the service address of the load balancer
 	// in each of the clusters where the service resides
+	// ClusterVIPs指定了在各个clusters中service的地址
 	ClusterVIPs map[string]string `json:"cluster-vips,omitempty"`
 
 	// Ports is the set of network ports where the service is listening for
 	// connections
+	// Ports是一系列service用于监听连接的网络端口
 	Ports PortList `json:"ports,omitempty"`
 
 	// ExternalName is only set for external services and holds the external
@@ -72,6 +78,8 @@ type Service struct {
 
 	// MeshExternal (if true) indicates that the service is external to the mesh.
 	// These services are defined using Istio's ServiceEntry spec.
+	// MeshExternal（如果为true的话）表示service是mesh之外的
+	// 这些services由Istio的ServiceEntry spec定义
 	MeshExternal bool
 
 	// LoadBalancingDisabled indicates that no load balancing should be done for this service.
@@ -91,19 +99,25 @@ type Service struct {
 
 	// Attributes contains additional attributes associated with the service
 	// used mostly by mixer and RBAC for policy enforcement purposes.
+	// Attributes包含了和service相关的额外特性
+	// 一般由mixer和RBAC用于策略相关的目的
 	Attributes ServiceAttributes
 }
 
 // Resolution indicates how the service instances need to be resolved before routing
 // traffic.
+// Resolution表明在路由流量之前，service instances该如何被解析
 type Resolution int
 
 const (
 	// ClientSideLB implies that the proxy will decide the endpoint from its local lb pool
+	// ClientSideLB表明proxy会从它的local lb pool决定endpoint
 	ClientSideLB Resolution = iota
 	// DNSLB implies that the proxy will resolve a DNS address and forward to the resolved address
+	// DNSLB表明proxy会解析一个DNS地址并且转发流量到resolved address
 	DNSLB
 	// Passthrough implies that the proxy should forward traffic to the destination IP requested by the caller
+	// Passthrough表明proxy应该将流量转发到caller指定的destination IP
 	Passthrough
 )
 
@@ -118,9 +132,11 @@ const (
 // Port represents a network port where a service is listening for
 // connections. The port should be annotated with the type of protocol
 // used by the port.
+// Port代表一个service监听连接的network port，该端口应该用端口使用的协议作为注释
 type Port struct {
 	// Name ascribes a human readable name for the port object. When a
 	// service has multiple ports, the name field is mandatory
+	// 当service有多个端口，name是强制的
 	Name string `json:"name,omitempty"`
 
 	// Port number where the service can be reached. Does not necessarily
@@ -271,6 +287,9 @@ func (p Protocol) IsTLS() bool {
 // service port). Note that the port associated with an instance does not
 // have to be the same as the port associated with the service. Depending
 // on the network setup (NAT, overlays), this could vary.
+// NetworkEndpoint定义了和一个服务实例相关的网络地址（IP:port），一个服务有一个或多个实例，每个运行在
+// 容器/虚拟机/pod中，如果一个服务有多个端口，那么同一个实例IP就会监听在多个端口（每个service端口各一个）
+// 需要注意的是，和实例相关的端口不一定要和服务相关的端口相同，因为根据网络设置(NAT，overlays)，这会非常不同
 //
 // For e.g., if catalog.mystore.com is accessible through port 80 and 8080,
 // and it maps to an instance with IP 172.16.0.1, such that connections to
@@ -294,6 +313,8 @@ type NetworkEndpoint struct {
 	// need not be the same as the port where the service is accessed.
 	// e.g., catalog.mystore.com:8080 -> 172.16.0.1:55446
 	// Ignored for `AddressFamilyUnix`.
+	// Port number是实例监听连接的端口
+	// 这不需要和service的端口相同
 	Port int
 
 	// Port declaration from the service declaration This is the port for
@@ -302,6 +323,7 @@ type NetworkEndpoint struct {
 	ServicePort *Port
 
 	// Defines a platform-specific workload instance identifier (optional).
+	// 定义了一个特定平台的负载实例identifier
 	UID string
 }
 
@@ -311,6 +333,8 @@ type NetworkEndpoint struct {
 // example, lets say catalog.mystore.com has 2 versions v1 and v2. v1 instances
 // could have labels gitCommit=aeiou234, region=us-east, while v2 instances could
 // have labels name=kittyCat,region=us-east.
+// Labels是一个非空的任意字符串的集合，每个版本的service都可以用和版本相关的独特的labels来区分
+// 这些labels会和特定service版本的所有实例相关联
 type Labels map[string]string
 
 // LabelsCollection is a collection of labels used for comparing labels against a
@@ -330,13 +354,18 @@ type ProbeList []*Probe
 // of a service. It binds a network endpoint (ip:port), the service
 // description (which is oblivious to various versions) and a set of labels
 // that describe the service version associated with this instance.
+// ServiceInstance代表了一个特定版本的service的单个实例，它和一个network endpoint, service description
+// 以及一系列描述和该实例相关的service版本相绑定
 //
 // Since a ServiceInstance has a single NetworkEndpoint, which has a single port,
 // multiple ServiceInstances are required to represent a workload that listens
 // on multiple ports.
+// 因为一个ServiceInstance有一个Network Endpoint，它有单个的port，需要多个ServiceInstances
+// 代表监听多个端口的workload
 //
 // The labels associated with a service instance are unique per a network endpoint.
 // There is one well defined set of labels for each service instance network endpoint.
+// 和一个service instance相关的label对于每个network endpoint都是独特的
 //
 // For example, the set of service instances associated with catalog.mystore.com
 // are modeled like this
@@ -382,6 +411,7 @@ type ServiceAttributes struct {
 }
 
 // ServiceDiscovery enumerates Istio service instances.
+// ServiceDiscovery枚举Istio service实例
 type ServiceDiscovery interface {
 	// Services list declarations of all services in the system
 	Services() ([]*Service, error)

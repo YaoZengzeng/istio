@@ -54,11 +54,14 @@ func convertDuration(d *duration.Duration) time.Duration {
 }
 
 // Watcher triggers reloads on changes to the proxy config
+// Watcher在proxy的配置发生变化时进行reload
 type Watcher interface {
 	// Run the watcher loop (blocking call)
+	// 运行watcher loop
 	Run(context.Context)
 
 	// Reload the agent with the latest configuration
+	// 用最新的配置重新加载agent
 	Reload()
 }
 
@@ -80,6 +83,7 @@ type watcher struct {
 
 // NewWatcher creates a new watcher instance from a proxy agent and a set of monitored certificate paths
 // (directories with files in them)
+// NewWatcher从proxy agent以及一系列的监控的certificate paths创建一个新的watcher实例并且
 func NewWatcher(config meshconfig.ProxyConfig, agent proxy.Agent, role model.Proxy,
 	certs []CertSource, pilotSAN []string) Watcher {
 	return &watcher{
@@ -98,12 +102,15 @@ const (
 
 func (w *watcher) Run(ctx context.Context) {
 	// agent consumes notifications from the controller
+	// agent处理从controller获取的通知
 	go w.agent.Run(ctx)
 
 	// kickstart the proxy with partial state (in case there are no notifications coming)
+	// 用部分状态启动proxy，以防没有通知到达
 	w.Reload()
 
 	// monitor certificates
+	// 监听certificates
 	certDirs := make([]string, 0, len(w.certs))
 	for _, cert := range w.certs {
 		certDirs = append(certDirs, cert.Directory)
@@ -120,6 +127,7 @@ func (w *watcher) Reload() {
 		generateCertHash(h, cert.Directory, cert.Files)
 	}
 
+	// 调度config的更新
 	w.agent.ScheduleConfigUpdate(h.Sum(nil))
 }
 
@@ -164,6 +172,8 @@ func watchFileEvents(ctx context.Context, wch <-chan *fsnotify.FileEvent, minDel
 // `updateFunc` method when changes are detected. This method is blocking
 // so it should be run as a goroutine.
 // updateFunc will not be called more than one time per minDelay.
+// watchCerts监听所有的certificate directories并且在检测到改变时，调用提供的`updateFunc`方法
+// 本方法会阻塞，因此应该作为一个goroutine运行
 func watchCerts(ctx context.Context, certsDirs []string, watchFileEventsFn watchFileEventsFn,
 	minDelay time.Duration, updateFunc func()) {
 	fw, err := fsnotify.NewWatcher()
@@ -224,6 +234,7 @@ type envoy struct {
 }
 
 // NewProxy creates an instance of the proxy control commands
+// NewProxy创建一个proxy control command的实例
 func NewProxy(config meshconfig.ProxyConfig, node string, logLevel string, pilotSAN []string) proxy.Proxy {
 	// inject tracing flag for higher levels
 	var args []string
@@ -271,6 +282,7 @@ func (proxy envoy) Run(config interface{}, epoch int, abort <-chan error) error 
 	// monitoring the certs and restart if the content of the certs changes.
 	if len(proxy.config.CustomConfigFile) > 0 {
 		// there is a custom configuration. Don't write our own config - but keep watching the certs.
+		// 如果有一个自定义的配置，则不要写我们自己的配置，但是还是需要监听certs
 		fname = proxy.config.CustomConfigFile
 	} else {
 		out, err := bootstrap.WriteBootstrap(&proxy.config, proxy.node, epoch, proxy.pilotSAN, proxy.opts, os.Environ())
@@ -290,6 +302,7 @@ func (proxy envoy) Run(config interface{}, epoch int, abort <-chan error) error 
 	log.Infof("Envoy command: %v", args)
 
 	/* #nosec */
+	// 启动envoy
 	cmd := exec.Command(proxy.config.BinaryPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -301,6 +314,7 @@ func (proxy envoy) Run(config interface{}, epoch int, abort <-chan error) error 
 	// container with the app.
 	if proxy.errChan != nil {
 		// Caller passed a channel, will wait itself for termination
+		// 调用者传递了一个channel，等待终结
 		go func() {
 			proxy.errChan <- cmd.Wait()
 		}()
@@ -315,6 +329,7 @@ func (proxy envoy) Run(config interface{}, epoch int, abort <-chan error) error 
 	select {
 	case err := <-abort:
 		log.Warnf("Aborting epoch %d", epoch)
+		// 如果从abort管道内收到请求，则调用cmd.Process.Kill强制杀死
 		if errKill := cmd.Process.Kill(); errKill != nil {
 			log.Warnf("killing epoch %d caused an error %v", epoch, errKill)
 		}

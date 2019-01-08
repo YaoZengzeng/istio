@@ -25,11 +25,14 @@ import (
 )
 
 // Registry specifies the collection of service registry related interfaces
+// Registry定义了和service registry相关的接口
 type Registry struct {
 	// Name is the type of the registry - Kubernetes, Consul, etc.
 	Name serviceregistry.ServiceRegistry
 	// ClusterID is used when multiple registries of the same type are used,
 	// for example in the case of K8S multicluster.
+	// ClusterID在多个同类型的registries被使用的时候使用
+	// 比如在多集群的k8s种
 	ClusterID string
 	model.Controller
 	model.ServiceDiscovery
@@ -43,6 +46,7 @@ var (
 )
 
 // Controller aggregates data across different registries and monitors for changes
+// Controller聚合了来自不同registries的数据并且监听它们的变化
 type Controller struct {
 	registries []Registry
 	storeLock  sync.RWMutex
@@ -272,6 +276,7 @@ func (c *Controller) GetProxyServiceInstances(node *model.Proxy) ([]*model.Servi
 }
 
 // Run starts all the controllers
+// 启动所有的controllers
 func (c *Controller) Run(stop <-chan struct{}) {
 
 	for _, r := range c.GetRegistries() {

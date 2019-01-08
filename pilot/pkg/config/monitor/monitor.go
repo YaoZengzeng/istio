@@ -25,6 +25,7 @@ import (
 
 // Monitor will poll a config function in order to update a ConfigStore as
 // changes are found.
+// Monitor会轮询一个config function，为了能够在发现变更的时候及时更新ConfigStore
 type Monitor struct {
 	store           model.ConfigStore
 	checkDuration   time.Duration
@@ -47,6 +48,8 @@ func NewMonitor(delegateStore model.ConfigStore, checkInterval time.Duration, ge
 // Start starts a new Monitor. Immediately checks the Monitor getSnapshotFunc
 // and updates the controller. It then kicks off an asynchronous event loop that
 // periodically polls the getSnapshotFunc for changes until a close event is sent.
+// Start启动一个新的Monitor，立即调用Monitor的getSnapshotFunc并且更新controller
+// 之后启动一个异步的event loop，定期轮询getSnapshotFunc直到收到一个close event
 func (m *Monitor) Start(stop <-chan struct{}) {
 	m.checkAndUpdate()
 	tick := time.NewTicker(m.checkDuration)

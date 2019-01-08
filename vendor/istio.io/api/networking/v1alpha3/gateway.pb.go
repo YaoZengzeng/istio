@@ -50,6 +50,7 @@ func (Server_TLSOptions_TLSmode) EnumDescriptor() ([]byte, []int) {
 // receiving incoming or outgoing HTTP/TCP connections. The specification
 // describes a set of ports that should be exposed, the type of protocol to
 // use, SNI configuration for the load balancer, etc.
+// `Gateway`描述了一个在mesh的edge接受来往的HTTP/TCP连接的load balancer
 //
 // For example, the following Gateway configuration sets up a proxy to act
 // as a load balancer exposing port 80 and 9080 (http), 443 (https), and

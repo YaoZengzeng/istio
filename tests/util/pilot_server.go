@@ -34,6 +34,7 @@ import (
 var (
 	// MockTestServer is used for the unit tests. Will be started once, terminated at the
 	// end of the suite.
+	// MockTestServer用于单元测试，启动一次并且在测试集结束的时候终止
 	MockTestServer *bootstrap.Server
 
 	// MockPilotURL is the URL for the pilot http endpoint
@@ -104,6 +105,8 @@ func init() {
 
 // EnsureTestServer will ensure a pilot server is running in process and initializes
 // the MockPilotUrl and MockPilotGrpcAddr to allow connections to the test pilot.
+// EnsureTestServer确保有一个pilot server在进程中运行并且初始化MockPilotUrl和MockPilotGrpcAddr
+// 从而允许连接test pilot
 func EnsureTestServer() *bootstrap.Server {
 	if MockTestServer == nil {
 		err := setup()
@@ -131,6 +134,7 @@ func setup() error {
 	httpAddr := ":" + pilotHTTP
 
 	// Create a test pilot discovery service configured to watch the tempDir.
+	// 创建一个测试的pilot discovery service并且被配置为监听tempDir
 	args := bootstrap.PilotArgs{
 		Namespace: "testing",
 		DiscoveryOptions: envoy.DiscoveryServiceOptions{
@@ -150,6 +154,7 @@ func setup() error {
 		},
 		Service: bootstrap.ServiceArgs{
 			// Using the Mock service registry, which provides the hello and world services.
+			// 使用Mock service registry，它能够提供hello以及world服务
 			Registries: []string{
 				string(serviceregistry.MockRegistry)},
 		},
@@ -161,6 +166,7 @@ func setup() error {
 	bootstrap.PilotCertDir = IstioSrc + "/tests/testdata/certs/pilot"
 
 	// Create and setup the controller.
+	// 创建并且设置controller
 	s, err := bootstrap.NewServer(args)
 	if err != nil {
 		return err
@@ -169,6 +175,7 @@ func setup() error {
 	MockTestServer = s
 
 	// Start the server.
+	// 启动server
 	_, err = s.Start(stop)
 	if err != nil {
 		return err

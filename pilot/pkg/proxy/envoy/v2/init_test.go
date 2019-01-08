@@ -64,11 +64,13 @@ func testIp(id uint32) string {
 }
 
 func connectADS(url string) (ads.AggregatedDiscoveryService_StreamAggregatedResourcesClient, error) {
+	// 建立grpc连接
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
 		return nil, fmt.Errorf("GRPC dial failed: %s", err)
 	}
 
+	// 创建ads client
 	xds := ads.NewAggregatedDiscoveryServiceClient(conn)
 	edsstr, err := xds.StreamAggregatedResources(context.Background())
 	if err != nil {
@@ -129,6 +131,7 @@ func adsReceive(ads ads.AggregatedDiscoveryService_StreamAggregatedResourcesClie
 	go func() {
 		select {
 		case <-t.C:
+			// 会导致adsRecv也被关闭，中断阻塞中的recv
 			_ = ads.CloseSend() // will result in adsRecv closing as well, interrupting the blocking recv
 		case <-done:
 			_ = t.Stop()
@@ -138,6 +141,7 @@ func adsReceive(ads ads.AggregatedDiscoveryService_StreamAggregatedResourcesClie
 }
 
 func sendEDSReq(clusters []string, node string, edsstr ads.AggregatedDiscoveryService_StreamAggregatedResourcesClient) error {
+	// 发送eds请求
 	err := edsstr.Send(&xdsapi.DiscoveryRequest{
 		ResponseNonce: time.Now().String(),
 		Node: &core.Node{
@@ -175,6 +179,7 @@ func sendEDSNack(clusters []string, node string, edsstr ads.AggregatedDiscoveryS
 // connection to pilot. In HA case this may be a different pilot. This is a regression test for
 // reconnect problems.
 func sendEDSReqReconnect(clusters []string, edsstr ads.AggregatedDiscoveryService_StreamAggregatedResourcesClient, res *xdsapi.DiscoveryResponse) error {
+	// 发送重连请求
 	err := edsstr.Send(&xdsapi.DiscoveryRequest{
 		Node: &core.Node{
 			Id:       sidecarId(app3Ip, "app3"),

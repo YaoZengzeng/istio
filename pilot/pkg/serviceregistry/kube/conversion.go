@@ -103,6 +103,7 @@ func convertService(svc v1.Service, domainSuffix string) *model.Service {
 	}
 	sort.Sort(sort.StringSlice(serviceaccounts))
 
+	// 将kubernetes的service转换为model.Service
 	return &model.Service{
 		Hostname:              serviceHostname(svc.Name, svc.Namespace, domainSuffix),
 		Ports:                 ports,

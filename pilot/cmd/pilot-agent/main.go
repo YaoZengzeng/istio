@@ -89,6 +89,7 @@ var (
 				return err
 			}
 			log.Infof("Version %s", version.Info.String())
+			// 默认为sidecar模式
 			role.Type = model.Sidecar
 			if len(args) > 0 {
 				role.Type = model.NodeType(args[0])
@@ -97,6 +98,7 @@ var (
 			// set values from registry platform
 			if len(role.IPAddress) == 0 {
 				if registry == serviceregistry.KubernetesRegistry {
+					// 当service registry为Kubernetes时，从环境变量INSTANCE_IP中获取ip地址
 					role.IPAddress = os.Getenv("INSTANCE_IP")
 				} else {
 					ipAddr := "127.0.0.1"
@@ -134,6 +136,7 @@ var (
 			proxyConfig := meshconfig.ProxyConfig{}
 
 			// set all flags
+			// 设置flags
 			proxyConfig.AvailabilityZone = availabilityZone
 			proxyConfig.CustomConfigFile = customConfigFile
 			proxyConfig.ConfigPath = configPath
@@ -251,6 +254,7 @@ var (
 			ctx, cancel := context.WithCancel(context.Background())
 
 			// If a status port was provided, start handling status probes.
+			// 如果提供了一个status port，启动对于status probes的处理
 			if statusPort > 0 {
 				parsedPorts, err := parseApplicationPorts()
 				if err != nil {
@@ -371,6 +375,7 @@ func init() {
 
 	cmd.AddFlags(rootCmd)
 
+	// 添加proxyCmd到rootCmd
 	rootCmd.AddCommand(proxyCmd)
 	rootCmd.AddCommand(version.CobraCommand())
 

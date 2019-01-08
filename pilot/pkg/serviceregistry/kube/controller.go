@@ -65,6 +65,7 @@ func init() {
 }
 
 // ControllerOptions stores the configurable attributes of a Controller.
+// ControllerOptions存储了一个Controller的配置属性
 type ControllerOptions struct {
 	// Namespace the controller watches. If set to meta_v1.NamespaceAll (""), controller watches all namespaces
 	WatchedNamespace string
@@ -72,12 +73,15 @@ type ControllerOptions struct {
 	DomainSuffix     string
 
 	// ClusterID identifies the remote cluster in a multicluster env.
+	// 在multicluster环境中，ClusterID用于标示remote cluster
 	ClusterID string
 
 	// XDSUpdater will push changes to the xDS server.
+	// XDSUpdater用户将变更推送到xDS server
 	XDSUpdater model.XDSUpdater
 
 	// ConfigUpdater is used to request global config updates.
+	// ConfigUpdater用于请求全局的配置更新
 	ConfigUpdater model.ConfigUpdater
 
 	stop chan struct{}
@@ -85,6 +89,7 @@ type ControllerOptions struct {
 
 // Controller is a collection of synchronized resource watchers
 // Caches are thread-safe
+// Controller是一系列同步的resource watchers
 type Controller struct {
 	domainSuffix string
 
@@ -119,6 +124,7 @@ type cacheHandler struct {
 
 // NewController creates a new Kubernetes controller
 // Created by bootstrap and multicluster (see secretcontroler).
+// NewController创建一个新的Kubernetes controller
 func NewController(client kubernetes.Interface, options ControllerOptions) *Controller {
 	log.Infof("Service controller watching namespace %q for service, endpoint, nodes and pods, refresh %d",
 		options.WatchedNamespace, options.ResyncPeriod)
@@ -331,6 +337,7 @@ func (c *Controller) Services() ([]*model.Service, error) {
 
 // GetService implements a service catalog operation
 func (c *Controller) GetService(hostname model.Hostname) (*model.Service, error) {
+	// name和namespace编码至hostname中
 	name, namespace, err := parseHostname(hostname)
 	if err != nil {
 		log.Infof("parseHostname(%s) => error %v", hostname, err)
@@ -347,6 +354,7 @@ func (c *Controller) GetService(hostname model.Hostname) (*model.Service, error)
 
 // serviceByKey retrieves a service by name and namespace
 func (c *Controller) serviceByKey(name, namespace string) (*v1.Service, bool) {
+	// 从informer中，根据name和namespace获取对应的service
 	item, exists, err := c.services.informer.GetStore().GetByKey(KeyFunc(name, namespace))
 	if err != nil {
 		log.Infof("serviceByKey(%s, %s) => error %v", name, namespace, err)
@@ -583,6 +591,7 @@ func (c *Controller) InstancesByPort(hostname model.Hostname, reqSvcPort int,
 						if port.Name == "" || // 'name optional if single port is defined'
 							reqSvcPort == 0 || // return all ports (mostly used by tests/debug)
 							svcPortEntry.Name == port.Name {
+							// 转化为model.ServiceInstance
 							out = append(out, &model.ServiceInstance{
 								Endpoint: model.NetworkEndpoint{
 									Address:     ea.IP,

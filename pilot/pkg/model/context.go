@@ -29,8 +29,10 @@ import (
 )
 
 // Environment provides an aggregate environmental API for Pilot
+// Environment提供了Pilot的一个aggregate environmental API
 type Environment struct {
 	// Discovery interface for listing services and instances.
+	// Discovery接口用于列举services和instances
 	ServiceDiscovery
 
 	// Accounts interface for listing service accounts
@@ -57,6 +59,7 @@ type Environment struct {
 }
 
 // Proxy defines the proxy attributes used by xDS identification
+// Proxy定义了供xDS identification使用的proxy属性
 type Proxy struct {
 	// ClusterID specifies the cluster where the proxy resides
 	ClusterID string
@@ -66,6 +69,7 @@ type Proxy struct {
 
 	// IPAddress is the IP address of the proxy used to identify it and its
 	// co-located service instances. Example: "10.60.1.6"
+	// IPAddress是proxy使用的IP地址，用于识别它自己以及一同部署的服务实例
 	IPAddress string
 
 	// ID is the unique platform-specific sidecar proxy ID
@@ -80,6 +84,7 @@ type Proxy struct {
 }
 
 // NodeType decides the responsibility of the proxy serves in the mesh
+// NodeType决定了proxy在mesh中担任的职责
 type NodeType string
 
 const (
@@ -87,9 +92,11 @@ const (
 	Sidecar NodeType = "sidecar"
 
 	// Ingress type is used for cluster ingress proxies
+	// Ingress由cluster ingress proxies使用
 	Ingress NodeType = "ingress"
 
 	// Router type is used for standalone proxies acting as L7/L4 routers
+	// Router表示作为一个独立的proxes使用，担任L7/L4 routers
 	Router NodeType = "router"
 )
 
@@ -104,6 +111,7 @@ func IsApplicationNodeType(nType NodeType) bool {
 }
 
 // ServiceNode encodes the proxy node attributes into a URI-acceptable string
+// ServiceNode将proxy的node attributes编码为一个URI-acceptable的字符串
 func (node *Proxy) ServiceNode() string {
 	return strings.Join([]string{
 		string(node.Type), node.IPAddress, node.ID, node.Domain,
@@ -189,12 +197,14 @@ const (
 	IngressKeyFilename = "tls.key"
 
 	// ConfigPathDir config directory for storing envoy json config files.
+	// ConfigPathDir配置用于存储envoy json配置文件的目录
 	ConfigPathDir = "/etc/istio/proxy"
 
 	// BinaryPathFilename envoy binary location
 	BinaryPathFilename = "/usr/local/bin/envoy"
 
 	// ServiceClusterName service cluster name used in xDS calls
+	// ServiceClusterName作为在xDS调用中作为cluster name
 	ServiceClusterName = "istio-proxy"
 
 	// DiscoveryPlainAddress discovery IP address:port with plain text

@@ -15,12 +15,15 @@
 package serviceregistry
 
 // ServiceRegistry defines underlying platform supporting service registry
+// ServiceRegistry定义支持service registry的底层平台
 type ServiceRegistry string
 
 const (
 	// MockRegistry is a service registry that contains 2 hard-coded test services
+	// MockRegistry是一个包含两个硬编码的测试服务的service registry
 	MockRegistry ServiceRegistry = "Mock"
 	// ConfigRegistry is a service registry that listens for service entries in a backing ConfigStore
+	// ConfigRegistry是一个service registry，监听在一个后端ConfigStore的service entries
 	ConfigRegistry ServiceRegistry = "Config"
 	// KubernetesRegistry is a service registry backed by k8s API server
 	KubernetesRegistry ServiceRegistry = "Kubernetes"

@@ -34,6 +34,7 @@ var (
 
 // FileSnapshot holds a reference to a file directory that contains crd
 // config and filter criteria for which of those configs will be parsed.
+// FileSnapshot包含了对于一个file directory的引用，其中包含了crd config以及filter criteria
 type FileSnapshot struct {
 	root             string
 	configTypeFilter map[string]bool
@@ -41,6 +42,8 @@ type FileSnapshot struct {
 
 // NewFileSnapshot returns a snapshotter.
 // If no types are provided in the descriptor, all IstioConfigTypes will be allowed.
+// NewFileSnapshot返回一个snapshotter
+// 如果在descriptor中没有提供types，则所有的IstioConfigTypes都会被允许
 func NewFileSnapshot(root string, descriptor model.ConfigDescriptor) *FileSnapshot {
 	snapshot := &FileSnapshot{
 		root:             root,

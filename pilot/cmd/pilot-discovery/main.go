@@ -68,6 +68,7 @@ var (
 			}
 
 			// Create the server for the discovery service.
+			// 创建server用于发现服务
 			discoveryServer, err := bootstrap.NewServer(serverArgs)
 			if err != nil {
 				return fmt.Errorf("failed to create discovery service: %v", err)
@@ -87,6 +88,7 @@ var (
 
 func init() {
 	discoveryCmd.PersistentFlags().StringSliceVar(&serverArgs.Service.Registries, "registries",
+		// 默认使用kubernetes作为service registry
 		[]string{string(serviceregistry.KubernetesRegistry)},
 		fmt.Sprintf("Comma separated list of platform service registries to read from (choose one or more from {%s, %s, %s, %s, %s})",
 			serviceregistry.KubernetesRegistry, serviceregistry.ConsulRegistry,

@@ -20,9 +20,12 @@ var _ = math.Inf
 // addressed. Each routing rule defines matching criteria for traffic of a specific
 // protocol. If the traffic is matched, then it is sent to a named destination service
 // (or subset/version of it) defined in the registry.
+// `VirtualService`定义了一系列需要应用的流量路由规则，当一个主角地址被解析的时候
+// 每个路由规则为特定的协议定义了一个匹配场景
 //
 // The source of traffic can also be matched in a routing rule. This allows routing
 // to be customized for specific client contexts.
+// 流量的源也能在路由规则中被匹配，从而允许路由也能根据特定的client定制
 //
 // The following example on Kubernetes, routes all HTTP traffic by default to
 // pods of the reviews service with label "version: v1". In addition,

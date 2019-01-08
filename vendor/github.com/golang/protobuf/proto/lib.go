@@ -277,6 +277,7 @@ import (
 var errInvalidUTF8 = errors.New("proto: invalid UTF-8 string")
 
 // Message is implemented by generated protocol buffer messages.
+// Message由产生的generated protocol buffer messages实现
 type Message interface {
 	Reset()
 	String() string

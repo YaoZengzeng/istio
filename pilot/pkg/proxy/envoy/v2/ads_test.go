@@ -31,6 +31,7 @@ func TestAdsReconnectWithNonce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// 发送eds请求
 	err = sendEDSReq([]string{"outbound|1080||service3.default.svc.cluster.local"}, sidecarId(app3Ip, "app3"), edsstr)
 	if err != nil {
 		t.Fatal(err)
@@ -38,6 +39,7 @@ func TestAdsReconnectWithNonce(t *testing.T) {
 	res, _ := adsReceive(edsstr, 5*time.Second)
 
 	// closes old process
+	// 关闭连接
 	_ = edsstr.CloseSend()
 
 	edsstr, err = connectADS(util.MockPilotGrpcAddr)
@@ -46,6 +48,7 @@ func TestAdsReconnectWithNonce(t *testing.T) {
 	}
 	defer edsstr.CloseSend()
 
+	// 重连并且将上一次的DiscoveryResponse作为参数传入
 	err = sendEDSReqReconnect([]string{"service3.default.svc.cluster.local|http"}, edsstr, res)
 	if err != nil {
 		t.Fatal(err)

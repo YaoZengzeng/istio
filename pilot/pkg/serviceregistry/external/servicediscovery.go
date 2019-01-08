@@ -53,6 +53,7 @@ type ServiceEntryStore struct {
 }
 
 // NewServiceDiscovery creates a new ServiceEntry discovery service
+// NewServiceDiscovery创建一个新的ServiceEntry发现服务
 func NewServiceDiscovery(callbacks model.ConfigStoreCache, store model.IstioConfigStore) *ServiceEntryStore {
 	c := &ServiceEntryStore{
 		serviceHandlers:  make([]serviceHandler, 0),

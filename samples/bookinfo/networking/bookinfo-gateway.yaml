@@ -4,6 +4,7 @@ metadata:
   name: bookinfo-gateway
 spec:
   selector:
+    # 使用istio默认的controller
     istio: ingressgateway # use istio default controller
   servers:
   - port:

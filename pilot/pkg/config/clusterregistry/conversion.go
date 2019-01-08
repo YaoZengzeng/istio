@@ -44,6 +44,7 @@ const (
 )
 
 // RemoteCluster defines cluster struct
+// RemoteCluster定义了cluster结构
 type RemoteCluster struct {
 	Cluster        *k8s_cr.Cluster
 	FromSecret     string
@@ -54,12 +55,14 @@ type RemoteCluster struct {
 }
 
 // ClusterStore is a collection of clusters
+// ClusterStore是一系列的clusters
 type ClusterStore struct {
 	rc        map[string]*RemoteCluster
 	storeLock sync.RWMutex
 }
 
 // NewClustersStore initializes data struct to store clusters information
+// NewClustersStore初始化数据结构用于存储集群信息
 func NewClustersStore() *ClusterStore {
 	rc := make(map[string]*RemoteCluster)
 	return &ClusterStore{
@@ -85,6 +88,7 @@ func GetClusterID(cluster *k8s_cr.Cluster) string {
 }
 
 // ReadClusters reads multiple clusters from a ConfigMap
+// ReadClusters从ConfigMap中读取多个clusters
 func ReadClusters(k8s kubernetes.Interface, configMapName string, configMapNamespace string, cs *ClusterStore) error {
 
 	// getClustersConfigs populates Cluster Store with valid entries found in

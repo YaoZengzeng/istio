@@ -175,6 +175,7 @@ func envDuration(env string, def time.Duration) time.Duration {
 }
 
 // DiscoveryService publishes services, clusters, and routes for all proxies
+// DiscoveryService为所有的proxies发布services，clusters以及routes
 type DiscoveryService struct {
 	*model.Environment
 
@@ -191,6 +192,7 @@ type DiscoveryService struct {
 	RestContainer *restful.Container
 
 	// true if a full push is needed after debounce. False if only EDS is required.
+	// 如果在debounce之后需要一个全量的push则设置为true，若只有EDS需要，则设置为false
 	fullPush bool
 }
 
@@ -306,9 +308,11 @@ const (
 
 // DiscoveryServiceOptions contains options for create a new discovery
 // service instance.
+// DiscoveryServiceOptions包含了创建一个新的服务发现实例的选项
 type DiscoveryServiceOptions struct {
 	// The listening address for HTTP. If the port in the address is empty or "0" (as in "127.0.0.1:" or "[::1]:0")
 	// a port number is automatically chosen.
+	// 如果端口地址为空或者为"0"，则会自动分配端口号
 	HTTPAddr string
 
 	// The listening address for GRPC. If the port in the address is empty or "0" (as in "127.0.0.1:" or "[::1]:0")
@@ -329,6 +333,7 @@ type DiscoveryServiceOptions struct {
 }
 
 // NewDiscoveryService creates an Envoy discovery service on a given port
+// NewDiscoveryService在给定的端口创建一个Envoy discovery service
 func NewDiscoveryService(ctl model.Controller, configCache model.ConfigStoreCache,
 	environment *model.Environment, o DiscoveryServiceOptions) (*DiscoveryService, error) {
 	out := &DiscoveryService{
@@ -351,6 +356,8 @@ func NewDiscoveryService(ctl model.Controller, configCache model.ConfigStoreCach
 
 	// Flush cached discovery responses whenever services, service
 	// instances, or routing configuration changes.
+	// 一旦services，service instances或者routing configuration发生改变时
+	// 刷新缓存的discovery responses
 	serviceHandler := func(*model.Service, model.Event) { out.clearCache() }
 	if err := ctl.AppendServiceHandler(serviceHandler); err != nil {
 		return nil, err
@@ -450,9 +457,11 @@ func (ds *DiscoveryService) debouncePush(startDebounce time.Time) {
 }
 
 // Start the actual push
+// 开始真正的push操作
 func (ds *DiscoveryService) doPush() {
 	// more config update events may happen while doPush is processing.
 	// we don't want to lose updates.
+	// 在doPush操作期间可能有更多的config update事件发生，我们不想遗漏这些更新
 	clearCacheMutex.Lock()
 
 	clearCacheTimerSet = false
@@ -461,6 +470,7 @@ func (ds *DiscoveryService) doPush() {
 	edsUpdates := BeforePush()
 
 	// Update the config values, next ConfigUpdate and eds updates will use this
+	// 更新fullPush为false，之后的ConfigUpdate和eds更新会使用它
 	ds.fullPush = false
 
 	clearCacheMutex.Unlock()
@@ -470,12 +480,15 @@ func (ds *DiscoveryService) doPush() {
 
 // clearCache will clear all envoy caches. Called by service, instance and config handlers.
 // This will impact the performance, since envoy will need to recalculate.
+// ClearCache会清理所有的envoy缓存，由service，instance和config的handlers调用
+// 这会影响性能，因为envoy需要重新计算
 func (ds *DiscoveryService) clearCache() {
 	ds.ConfigUpdate(true)
 }
 
 // ConfigUpdate implements ConfigUpdater interface, used to request pushes.
 // It replaces the 'clear cache' from v1.
+// ConfigUpdate实现了ConfigUpdater接口，用于请求pushes
 func (ds *DiscoveryService) ConfigUpdate(full bool) {
 	clearCacheMutex.Lock()
 	defer clearCacheMutex.Unlock()

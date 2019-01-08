@@ -29,6 +29,7 @@ var (
 )
 
 // Make creates an in-memory config store from a config descriptor
+// Make根据一个config descriptor创建一个在内存中的config store
 func Make(descriptor model.ConfigDescriptor) model.ConfigStore {
 	out := store{
 		descriptor: descriptor,

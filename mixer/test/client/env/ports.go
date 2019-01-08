@@ -118,6 +118,7 @@ func allPortFree(base uint16, ports uint16) bool {
 }
 
 // NewPorts allocate all ports based on test id.
+// NewPorts根据test id分配所有的ports
 func NewPorts(name uint16) *Ports {
 	base := allocPortBase(name)
 	return &Ports{

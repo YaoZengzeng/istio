@@ -184,6 +184,7 @@ func getNodeMetaData(envs []string) map[string]string {
 }
 
 // WriteBootstrap generates an envoy config based on config and epoch, and returns the filename.
+// WriteBootstrap根据config以及epoch创建一个envoy config并且返回文件名
 // TODO: in v2 some of the LDS ports (port, http_port) should be configured in the bootstrap.
 func WriteBootstrap(config *meshconfig.ProxyConfig, node string, epoch int, pilotSAN []string,
 	opts map[string]interface{}, localEnv []string) (string, error) {
