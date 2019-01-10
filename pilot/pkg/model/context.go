@@ -29,7 +29,7 @@ import (
 )
 
 // Environment provides an aggregate environmental API for Pilot
-// Environment提供了Pilot的一个aggregate environmental API
+// Environment提供了Pilot的一个聚合的environmental API
 type Environment struct {
 	// Discovery interface for listing services and instances.
 	// Discovery接口用于列举services和instances
@@ -50,10 +50,13 @@ type Environment struct {
 
 	// PushContext holds informations during push generation. It is reset on config change, at the beginning
 	// of the pushAll. It will hold all errors and stats and possibly caches needed during the entire cache computation.
+	// PushContext包含了push所需的所有信息，它会在配置改变的时候被重置，在pushAll的开头，它会存放所有的errors，stats甚至可能是caches
 	// DO NOT USE EXCEPT FOR TESTS AND HANDLING OF NEW CONNECTIONS.
 	// ALL USE DURING A PUSH SHOULD USE THE ONE CREATED AT THE
 	// START OF THE PUSH, THE GLOBAL ONE MAY CHANGE AND REFLECT A DIFFERENT
 	// CONFIG AND PUSH
+	// 所有在push期间使用的PushContext都应该来自在push开始的时候创建的那个
+	// 全局的push可能发生更改并且表示另外一个config以及push
 	// Deprecated - a local config for ads will be used instead
 	PushContext *PushContext
 }

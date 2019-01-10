@@ -29,7 +29,7 @@ var (
 )
 
 // NewDiscovery builds a memory ServiceDiscovery
-// NewDiscovery构建一个memory ServiceDiscovery
+// NewDiscovery构建一个内存中的ServiceDiscovery
 func NewDiscovery(services map[model.Hostname]*model.Service, versions int) *ServiceDiscovery {
 	return &ServiceDiscovery{
 		services: services,

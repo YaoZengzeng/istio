@@ -29,6 +29,7 @@ import (
 
 // Peer contains the information of the peer for an RPC, such as the address
 // and authentication information.
+// Peer包含了一个RPC的peer的信息，例如地址以及认证信息
 type Peer struct {
 	// Addr is the peer address.
 	Addr net.Addr

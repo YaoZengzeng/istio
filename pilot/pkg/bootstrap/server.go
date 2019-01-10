@@ -478,7 +478,7 @@ func (s *Server) initConfigController(args *PilotArgs) error {
 	if args.Config.Controller != nil {
 		s.configController = args.Config.Controller
 	} else if args.Config.FileDir != "" {
-		// 从文件中加载config
+		// 从文件中加载config，store实现了model.ConfigStore
 		store := memory.Make(model.IstioConfigTypes)
 		// configController是model.ConfigStoreCache接口的一个实现
 		configController := memory.NewController(store)
@@ -719,9 +719,11 @@ func (s *Server) initServiceControllers(args *PilotArgs) error {
 			return multierror.Prefix(nil, "Service registry "+r+" is not supported.")
 		}
 	}
+	// service entry即外部服务，同样需要对其进行注册订阅
 	serviceEntryStore := external.NewServiceDiscovery(s.configController, s.istioConfigStore)
 
 	// add service entry registry to aggregator by default
+	// 默认在aggregator中加入service entry
 	serviceEntryRegistry := aggregate.Registry{
 		Name:             "ServiceEntries",
 		Controller:       serviceEntryStore,
@@ -810,6 +812,7 @@ func (s *Server) initDiscoveryService(args *PilotArgs) error {
 	// 初始化gRPC server，从Pilot的老的data model获取数据
 	s.initGrpcServer()
 
+	// 创建EnvoyXdsServer
 	s.EnvoyXdsServer = envoyv2.NewDiscoveryServer(environment, istio_networking.NewConfigGenerator(args.Plugins))
 	s.EnvoyXdsServer.ConfigUpdater = s.discoveryService
 	// TODO: decouple v2 from the cache invalidation, use direct listeners.

@@ -85,6 +85,8 @@ type VirtualService struct {
 	// platform, short-names can also be used instead of a FQDN (i.e. has no
 	// dots in the name). In such a scenario, the FQDN of the host would be
 	// derived based on the underlying platform.
+	// 流量会被送往的目标hosts，可以是一个有着通配符前缀的DNS name或者是一个IP地址，根据平台
+	// 的不同，short-names也能够被使用。在这种情况下，FQDN会依据底层平台被推导出来
 	//
 	// A single VirtualService can be used to describe all the traffic
 	// properties of the corresponding hosts, including those for multiple
@@ -93,6 +95,8 @@ type VirtualService struct {
 	// caveats. Refer to the
 	// [Operations Guide](/help/ops/traffic-management/deploy-guidelines/#multiple-virtual-services-and-destination-rules-for-the-same-host)
 	// for details.
+	// 单个的VirtualService能够用于描述相关hosts所有的traffic properties，包括多个的
+	// HTTP和TCP端口，另外，单个host的traffic properties也可以用多个VirtualService定义
 	//
 	// *Note for Kubernetes users*: When short names are used (e.g. "reviews"
 	// instead of "reviews.default.svc.cluster.local"), Istio will interpret
@@ -102,11 +106,15 @@ type VirtualService struct {
 	// the actual namespace associated with the reviews service. _To avoid
 	// potential misconfigurations, it is recommended to always use fully
 	// qualified domain names over short names._
+	// 在kubernetes中，rule的namespace，而不是service所在的namespace会被用于将short names
+	// 扩展为FQDN
 	//
 	// The hosts field applies to both HTTP and TCP services. Service inside
 	// the mesh, i.e., those found in the service registry, must always be
 	// referred to using their alphanumeric names. IP addresses are allowed
 	// only for services defined via the Gateway.
+	// hosts字段可以同时应用于HTTP和TCP服务，mesh中的Service，即在service registry
+	// 找到的，必须用它们的alphanumeric names表示，IP地址只允许通过Gateway定义的services
 	Hosts []string `protobuf:"bytes,1,rep,name=hosts" json:"hosts,omitempty"`
 	// The names of gateways and sidecars that should apply these routes. A
 	// single VirtualService is used for sidecars inside the mesh as well as
@@ -118,12 +126,18 @@ type VirtualService struct {
 	// sidecars in the mesh. If a list of gateway names is provided, the
 	// rules will apply only to the gateways. To apply the rules to both
 	// gateways and sidecars, specify `mesh` as one of the gateway names.
+	// 当Gateways字段为空时，规则会应用到mesh中所有的sidecar，若提供了一系列gateway的名字
+	// 则规则只会被应用到gateways上，若想将规则同时应用到gateways和sidecars，则将
+	// `mesh`作为其中一个gateway names
 	Gateways []string `protobuf:"bytes,2,rep,name=gateways" json:"gateways,omitempty"`
 	// An ordered list of route rules for HTTP traffic. HTTP routes will be
 	// applied to platform service ports named 'http-*'/'http2-*'/'grpc-*', gateway
 	// ports with protocol HTTP/HTTP2/GRPC/ TLS-terminated-HTTPS and service
 	// entry ports using HTTP/HTTP2/GRPC protocols.  The first rule matching
 	// an incoming request is used.
+	// 一个用于HTTP流量的按序的route rules，HTTP routes会被应用到那些以'http-*'/'htt2-*'
+	// 'grpc-*'命名的平台相关的service ports，以及协议为HTTP/HTTP2/GRPC的gateway ports
+	// ，使用HTTP/HTTP2/GRPC协议的service entry ports，第一个匹配的规则就会被使用
 	Http []*HTTPRoute `protobuf:"bytes,3,rep,name=http" json:"http,omitempty"`
 	// An ordered list of route rule for non-terminated TLS & HTTPS
 	// traffic. Routing is typically performed using the SNI value presented
@@ -134,10 +148,13 @@ type VirtualService struct {
 	// incoming request is used.  NOTE: Traffic 'https-*' or 'tls-*' ports
 	// without associated virtual service will be treated as opaque TCP
 	// traffic.
+	// 一个用于non-terminated TLS以及HTTPS流量的有序的route rule
 	Tls []*TLSRoute `protobuf:"bytes,5,rep,name=tls" json:"tls,omitempty"`
 	// An ordered list of route rules for opaque TCP traffic. TCP routes will
 	// be applied to any port that is not a HTTP or TLS port. The first rule
 	// matching an incoming request is used.
+	// 一个用于TCP流量的按序的route rules, TCP routes会应用到任何非HTTP或者TLS的port
+	// 第一个匹配的规则就会被使用
 	Tcp []*TCPRoute `protobuf:"bytes,4,rep,name=tcp" json:"tcp,omitempty"`
 }
 
@@ -257,6 +274,8 @@ func (m *VirtualService) GetTcp() []*TCPRoute {
 // qualified domain name of the productpage service,
 // productpage.prod.svc.cluster.local. Therefore the rule's namespace does
 // not have an impact in resolving the name of the productpage service.
+// 当规则中没有定义subnet时，Istio会从service registry中获取productpage.prod.svc.cluster.local
+// 的所有实例并且用它们填充sidecar的load balancing pool
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3
@@ -279,6 +298,9 @@ func (m *VirtualService) GetTcp() []*TCPRoute {
 // ServiceEntry resource. VirtualServices can then be defined to control traffic
 // bound to these external services. For example, the following rules define a
 // Service for wikipedia.org and set a timeout of 5s for http requests.
+// 为了控制通往mesh之外的service的路由，external services必须首先通过ServiceEntry资源对象
+// 添加到Istio内部的service registry中，之后才能定义VirtualServices用于将流量导到这些external
+// services
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3
@@ -327,6 +349,7 @@ type Destination struct {
 	// The name of a subset within the service. Applicable only to services
 	// within the mesh. The subset must be defined in a corresponding
 	// DestinationRule.
+	// Subset只对mesh中的service有效，subset必须定义在对应的DestinationRule中
 	Subset string `protobuf:"bytes,2,opt,name=subset,proto3" json:"subset,omitempty"`
 	// Specifies the port on the host that is being addressed. If a service
 	// exposes only a single port it is not required to explicitly select the
@@ -362,11 +385,13 @@ func (m *Destination) GetPort() *PortSelector {
 
 // Describes match conditions and actions for routing HTTP/1.1, HTTP2, and
 // gRPC traffic. See VirtualService for usage examples.
+// 描述对于路由HTTP/1.1. HTTP2以及gRPC流量的匹配规则和动作
 type HTTPRoute struct {
 	// Match conditions to be satisfied for the rule to be
 	// activated. All conditions inside a single match block have AND
 	// semantics, while the list of match blocks have OR semantics. The rule
 	// is matched if any one of the match blocks succeed.
+	// 单个match block里的匹配条件是AND关系，不同的match block里的关系是OR关系
 	Match []*HTTPMatchRequest `protobuf:"bytes,1,rep,name=match" json:"match,omitempty"`
 	// A http rule can either redirect or forward (default) traffic. The
 	// forwarding target can be one of several versions of a service (see
@@ -566,6 +591,8 @@ func (m *TLSRoute) GetRoute() []*DestinationWeight {
 // Describes match conditions and actions for routing TCP traffic. The
 // following routing rule forwards traffic arriving at port 27017 for
 // mongo.prod.svc.cluster.local to another Mongo server on port 5555.
+// 用于描述TCP流量的匹配条件以及动作，如下的routing rule表示将到达端口27017，访问
+// mongo.prod.svc.cluster.local的流量转发到另一个端口为5555的Mongo server
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3
@@ -709,6 +736,7 @@ type HTTPMatchRequest struct {
 	// Names of gateways where the rule should be applied to. Gateway names
 	// at the top of the VirtualService (if any) are overridden. The gateway match is
 	// independent of sourceLabels.
+	// 应该施加规则的gateways的名字，此时VirtualService中的Gateway names将会被忽略
 	Gateways []string `protobuf:"bytes,8,rep,name=gateways" json:"gateways,omitempty"`
 }
 
@@ -779,6 +807,7 @@ func (m *HTTPMatchRequest) GetGateways() []string {
 // following rule will route 25% of traffic for the "reviews" service to
 // instances with the "v2" tag and the remaining traffic (i.e., 75%) to
 // "v1".
+// 每个routing rule都和一个或多个service versions相关联
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3
@@ -821,6 +850,7 @@ func (m *HTTPMatchRequest) GetGateways() []string {
 // Traffic can also be split across two entirely different services without
 // having to define new subsets. For example, the following rule forwards 25% of
 // traffic to reviews.com to dev.reviews.com
+// 流量也可以在两个完全不同的services之间分割而不需要定义subsets
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3
@@ -1015,6 +1045,7 @@ func (m *TLSMatchAttributes) GetGateways() []string {
 // the specified values. For example, the following rule redirects
 // requests for /v1/getProductRatings API on the ratings service to
 // /v1/bookRatings provided by the bookratings service.
+// HTTPRedirect用于给caller发送一个301 redirect response
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3

@@ -33,6 +33,8 @@ import (
 // values are zero, and when push completes the status is reset.
 // The struct is exposed in a debug endpoint - fields public to allow
 // easy serialization as json.
+// PushContext追踪push的状态 - metrics以及errors
+// Metrics会在push之后被重置 - 在初始的时候所有values都为0，当push结束的时候status就会被重置
 type PushContext struct {
 	proxyStatusMutex sync.RWMutex
 	// ProxyStatus is keyed by the error code, and holds a map keyed
@@ -47,9 +49,11 @@ type PushContext struct {
 	// Mutex is used to protect the below store.
 	// All data is set when the PushContext object is populated in `InitContext`,
 	// data should not be changed by plugins.
+	// 当PushContext对象在`InitContext`被填充时，所有的数据都已经设置好了并且不能被plugins改变sss
 	Mutex sync.Mutex `json:"-,omitempty"`
 
 	// Services list all services in the system at the time push started.
+	// Services记载了在系统开始push的时候所有的services
 	Services []*Service `json:"-,omitempty"`
 
 	// ServiceByHostname has all services, indexed by hostname.
@@ -362,6 +366,7 @@ var (
 )
 
 // NewPushContext creates a new PushContext structure to track push status.
+// NewPushContext创建一个新的PushContext structure用于追踪push status
 func NewPushContext() *PushContext {
 	// TODO: detect push in progress, don't update status if set
 	return &PushContext{
@@ -383,6 +388,7 @@ func (ps *PushContext) JSON() ([]byte, error) {
 }
 
 // OnConfigChange is called when a config change is detected.
+// 当检测到config的变更时，调用OnConfigChange
 func (ps *PushContext) OnConfigChange() {
 	LastPushStatus = ps
 	ps.UpdateMetrics()
@@ -437,6 +443,8 @@ func (ps *PushContext) VirtualServices(gateways map[string]bool) []Config {
 // InitContext will initialize the data structures used for code generation.
 // This should be called before starting the push, from the thread creating
 // the push context.
+// InitContext会初始化用于code generation的数据结构
+// 该函数应该在开始push之前被调用
 func (ps *PushContext) InitContext(env *Environment) error {
 	ps.Mutex.Lock()
 	defer ps.Mutex.Unlock()
@@ -465,12 +473,14 @@ func (ps *PushContext) InitContext(env *Environment) error {
 
 // Caches list of services in the registry, and creates a map
 // of hostname to service
+// 缓存registry中的一系列services并且创建一个hostname到service的map
 func (ps *PushContext) initServiceRegistry(env *Environment) error {
 	services, err := env.Services()
 	if err != nil {
 		return err
 	}
 	// Sort the services in order of creation.
+	// 以创建的时间对services进行排序
 	ps.Services = sortServicesByCreationTime(services)
 	for _, s := range services {
 		ps.ServiceByHostname[s.Hostname] = s
@@ -488,6 +498,7 @@ func sortServicesByCreationTime(services []*Service) []*Service {
 }
 
 // Caches list of virtual services
+// 缓存一系列的virtual services
 func (ps *PushContext) initVirtualServices(env *Environment) error {
 	vservices, err := env.List(VirtualService.Type, NamespaceAll)
 	if err != nil {
@@ -497,6 +508,7 @@ func (ps *PushContext) initVirtualServices(env *Environment) error {
 	sortConfigByCreationTime(vservices)
 	ps.VirtualServiceConfigs = vservices
 	// convert all shortnames in virtual services into FQDNs
+	// 将virtual services中的所有shortnames转换为FQDN
 	for _, r := range ps.VirtualServiceConfigs {
 		rule := r.Spec.(*networking.VirtualService)
 		// resolve top level hosts
@@ -626,6 +638,7 @@ func (ps *PushContext) DestinationRule(hostname Hostname) *Config {
 }
 
 // SubsetToLabels returns the labels associated with a subset of a given service.
+// SubsetToLabels返回和一个给定service的subset相关的labels
 func (ps *PushContext) SubsetToLabels(subsetName string, hostname Hostname) LabelsCollection {
 	// empty subset
 	if subsetName == "" {

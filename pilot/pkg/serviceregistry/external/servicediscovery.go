@@ -30,6 +30,7 @@ type serviceHandler func(*model.Service, model.Event)
 type instanceHandler func(*model.ServiceInstance, model.Event)
 
 // ServiceEntryStore communicates with ServiceEntry CRDs and monitors for changes
+// ServiceEntryStore和ServiceEntry CRDs进行交互并且监听变更
 type ServiceEntryStore struct {
 	serviceHandlers  []serviceHandler
 	instanceHandlers []instanceHandler
@@ -65,7 +66,9 @@ func NewServiceDiscovery(callbacks model.ConfigStoreCache, store model.IstioConf
 		updateNeeded:     true,
 	}
 	if callbacks != nil {
+		// 注册Service Entry的event回调函数
 		callbacks.RegisterEventHandler(model.ServiceEntry.Type, func(config model.Config, event model.Event) {
+			// 断言为networking.ServiceEntry类型
 			serviceEntry := config.Spec.(*networking.ServiceEntry)
 
 			// Recomputing the index here is too expensive.
@@ -74,6 +77,7 @@ func NewServiceDiscovery(callbacks model.ConfigStoreCache, store model.IstioConf
 			c.updateNeeded = true
 			c.changeMutex.Unlock()
 
+			// 从serviceEntry中提取出service
 			services := convertServices(serviceEntry, config.CreationTimestamp.Time)
 			for _, handler := range c.serviceHandlers {
 				for _, service := range services {
@@ -81,6 +85,7 @@ func NewServiceDiscovery(callbacks model.ConfigStoreCache, store model.IstioConf
 				}
 			}
 
+			// 从serviceEntry中提取出instances
 			instances := convertInstances(serviceEntry, config.CreationTimestamp.Time)
 			for _, handler := range c.instanceHandlers {
 				for _, instance := range instances {

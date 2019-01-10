@@ -97,6 +97,7 @@ func TestAdsReconnect(t *testing.T) {
 	// event happens
 	v2.AdsPushAll(s.EnvoyXdsServer)
 	// will trigger recompute and push (we may need to make a change once diff is implemented
+	// 会触发重新计算以及push
 
 	m, err := adsReceive(edsstr2, 3*time.Second)
 	if err != nil {

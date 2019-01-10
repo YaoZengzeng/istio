@@ -205,6 +205,7 @@ func (f AddressFamily) String() string {
 }
 
 // TrafficDirection defines whether traffic exists a service instance or enters a service instance
+// TrafficDirection用来定义流量是流入还是流出一个service实例
 type TrafficDirection string
 
 const (
@@ -503,6 +504,7 @@ type ServiceDiscovery interface {
 type ServiceAccounts interface {
 	// GetIstioServiceAccounts returns a list of service accounts looked up from
 	// the specified service hostname and ports.
+	// GetIstioServiceAccounts根据特定的service hostname和ports返回一系列的service accounts
 	// Deprecated - service account tracking moved to XdsServer, incremental.
 	// Method only used in networking/core/v1a3/cluster.go
 	GetIstioServiceAccounts(hostname Hostname, ports []string) []string
@@ -822,6 +824,8 @@ func ParseServiceKey(s string) (hostname Hostname, ports PortList, labels Labels
 
 // BuildSubsetKey generates a unique string referencing service instances for a given service name, a subset and a port.
 // The proxy queries Pilot with this key to obtain the list of instances in a subset.
+// BuildSubsetKey创建一个独特的字符串用来表示一个给定service name，subset以及port的service instances
+// proxy用这个key请求Pilot来获取该subset中的一系列实例
 func BuildSubsetKey(direction TrafficDirection, subsetName string, hostname Hostname, port int) string {
 	return fmt.Sprintf("%s|%d|%s|%s", direction, port, subsetName, hostname)
 }

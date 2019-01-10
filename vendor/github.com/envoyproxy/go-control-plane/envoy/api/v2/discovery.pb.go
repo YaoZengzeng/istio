@@ -106,6 +106,7 @@ type DiscoveryResponse struct {
 	// The version of the response data.
 	VersionInfo string `protobuf:"bytes,1,opt,name=version_info,json=versionInfo,proto3" json:"version_info,omitempty"`
 	// The response resources. These resources are typed and depend on the API being called.
+	// resouces是有类型的并且依赖调用的API进行解析
 	Resources []google_protobuf6.Any `protobuf:"bytes,2,rep,name=resources" json:"resources"`
 	// [#not-implemented-hide:]
 	// Canary is used to support two Envoy command line flags:

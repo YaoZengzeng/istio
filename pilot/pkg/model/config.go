@@ -310,6 +310,7 @@ const (
 	NamespaceAll = ""
 
 	// IstioMeshGateway is the built in gateway for all sidecars
+	// IstioMeshGateway位于gateway中表示所有的sidecars
 	IstioMeshGateway = "mesh"
 
 	// IstioSystemNamespace is the namespace where Istio's components are deployed
@@ -538,6 +539,7 @@ func ResolveHostname(meta ConfigMeta, svc *mccpb.IstioService) Hostname {
 
 // ResolveShortnameToFQDN uses metadata information to resolve a reference
 // to shortname of the service to FQDN
+// ResolveShortnameToFQDN利用metadata信息将一个service的shortname解析为FQDN
 func ResolveShortnameToFQDN(host string, meta ConfigMeta) Hostname {
 	out := host
 	// Treat the wildcard host as fully qualified. Any other variant of a wildcard hostname will contain a `.` too,

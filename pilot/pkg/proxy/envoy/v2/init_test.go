@@ -42,6 +42,7 @@ var nodeMetadata = &proto.Struct{Fields: map[string]*proto.Value{
 }}
 
 // Extract cluster load assignment from a discovery response.
+// 从一个discovery response中获取cluster load assignment
 func getLoadAssignment(res1 *xdsapi.DiscoveryResponse) (*xdsapi.ClusterLoadAssignment, error) {
 	if res1.TypeUrl != "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment" {
 		return nil, errors.New("Invalid typeURL" + res1.TypeUrl)

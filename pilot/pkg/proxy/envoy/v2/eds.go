@@ -39,15 +39,21 @@ import (
 
 // EDS returns the list of endpoints (IP:port and in future labels) associated with a real
 // service or a subset of a service, selected using labels.
+// EDS返回一系列的和real service或者service的子集相关的endpoints（IP:port以及未来的labels），通过labels
+// 进行筛选
 //
 // The source of info is a list of service registries.
+// endpoint信息的来源是一系列的service registries
 //
 // Primary event is an endpoint creation/deletion. Once the event is fired, EDS needs to
 // find the list of services associated with the endpoint.
+// endpoint相关的主要事件是endpoint的创建/删除，一旦事件发生了，EDS需要找到合endpoint相关的一系列services
 //
 // In case of k8s, Endpoints event is fired when the endpoints are added to service - typically
 // after readiness check. At that point we have the 'real' Service. The Endpoint includes a list
 // of port numbers and names.
+// 在k8s下，当endpoints被加入到service的时候就发生了Endpoints event - 一般发生在readiness check之后，在我们
+// 有了真正的Service之后，Endpoint就包含了一系列的端口号以及端口名
 //
 // For the subset case, the Pod referenced in the Endpoint must be looked up, and pod checked
 // for labels.
@@ -70,6 +76,8 @@ var (
 
 // EdsCluster tracks eds-related info for monitored clusters. In practice it'll include
 // all clusters until we support on-demand cluster loading.
+// EdsCluster为monitored clusters追踪eds相关的信息，现在它包含了所有的clusters，直到我们支持按序的
+// cluster loading
 type EdsCluster struct {
 	// mutex protects changes to this cluster
 	mutex sync.Mutex
@@ -80,6 +88,7 @@ type EdsCluster struct {
 	FirstUse time.Time
 
 	// EdsClients keeps track of all nodes monitoring the cluster.
+	// EdsClients追踪所有正在监听该cluster的所有nodes
 	EdsClients map[string]*XdsConnection `json:"-"`
 
 	// NonEmptyTime is the time the cluster first had a non-empty set of endpoints
@@ -281,6 +290,10 @@ func (s *DiscoveryServer) updateClusterInc(push *model.PushContext, clusterName 
 // Note that aggreaged list is expensive (for large numbers) - we want to replace
 // it with a model where DiscoveryServer keeps track of all endpoint registries
 // directly, and calls them one by one.
+// updateServiceShards会列举endpoints并且创建shards
+// 这用于调谐以及支持非k8s的registries
+// aggregated list是非常昂贵的，我们想用另外一个模型来代替它，DiscoveryServer直接追踪所有的
+// endpoint registries，并且依次调用它们
 func (s *DiscoveryServer) updateServiceShards(push *model.PushContext) error {
 
 	// TODO: if ServiceDiscovery is aggregate, and all members support direct, use
@@ -301,6 +314,8 @@ func (s *DiscoveryServer) updateServiceShards(push *model.PushContext) error {
 	for _, reg := range regs {
 		// Each registry acts as a shard - we don't want to combine them because some
 		// may individually update their endpoints incrementally
+		// 每个registry都作为一个shard - 我们不想合并它们，因为其中某些可能独自对它们的endpoints进行
+		// 增量式更新
 		for _, svc := range push.Services {
 			entries := []*model.IstioEndpoint{}
 			hn := string(svc.Hostname)
@@ -355,6 +370,7 @@ func (s *DiscoveryServer) updateServiceShards(push *model.PushContext) error {
 
 // updateCluster is called from the event (or global cache invalidation) to update
 // the endpoints for the cluster.
+// updateCluster由事件触发，用于更新cluster的endpoints
 func (s *DiscoveryServer) updateCluster(push *model.PushContext, clusterName string, edsCluster *EdsCluster) error {
 	// TODO: should we lock this as well ? Once we move to event-based it may not matter.
 	var hostname model.Hostname
@@ -392,6 +408,7 @@ func (s *DiscoveryServer) updateCluster(push *model.PushContext, clusterName str
 	// We still lock the access to the LoadAssignments.
 	edsCluster.mutex.Lock()
 	defer edsCluster.mutex.Unlock()
+	// 更新了edsCluster的LoadAssignment
 	edsCluster.LoadAssignment = &xdsapi.ClusterLoadAssignment{
 		ClusterName: clusterName,
 		Endpoints:   locEps,
@@ -507,12 +524,15 @@ func (s *DiscoveryServer) EDSUpdate(shard, serviceName string,
 // EdsUpdates map - additional preparation will be added as we move to full incremental.
 // This is needed to keep things isolated and use the right mutex.
 // Once proxy/envoy/discovery is merged into v2 discovery this can become non-public.
+// BeforePush时在push执行之前调用的回调函数，它当前更换并且返回EdsUpdates map，当过度到full incremental
+// 还需要额外的准备工作
 func (s *DiscoveryServer) BeforePush() map[string]*model.EndpointShardsByService {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	edsUpdates := s.edsUpdates
 	// Reset - any new updates will be tracked by the new map
+	// 重置 - 任何新的更新都会被新的map跟踪
 	s.edsUpdates = map[string]*model.EndpointShardsByService{}
 
 	return edsUpdates
@@ -529,6 +549,7 @@ func (s *DiscoveryServer) edsUpdate(shard, serviceName string,
 
 	// Update the data structures for the service.
 	// 1. Find the 'per service' data
+	// 更新每个service的数据结构
 	ep, f := s.EndpointShardsByService[serviceName]
 	if !f {
 		// This endpoint is for a service that was not previously loaded.
@@ -634,6 +655,8 @@ func connectionID(node string) string {
 
 // pushEds is pushing EDS updates for a single connection. Called the first time
 // a client connects, for incremental updates and for full periodic updates.
+// pushEds给单个的connection推送EDS updates，在client连接的时候第一次被调用，并且用于增量式的更新
+// 以及阶段性的全量更新
 func (s *DiscoveryServer) pushEds(push *model.PushContext, con *XdsConnection,
 	full bool, edsUpdatedServices map[string]*model.EndpointShardsByService) error {
 	resAny := []types.Any{}

@@ -185,6 +185,7 @@ func init() {
 
 // DiscoveryStream is a common interface for EDS and ADS. It also has a
 // shorter name.
+// DiscoveryStream是EDS和ADS的公共接口
 type DiscoveryStream interface {
 	Send(*xdsapi.DiscoveryResponse) error
 	Recv() (*xdsapi.DiscoveryRequest, error)
@@ -192,6 +193,7 @@ type DiscoveryStream interface {
 }
 
 // XdsConnection is a listener connection type.
+// XdsConnection是一个listener connection类型
 type XdsConnection struct {
 	// Mutex to protect changes to this XDS connection
 	mu sync.RWMutex
@@ -239,6 +241,7 @@ type XdsConnection struct {
 	RoutePercent, EndpointPercent         int
 
 	// current list of clusters monitored by the client
+	// 当前client监听的一系列clusters
 	Clusters []string
 
 	// TODO: TcpListeners (may combine mongo/etc)
@@ -247,21 +250,27 @@ type XdsConnection struct {
 	stream DiscoveryStream
 
 	// Routes is the list of watched Routes.
+	// 当前正在监听的Routes
 	Routes []string
 
 	// LDSWatch is set if the remote server is watching Listeners
+	// 如果remote server正在监听Listeners，则LDSWatch设置为true
 	LDSWatch bool
 	// CDSWatch is set if the remote server is watching Clusters
+	// 如果remote server正在监听Clusters，则CDSWatch设置为true
 	CDSWatch bool
 
 	// added will be true if at least one discovery request was received, and the connection
 	// is added to the map of active.
+	// 如果已经至少接受到一个discovery request，added就会变为true，connection就会被加入到active map中
 	added bool
 
 	// Time of last push
+	// 上一次push的时间
 	LastPush time.Time
 
 	// Time of last push failure.
+	// 上一次push失败的时间
 	LastPushFailure time.Time
 
 	// pushMutex prevents 2 overlapping pushes for this connection.
@@ -269,6 +278,7 @@ type XdsConnection struct {
 }
 
 // XdsEvent represents a config or registry event that results in a push.
+// XdsEvent表示导致push的config或者registry event
 type XdsEvent struct {
 	// If not empty, it is used to indicate the event is caused by a change in the clusters.
 	// Only EDS for the listed clusters will be sent.
@@ -297,6 +307,7 @@ func newXdsConnection(peerAddr string, stream DiscoveryStream) *XdsConnection {
 func receiveThread(con *XdsConnection, reqChannel chan *xdsapi.DiscoveryRequest, errP *error) {
 	defer close(reqChannel) // indicates close of the remote side.
 	for {
+		// 从stream中接收请求
 		req, err := con.stream.Recv()
 		if err != nil {
 			if status.Code(err) == codes.Canceled || err == io.EOF {
@@ -307,12 +318,14 @@ func receiveThread(con *XdsConnection, reqChannel chan *xdsapi.DiscoveryRequest,
 			adsLog.Errorf("ADS: %q %s terminated with errors %v", con.PeerAddr, con.ConID, err)
 			return
 		}
+		// 将请求发送给reqChannel
 		reqChannel <- req
 	}
 }
 
 // StreamAggregatedResources implements the ADS interface.
 // StreamAggregatedResources实现了ADS接口
+// 参数stream是一个接口类型，包含了Send，Recv方法以及grpc.ServerStream
 func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	peerInfo, ok := peer.FromContext(stream.Context())
 	peerAddr := "0.0.0.0"
@@ -348,6 +361,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 		return err
 	}
 
+	// 创建新的XdsConnection
 	con := newXdsConnection(peerAddr, stream)
 	defer close(con.doneChannel)
 
@@ -361,6 +375,9 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 	// discovery requests and wait for push commands on config change, so we add a
 	// go routine. If go grpc adds gochannel support for streams this will not be needed.
 	// This also detects close.
+	// 从stream进行读取是一个阻塞的操作，每个连接都需要读取discovery requests并且等待config改变时的
+	// push commands，因此我们需要一个goroutine，如果go grpc对streams增加了gochannel的支持，这就
+	// 不再需要了
 	var receiveError error
 	reqChannel := make(chan *xdsapi.DiscoveryRequest, 1)
 	go receiveThread(con, reqChannel, &receiveError)
@@ -399,6 +416,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 				}
 			}
 			switch discReq.TypeUrl {
+			// 解析request的请求类型
 			case ClusterType:
 				if con.CDSWatch {
 					// Already received a cluster watch request, this is an ACK
@@ -415,6 +433,8 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 				// CDS REQ is the first request an envoy makes. This shows up
 				// immediately after connect. It is followed by EDS REQ as
 				// soon as the CDS push is returned.
+				// CDS REQ是一个envoy发送的第一个request，它会在连接发生之后立即出现
+				// 当CDS push返回之后，会立即伴随一个EDS REQ
 				adsLog.Infof("ADS:CDS: REQ %v %s %v raw: %s", peerAddr, con.ConID, time.Since(t0), discReq.String())
 				con.CDSWatch = true
 				err := s.pushCds(con, s.globalPushContext(), versionInfo())
@@ -517,6 +537,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 				adsLog.Warnf("ADS: Unknown watched resources %s", discReq.String())
 			}
 
+			// 连接第一次收到来自envoy的请求时，将连接加入active connection
 			if !con.added {
 				con.added = true
 				s.addCon(con.ConID, con)
@@ -526,6 +547,8 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 			// It is called when config changes.
 			// This is not optimized yet - we should detect what changed based on event and only
 			// push resources that need to be pushed.
+			// 在config发生改变的时候被调用
+			// 此处还未被优化，我们应该根据event检测到什么发生了改变并且只推送需要被推送的资源
 
 			err := s.pushAll(con, pushEv)
 			if err != nil {
@@ -542,6 +565,7 @@ func (s *DiscoveryServer) IncrementalAggregatedResources(stream ads.AggregatedDi
 
 // Compute and send the new configuration. This is blocking and may be slow
 // for large configs.
+// 计算并且推送新的configuration，这是阻塞操作并且large configs可能很慢
 func (s *DiscoveryServer) pushAll(con *XdsConnection, pushEv *XdsEvent) error {
 	if pushEv.edsUpdatedServices != nil {
 		// Push only EDS. This is indexed already - push immediately
@@ -617,6 +641,7 @@ func adsClientCount() int {
 }
 
 // AdsPushAll is used only by tests (after refactoring)
+// AdsPushAll只用于测试
 func AdsPushAll(s *DiscoveryServer) {
 	s.AdsPushAll(versionInfo(), s.globalPushContext(), true, nil)
 }
@@ -662,13 +687,16 @@ func (s *DiscoveryServer) AdsPushAll(version string, push *model.PushContext,
 }
 
 // Send a signal to all connections, with a push event.
+// 发送一个signal到所有的connections，用一个push event
 func (s *DiscoveryServer) startPush(version string, push *model.PushContext, full bool,
 	edsUpdates map[string]*model.EndpointShardsByService) {
 
 	// Push config changes, iterating over connected envoys. This cover ADS and EDS(0.7), both share
 	// the same connection table
+	// 推送config的变更，遍历所有连接的envoys，其中包括ADS和EDS(0.7)，共享同一个connection table
 	adsClientsMutex.RLock()
 	// Create a temp map to avoid locking the add/remove
+	// 创建一个临时的map，从而避免adsClients的add/remove
 	pending := []*XdsConnection{}
 	for _, v := range adsClients {
 		pending = append(pending, v)
@@ -677,9 +705,12 @@ func (s *DiscoveryServer) startPush(version string, push *model.PushContext, ful
 
 	// This will trigger recomputing the config for each connected Envoy.
 	// It will include sending all configs that envoy is listening for, including EDS.
+	// 这会触发对于每个连接的Envoy的重新计算
+	// 这会包括发送所有envoy监听的configs，包括EDS
 	// TODO: get service, serviceinstances, configs once, to avoid repeated redundant calls.
 	// TODO: indicate the specific events, to only push what changed.
 
+	// pendingPush是当前等待Push的连接的数目
 	pendingPush := int32(len(pending))
 
 	tstart := time.Now()
@@ -708,8 +739,10 @@ func (s *DiscoveryServer) startPush(version string, push *model.PushContext, ful
 		// Using non-blocking push has problems if 2 pushes happen too close to each other
 		client := c
 		// TODO: this should be in a thread group, to do multiple pushes in parallel.
+		// 这应该在一个thread group中，从而并行地进行push
 		to := time.After(PushTimeout)
 		select {
+		// 将XdsEvent发送给client.pushChannel
 		case client.pushChannel <- &XdsEvent{
 			push:               push,
 			pending:            &pendingPush,

@@ -90,6 +90,7 @@ func convertServices(serviceEntry *networking.ServiceEntry, creationTime time.Ti
 		} else {
 			out = append(out, &model.Service{
 				CreationTime: creationTime,
+				// 是否为外部的service
 				MeshExternal: serviceEntry.Location == networking.ServiceEntry_MESH_EXTERNAL,
 				Hostname:     model.Hostname(host),
 				Address:      model.UnspecifiedIP,

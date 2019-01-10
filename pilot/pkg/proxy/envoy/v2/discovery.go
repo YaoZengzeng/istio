@@ -203,6 +203,7 @@ func (s *DiscoveryServer) Register(rpcs *grpc.Server) {
 // Singleton, refresh the cache - may not be needed if events work properly, just a failsafe
 // ( will be removed after change detection is implemented, to double check all changes are
 // captured)
+// 更新cache，如果events工作正常的话，可能并不需要
 func (s *DiscoveryServer) periodicRefresh() {
 	envOverride := os.Getenv("V2_REFRESH")
 	if len(envOverride) > 0 {
@@ -260,6 +261,7 @@ func (s *DiscoveryServer) periodicRefreshMetrics() {
 func (s *DiscoveryServer) Push(full bool, edsUpdates map[string]*model.EndpointShardsByService) {
 	if !full {
 		adsLog.Infof("XDS Incremental Push EDS:%d", len(edsUpdates))
+		// 对于EDS可以增量push。
 		go s.AdsPushAll(version, s.globalPushContext(), false, edsUpdates)
 		return
 	}
@@ -275,6 +277,7 @@ func (s *DiscoveryServer) Push(full bool, edsUpdates map[string]*model.EndpointS
 	push := model.NewPushContext()
 	push.ServiceAccounts = s.ServiceAccounts
 
+	// 初始化push context
 	if err := push.InitContext(s.Env); err != nil {
 		adsLog.Errorf("XDS: failed to update services %v", err)
 		// We can't push if we can't read the data - stick with previous version.
@@ -283,6 +286,7 @@ func (s *DiscoveryServer) Push(full bool, edsUpdates map[string]*model.EndpointS
 		return
 	}
 
+	// 构建outbound cluster for sidecars和gateways
 	if err := s.ConfigGenerator.BuildSharedPushState(s.Env, push); err != nil {
 		adsLog.Errorf("XDS: Failed to rebuild share state in configgen: %v", err)
 		totalXDSInternalErrors.Add(1)

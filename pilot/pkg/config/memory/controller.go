@@ -30,6 +30,8 @@ type controller struct {
 // made on the client.
 // NewController返回一个model.ConfigStoreCache的实现
 // 这是一个client端的monitor，它会分发在客户端产生的改变
+// controller是对于configStore的一个封装，在对其进行修改的同时，对事件进行了创建，并可以注册handler对其
+// 进行处理
 func NewController(cs model.ConfigStore) model.ConfigStoreCache {
 	out := &controller{
 		configStore: cs,

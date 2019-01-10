@@ -154,6 +154,10 @@ func (TLSSettings_TLSmode) EnumDescriptor() ([]byte, []int) {
 // detection settings to detect and evict unhealthy hosts from the load
 // balancing pool. For example, a simple load balancing policy for the
 // ratings service would look as follows:
+// `DestinationRule`定义了应用到一个已经经过路由的service流量的策略
+// 这些规则制定了sidecar的load balancing，connection pool的大小的配置
+// 以及用于检测并且从load balancing pool中驱逐unhealthy hosts的outlier detection
+// settings
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3
@@ -172,6 +176,7 @@ func (TLSSettings_TLSmode) EnumDescriptor() ([]byte, []int) {
 // following rule uses a round robin load balancing policy for all traffic
 // going to a subset named testversion that is composed of endpoints (e.g.,
 // pods) with labels (version:v3).
+// 版本相关的plicies可以通过定义一个有名字的`subnet`实现并且覆盖在service level定义的规则
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3
@@ -199,6 +204,7 @@ func (TLSSettings_TLSmode) EnumDescriptor() ([]byte, []int) {
 // following rule uses the least connection load balancing policy for all
 // traffic to port 80, while uses a round robin load balancing setting for
 // traffic to the port 9080.
+// Traffic policies也可以定制化到特定的ports
 //
 // ```yaml
 // apiVersion: networking.istio.io/v1alpha3
@@ -238,9 +244,12 @@ type DestinationRule struct {
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// Traffic policies to apply (load balancing policy, connection pool
 	// sizes, outlier detection).
+	// 应用的traffic policies（负载均衡策略，连接池大小以及异常值检测）
 	TrafficPolicy *TrafficPolicy `protobuf:"bytes,2,opt,name=traffic_policy,json=trafficPolicy" json:"traffic_policy,omitempty"`
 	// One or more named sets that represent individual versions of a
 	// service. Traffic policies can be overridden at subset level.
+	// 一个或多个代表服务的单个版本的有名字的集合
+	// Traffic policies可以在subnet level被重写
 	Subsets []*Subset `protobuf:"bytes,3,rep,name=subsets" json:"subsets,omitempty"`
 }
 

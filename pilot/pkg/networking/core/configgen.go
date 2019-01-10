@@ -47,6 +47,7 @@ type ConfigGenerator interface {
 }
 
 // NewConfigGenerator creates a new instance of the dataplane configuration generator
+// NewConfigGenerator创建一个数据面configuration generator的新实例
 func NewConfigGenerator(plugins []string) ConfigGenerator {
 	return v1alpha3.NewConfigGenerator(registry.NewPlugins(plugins))
 }

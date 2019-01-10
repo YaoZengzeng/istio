@@ -187,6 +187,8 @@ type DiscoveryService struct {
 	// considered with this change to avoid memory exhaustion as the
 	// entire cache will no longer be periodically flushed and stale
 	// entries can linger in the cache indefinitely.
+	// 优化cache的驱逐策略从而避免当任何route, service或者endpoint发生改变时
+	// 刷新整个cache
 	sdsCache *discoveryCache
 
 	RestContainer *restful.Container
@@ -373,10 +375,12 @@ func NewDiscoveryService(ctl model.Controller, configCache model.ConfigStoreCach
 	if configCache != nil {
 		// TODO: changes should not trigger a full recompute of LDS/RDS/CDS/EDS
 		// (especially mixerclient HTTP and quota)
+		// 变更不应该处罚LDS/RDS/CDS/EDS的完全重算，尤其是mixerclient的HTTP和quota
 		configHandler := func(model.Config, model.Event) {
 			out.clearCache()
 		}
 		for _, descriptor := range model.IstioConfigTypes {
+			// 注册各个类型的event handler
 			configCache.RegisterEventHandler(descriptor.Type, configHandler)
 		}
 	}
@@ -385,6 +389,7 @@ func NewDiscoveryService(ctl model.Controller, configCache model.ConfigStoreCach
 }
 
 // Register adds routes a web service container. This is visible for testing purposes only.
+// Register仅用于测试
 func (ds *DiscoveryService) Register(container *restful.Container) {
 	ws := &restful.WebService{}
 	ws.Produces(restful.MIME_JSON)
@@ -513,6 +518,7 @@ func (ds *DiscoveryService) ConfigUpdate(full bool) {
 
 	// Old code, for safety
 	// If last config change was > 1 second ago, push.
+	// 如果上一次config变更的事件超过1秒钟就进行push操作
 	if time.Since(lastClearCacheEvent) > 1*time.Second {
 		log.Infof("Push %d: %v since last change, %v since last push",
 			clearCacheEvents,

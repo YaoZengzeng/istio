@@ -47,6 +47,7 @@ func (con *XdsConnection) clusters(response []*xdsapi.Cluster) *xdsapi.Discovery
 }
 
 func (s *DiscoveryServer) pushCds(con *XdsConnection, push *model.PushContext, version string) error {
+	// 推送cds，首先从PushContext中获取rawClusters
 	rawClusters, err := s.generateRawClusters(con, push)
 	if err != nil {
 		return err
@@ -70,6 +71,7 @@ func (s *DiscoveryServer) pushCds(con *XdsConnection, push *model.PushContext, v
 }
 
 func (s *DiscoveryServer) generateRawClusters(con *XdsConnection, push *model.PushContext) ([]*xdsapi.Cluster, error) {
+	// 调用ConfigGenerator构建Clusters对象
 	rawClusters, err := s.ConfigGenerator.BuildClusters(s.Env, con.modelNode, push)
 	if err != nil {
 		adsLog.Warnf("CDS: Failed to generate clusters for node %s: %v", con.modelNode, err)
