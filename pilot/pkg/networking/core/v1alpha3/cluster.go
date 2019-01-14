@@ -54,6 +54,7 @@ func (configgen *ConfigGeneratorImpl) BuildClusters(env *model.Environment, prox
 	switch proxy.Type {
 	case model.Sidecar:
 		if configgen.OutboundClustersForSidecars != nil {
+			// 对于sidecar，扩展默认的outbound clusters
 			clusters = append(clusters, configgen.OutboundClustersForSidecars...)
 			recomputeOutboundClusters = false
 		}
@@ -68,6 +69,7 @@ func (configgen *ConfigGeneratorImpl) BuildClusters(env *model.Environment, prox
 		clusters = append(clusters, configgen.buildOutboundClusters(env, proxy.Type, push)...)
 	}
 
+	// 对于sidecar类型的cluster，只包含默认的cluster和inbound cluster?
 	if proxy.Type == model.Sidecar {
 		instances, err := env.GetProxyServiceInstances(proxy)
 		if err != nil {
@@ -75,12 +77,15 @@ func (configgen *ConfigGeneratorImpl) BuildClusters(env *model.Environment, prox
 			return nil, err
 		}
 
+		// 用于管理的一些端口
 		managementPorts := env.ManagementPorts(proxy.IPAddress)
+		// 创建inbound clusters
 		clusters = append(clusters, configgen.buildInboundClusters(env, proxy, push, instances, managementPorts)...)
 	}
 
 	// Add a blackhole cluster for catching traffic to unresolved routes
 	// DO NOT CALL PLUGINS for this cluster.
+	// 增加blackhole cluster用于获取那些不能被解析到routes的流量
 	clusters = append(clusters, buildBlackHoleCluster())
 
 	return normalizeClusters(push, proxy, clusters), nil
@@ -88,6 +93,8 @@ func (configgen *ConfigGeneratorImpl) BuildClusters(env *model.Environment, prox
 
 // resolves cluster name conflicts. there can be duplicate cluster names if there are conflicting service definitions.
 // for any clusters that share the same name the first cluster is kept and the others are discarded.
+// 解决cluster name到冲突，如果存在有冲突的service定义则会存在重复的cluster names
+// 对于任何有着相同名字的cluster, 第一个cluster会被保留，其他则会被丢弃
 func normalizeClusters(push *model.PushContext, proxy *model.Proxy, clusters []*v2.Cluster) []*v2.Cluster {
 	have := make(map[string]bool)
 	out := make([]*v2.Cluster, 0, len(clusters))
@@ -198,6 +205,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundClusters(env *model.Environmen
 	for _, instance := range instances {
 		// This cluster name is mainly for stats.
 		clusterName := model.BuildSubsetKey(model.TrafficDirectionInbound, "", instance.Service.Hostname, instance.Endpoint.ServicePort.Port)
+		// 因为是inbound流量，IP地址直接为127.0.0.1
 		address := util.BuildAddress("127.0.0.1", uint32(instance.Endpoint.Port))
 		localCluster := buildDefaultCluster(env, clusterName, v2.Cluster_STATIC, []*core.Address{&address})
 		setUpstreamProtocol(localCluster, instance.Endpoint.ServicePort)
@@ -209,6 +217,8 @@ func (configgen *ConfigGeneratorImpl) buildInboundClusters(env *model.Environmen
 		// When users specify circuit breakers, they need to be set on the receiver end
 		// (server side) as well as client side, so that the server has enough capacity
 		// (not the defaults) to handle the increased traffic volume
+		// 当用户指定了熔断器之后，它们既需要在接收端，也需要在客户端设置，这样server就有足够的能力处理
+		// 增加的traffic volum了
 		// TODO: This is not foolproof - if instance is part of multiple services listening on same port,
 		// choice of inbound cluster is arbitrary. So the connection pool settings may not apply cleanly.
 		config := push.DestinationRule(instance.Service.Hostname)
@@ -217,6 +227,8 @@ func (configgen *ConfigGeneratorImpl) buildInboundClusters(env *model.Environmen
 			if destinationRule.TrafficPolicy != nil {
 				// only connection pool settings make sense on the inbound path.
 				// upstream TLS settings/outlier detection/load balancer don't apply here.
+				// 对于inbound path，只有connection pool的设置有效
+				// upstream TLS settings/outlier detection/load balancer都不能生效
 				applyConnectionPool(localCluster, destinationRule.TrafficPolicy.ConnectionPool)
 			}
 		}
@@ -224,6 +236,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundClusters(env *model.Environmen
 	}
 
 	// Add a passthrough cluster for traffic to management ports (health check ports)
+	// 对于管理端口相关的流量，增加一个passthrough cluster
 	for _, port := range managementPorts {
 		clusterName := model.BuildSubsetKey(model.TrafficDirectionInbound, "", ManagementClusterHostname, port.Port)
 		address := util.BuildAddress("127.0.0.1", uint32(port.Port))

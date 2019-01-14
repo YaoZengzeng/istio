@@ -76,12 +76,15 @@ type PushContext struct {
 	// Temp: the code in alpha3 should use VirtualService directly
 	VirtualServiceConfigs []Config `json:"-,omitempty"`
 
+	// destination rule相关的hosts
 	destinationRuleHosts   []Hostname
+	// hosts到destination rules的映射
 	destinationRuleByHosts map[Hostname]*combinedDestinationRule
 
 	//TODO: gateways              []*networking.Gateway
 
-	// Env has a pointer to the shared environment used to create the snapshot.
+	// Env has a pointer to the shared environment used to create the snapshot
+	// Env有一个指向shared environment的指针，用于创建snapshot
 	Env *Environment `json:"-,omitempty"`
 
 	// ServiceAccounts is a function mapping service name to service accounts.
@@ -91,12 +94,17 @@ type PushContext struct {
 	// This is needed because ADS names use port numbers, while endpoints use
 	// port names. The key is the service name. If a service or port are not found,
 	// the endpoint needs to be re-evaluated later (eventual consistency)
+	// ServicePort2Name用于追踪service name到port的映射
+	// 这是必须的，因为ADS names使用port numbers，而endpoints使用port names
+	// map的key是service name，如果一个service或者port没找到
+	// endpoint需要重新计算
 	ServicePort2Name map[string]PortList `json:"-"`
 
 	initDone bool
 }
 
 // XDSUpdater is used for direct updates of the xDS model and incremental push.
+// XDSUpdater用于对xDS model的直接更新以及增量的推送
 // Pilot uses multiple registries - for example each K8S cluster is a registry instance,
 // as well as consul and future EDS or MCP sources. Each registry is responsible for
 // tracking a set of endpoints associated with mesh services, and calling the EDSUpdate
@@ -104,23 +112,33 @@ type PushContext struct {
 // example by deployment, or to deal with very large number of endpoints for a service.
 // We want to avoid passing around large objects - like full list of endpoints for a registry,
 // or the full list of endpoints for a service across registries, since it limits scalability.
+// Pilot使用多个registries - 比如每一个K8S cluster或者consul以及未来的EDS或者MCP sources都是一个registry
+// intance，每个registry都负责追踪和mesh services相关的一系列endpoints，当发生变更的时候调用EDSUpdate
+// 一个registry可能将一个service的endpoints划分为更小的subsets - 比如通过deployment，或者处理一个service
+// 非常多的endpoints，我们希望避免遍历大的对象 - 例如一个registry完整的endpoints列表，或者一个service跨registry
+// 的一系列endpoints，因为这会限制扩展性
 //
 // Future optimizations will include grouping the endpoints by labels, gateway or region to
 // reduce the time when subsetting or split-horizon is used. This desing assumes pilot
 // tracks all endpoints in the mesh and they fit in RAM - so limit is few M endpoints.
 // It is possible to split the endpoint tracking in future.
+// 以后会通过labels，gateway或者region来划分endpoints以避免subsetting或者split-horizon的使用
 type XDSUpdater interface {
 
 	// EDSUpdate is called when the list of endpoints or labels in a ServiceEntry is
 	// changed. For each cluster and hostname, the full list of active endpoints (including empty list)
 	// must be sent. The shard name is used as a key - current implementation is using the registry
 	// name.
+	// EDSUpdate会在ServiceEntry的一系列endpoints或者labels更改的时候被调用
+	// 对于每一个cluster以及hostname，完整的actice endpoints列表必须被发送，shard name作为key - 当前的实现使用
+	// registry name
 	EDSUpdate(shard, hostname string, entry []*IstioEndpoint) error
 
 	// SvcUpdate is called when a service port mapping definition is updated.
 	// This interface is WIP - labels, annotations and other changes to service may be
 	// updated to force a EDS and CDS recomputation and incremental push, as it doesn't affect
 	// LDS/RDS.
+	// 当一个service端口映射的定义发生改变时，SvcUpdate会被调用
 	SvcUpdate(shard, hostname string, ports map[string]uint32, rports map[uint32]string)
 
 	// WorkloadUpdate is called by a registry when the labels or annotations on a workload have changed.
@@ -128,6 +146,8 @@ type XDSUpdater interface {
 	// In future it will include the 'network id' for pods in a different network, behind a zvpn gate.
 	// The IP is used because K8S Endpoints object associated with a Service only include the IP.
 	// We use Endpoints to track the membership to a service and readiness.
+	// WorkloadUpdate在一个workload的labels或者annotations发生变化时会被调用
+	// 如果pod在main/default network中，'id'就是k8s的pod的ip地址
 	WorkloadUpdate(id string, labels map[string]string, annotations map[string]string)
 }
 
@@ -138,12 +158,16 @@ type XDSUpdater interface {
 // Replaces NetworkEndpoint and ServiceInstance:
 // - ServicePortName replaces ServicePort, since port number and protocol may not
 // be available when endpoint callbacks are made.
+// - ServicePortName替代ServicePort，因为port number和protocol可能并不可得，在endpoint callbacks被调用的时候
 // - It no longers splits into one ServiceInstance and one NetworkEndpoint - both
 // are in a single struct
+// - 它不再分裂成一个ServiceInstance和一个NetworkEndpoint - 它们都在单一的结构里
 // - doesn't have a pointer to Service - the full Service object may not be available at
 // the time the endpoint is received. The service name is used as a key and used to reconcile.
+// - 没有指向Service的指针 - 在获取endpoint的时候，完整的Service结构可能并不可得. service name作为key并且用于调谐
 // - it has a cached EnvoyEndpoint object - to avoid re-allocating it for each request and
 // client.
+// - 它有一个缓存的EnvoyEndpoint对象 - 用来避免每个request和client的重新分配
 type IstioEndpoint struct {
 
 	// Labels points to the workload or deployment labels.
@@ -174,6 +198,7 @@ type IstioEndpoint struct {
 
 	// EnvoyEndpoint is a cached LbEndpoint, converted from the data, to
 	// avoid recomputation
+	// EnvoyEndpoint是一个缓存的LbEndpoint，从data转换而来，为了避免重新计算
 	EnvoyEndpoint *endpoint.LbEndpoint
 
 	// ServiceAccount holds the associated service account.
@@ -191,6 +216,8 @@ type EndpointShardsByService struct {
 	// Shards is used to track the shards. EDS updates are grouped by shard.
 	// Current implementation uses the registry name as key - in multicluster this is the
 	// name of the k8s cluster, derived from the config (secret).
+	// Shards用来追踪shards，根据shard成组更新EDS
+	// 当前的实现使用registry name作为key - 在multicluster中，这就是k8s cluster的名字，从config中派生
 	Shards map[string]*EndpointShard
 
 	// ServiceAccounts has the concatenation of all service accounts seen so far in endpoints.
@@ -204,7 +231,7 @@ type EndpointShardsByService struct {
 // EndpointShard contains all the endpoints for a single shard (subset) of a service.
 // Shards are updated atomically by registries. A registry may split a service into
 // multiple shards (for example each deployment, or smaller sub-sets).
-// EndpointShard包含了一个service的single shard所有的endpoints
+// EndpointShard包含了一个service的single shard的所有endpoints
 // Shards由registries自动更新，一个registry可能把一个service分割成多个shards（比如每个deployment，或者更小的sub-sets）
 type EndpointShard struct {
 	Shard   string
@@ -225,6 +252,8 @@ type ConfigUpdater interface {
 
 // ProxyPushStatus represents an event captured during config push to proxies.
 // It may contain additional message and the affected proxy.
+// ProxyPushStatus代表了在将config推送到proxy的过程中获取的event
+// 他可能包含额外的message以及受影响的proxy
 type ProxyPushStatus struct {
 	Proxy   string `json:"proxy,omitempty"`
 	Message string `json:"message,omitempty"`
@@ -237,6 +266,7 @@ type PushMetric struct {
 }
 
 type combinedDestinationRule struct {
+	// 当前可见的一系列subsets
 	subsets map[string]bool // list of subsets seen so far
 	// We are not doing ports
 	config *Config
@@ -256,6 +286,7 @@ func newPushMetric(name, help string) *PushMetric {
 }
 
 // Add will add an case to the metric.
+// Add会增加一个case到metric
 func (ps *PushContext) Add(metric *PushMetric, key string, proxy *Proxy, msg string) {
 	if ps == nil {
 		log.Infof("Metric without context %s %v %s", key, proxy, msg)
@@ -453,10 +484,13 @@ func (ps *PushContext) InitContext(env *Environment) error {
 	}
 	ps.Env = env
 	var err error
+	// 初始化PushContext中service相关的字段
 	if err = ps.initServiceRegistry(env); err != nil {
 		return err
 	}
 
+	// 初始化PushContext中的VirtualServiceConfigs字段
+	// 并且将其中host name的short name都转换为FQDN
 	if err = ps.initVirtualServices(env); err != nil {
 		return err
 	}
@@ -467,6 +501,7 @@ func (ps *PushContext) InitContext(env *Environment) error {
 
 	// TODO: everything else that is used in config generation - the generation
 	// should not have any deps on config store.
+	// code generation不应该对config store有任何依赖
 	ps.initDone = true
 	return nil
 }
@@ -500,6 +535,7 @@ func sortServicesByCreationTime(services []*Service) []*Service {
 // Caches list of virtual services
 // 缓存一系列的virtual services
 func (ps *PushContext) initVirtualServices(env *Environment) error {
+	// 从env中获取VirtualServices
 	vservices, err := env.List(VirtualService.Type, NamespaceAll)
 	if err != nil {
 		return err
@@ -580,6 +616,8 @@ func (ps *PushContext) initDestinationRules(env *Environment) error {
 // SetDestinationRules is updates internal structures using a set of configs.
 // Split out of DestinationRule expensive conversions, computed once per push.
 // This also allows tests to inject a config without having the mock.
+// SetDestinationRules用一系列的configs更新internal structures
+// 分解出DestinationRule是非常昂贵的操作，因此每次push只计算一次
 func (ps *PushContext) SetDestinationRules(configs []Config) {
 	// Sort by time first. So if two destination rule have top level traffic policies
 	// we take the first one.
@@ -630,6 +668,7 @@ func (ps *PushContext) SetDestinationRules(configs []Config) {
 }
 
 // DestinationRule returns a destination rule for a service name in a given domain.
+// DestinationRule返回对于给定domain内的service name的destination rule
 func (ps *PushContext) DestinationRule(hostname Hostname) *Config {
 	if c, ok := MostSpecificHostMatch(hostname, ps.destinationRuleHosts); ok {
 		return ps.destinationRuleByHosts[c].config

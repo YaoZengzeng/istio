@@ -166,12 +166,16 @@ const (
 	ProtocolHTTPS Protocol = "HTTPS"
 	// ProtocolTCP declares the the port uses TCP.
 	// This is the default protocol for a service port.
+	// ProtocolTCP表明端口使用TCP
+	// 这是一个service port的默认端口
 	ProtocolTCP Protocol = "TCP"
 	// ProtocolTLS declares that the port carries TLS traffic.
 	// TLS traffic is assumed to contain SNI as part of the handshake.
+	// TLS流量假设包含SNI作为握手的一部分
 	ProtocolTLS Protocol = "TLS"
 	// ProtocolUDP declares that the port uses UDP.
 	// Note that UDP protocol is not currently supported by the proxy.
+	// UDP协议当前proxy不支持
 	ProtocolUDP Protocol = "UDP"
 	// ProtocolMongo declares that the port carries mongoDB traffic
 	ProtocolMongo Protocol = "Mongo"
@@ -321,6 +325,8 @@ type NetworkEndpoint struct {
 	// Port declaration from the service declaration This is the port for
 	// the service associated with this instance (e.g.,
 	// catalog.mystore.com)
+	// 从service declaration中获取的Port declaration
+	// 这是和这个实例相关的service port
 	ServicePort *Port
 
 	// Defines a platform-specific workload instance identifier (optional).
@@ -370,6 +376,7 @@ type ProbeList []*Probe
 //
 // For example, the set of service instances associated with catalog.mystore.com
 // are modeled like this
+// 比如，一系列和catalog.mystore.com相关的实例如下
 //      --> NetworkEndpoint(172.16.0.1:8888), Service(catalog.myservice.com), Labels(foo=bar)
 //      --> NetworkEndpoint(172.16.0.2:8888), Service(catalog.myservice.com), Labels(foo=bar)
 //      --> NetworkEndpoint(172.16.0.3:8888), Service(catalog.myservice.com), Labels(kitty=cat)
@@ -444,6 +451,7 @@ type ServiceDiscovery interface {
 
 	// InstancesByPort retrieves instances for a service on the given ports with labels that match
 	// any of the supplied labels. All instances match an empty tag list.
+	// InstancesByPort获取一个给定端口的service实例，并且label互相匹配，所有的实例和empty tag list互相匹配
 	//
 	// For example, consider the example of catalog.mystore.com as described in NetworkEndpoints
 	// Instances(catalog.myservice.com, 80) ->
@@ -467,8 +475,10 @@ type ServiceDiscovery interface {
 	InstancesByPort(hostname Hostname, servicePort int, labels LabelsCollection) ([]*ServiceInstance, error)
 
 	// GetProxyServiceInstances returns the service instances that co-located with a given Proxy
+	// GetProxyServiceInstances返回和给定的Proxy在一起的service instances
 	//
 	// Co-located generally means running in the same network namespace and security context.
+	// Co-located通常意味着在同一个network namespace以及security context运行
 	//
 	// A Proxy operating as a Sidecar will return a non-empty slice.  A stand-alone Proxy
 	// will return an empty slice.
@@ -477,7 +487,9 @@ type ServiceDiscovery interface {
 	// - A ServiceInstance has a single NetworkEndpoint which has a single Port.  But a Service
 	//   may have many ports.  So a workload implementing such a Service would need
 	//   multiple ServiceInstances, one for each port.
+	// 单个的NetworkEndpoint只有单个的port，但一个Service可能有多个ports，因此需要返回多个ServiceInstances
 	// - A single workload may implement multiple logical Services.
+	// 一个workload可能实现多个logical services
 	//
 	// In the second case, multiple services may be implemented by the same physical port number,
 	// though with a different ServicePort and NetworkEndpoint for each.  If any of these overlapping
@@ -827,6 +839,7 @@ func ParseServiceKey(s string) (hostname Hostname, ports PortList, labels Labels
 // BuildSubsetKey创建一个独特的字符串用来表示一个给定service name，subset以及port的service instances
 // proxy用这个key请求Pilot来获取该subset中的一系列实例
 func BuildSubsetKey(direction TrafficDirection, subsetName string, hostname Hostname, port int) string {
+	// 流量方向，端口，子网名以及hostname
 	return fmt.Sprintf("%s|%d|%s|%s", direction, port, subsetName, hostname)
 }
 

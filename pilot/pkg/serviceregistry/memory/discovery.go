@@ -100,12 +100,14 @@ func MakeExternalHTTPSService(hostname, external model.Hostname, address string)
 }
 
 // MakeInstance creates a memory instance, version enumerates endpoints
+// MakeInstance创建一个memory instance
 func MakeInstance(service *model.Service, port *model.Port, version int, az string) *model.ServiceInstance {
 	if service.External() {
 		return nil
 	}
 
 	// we make port 80 same as endpoint port, otherwise, it's distinct
+	// 如果端口号不是80，则修改为target + 1000
 	target := port.Port
 	if target != 80 {
 		target = target + 1000

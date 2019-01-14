@@ -60,6 +60,7 @@ func ConvertAddressToCidr(addr string) *core.CidrRange {
 }
 
 // BuildAddress returns a SocketAddress with the given ip and port.
+// BuildAddress返回一个有着给定ip和端口的SocketAddress
 func BuildAddress(ip string, port uint32) core.Address {
 	return core.Address{
 		Address: &core.Address_SocketAddress{

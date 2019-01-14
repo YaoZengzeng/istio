@@ -52,6 +52,7 @@ const (
 	RDSHttpProxy = "http_proxy"
 
 	// VirtualListenerName is the name for traffic capture listener
+	// VirtualListenerName是traffic capture listener的名字
 	VirtualListenerName = "virtual"
 
 	// WildcardAddress binds to all IP addresses
@@ -107,6 +108,7 @@ func init() {
 var ListenersALPNProtocols = []string{"h2", "http/1.1"}
 
 // BuildListeners produces a list of listeners and referenced clusters for all proxies
+// BuildListeners创建一系列的listeners
 func (configgen *ConfigGeneratorImpl) BuildListeners(env *model.Environment, node *model.Proxy, push *model.PushContext) ([]*xdsapi.Listener, error) {
 	switch node.Type {
 	case model.Sidecar:
@@ -123,7 +125,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarListeners(env *model.Environme
 
 	mesh := env.Mesh
 	managementPorts := env.ManagementPorts(node.IPAddress)
-
+	// 获取一系列本地节点相关的instance
 	proxyInstances, err := env.GetProxyServiceInstances(node)
 	if err != nil {
 		return nil, err
@@ -157,6 +159,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarListeners(env *model.Environme
 
 		// We need a dummy filter to fill in the filter stack for orig_dst listener
 		// TODO: Move to Listener filters and set up original dst filter there.
+		// 我们需要一个虚拟过滤器为orig_dst listener填充filter stack
 		dummyTCPProxy := &tcp_proxy.TcpProxy{
 			StatPrefix: util.BlackHoleCluster,
 			Cluster:    util.BlackHoleCluster,
@@ -168,6 +171,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarListeners(env *model.Environme
 		}
 
 		// add an extra listener that binds to the port that is the recipient of the iptables redirect
+		// 增加一个额外的过滤器用来绑定iptables重定向的接收端口
 		listeners = append(listeners, &xdsapi.Listener{
 			Name:           VirtualListenerName,
 			Address:        util.BuildAddress(WildcardAddress, uint32(mesh.ProxyListenPort)),

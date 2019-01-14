@@ -281,12 +281,15 @@ func (m *DestinationRule) GetSubsets() []*Subset {
 
 // Traffic policies to apply for a specific destination, across all
 // destination ports. See DestinationRule for examples.
+// 应用到特定destination的所有端口的traffic policies，
 type TrafficPolicy struct {
 	// Settings controlling the load balancer algorithms.
 	LoadBalancer *LoadBalancerSettings `protobuf:"bytes,1,opt,name=load_balancer,json=loadBalancer" json:"load_balancer,omitempty"`
 	// Settings controlling the volume of connections to an upstream service
+	// 设置到一个upstream service的volume of connections
 	ConnectionPool *ConnectionPoolSettings `protobuf:"bytes,2,opt,name=connection_pool,json=connectionPool" json:"connection_pool,omitempty"`
 	// Settings controlling eviction of unhealthy hosts from the load balancing pool
+	// 控制从load balancing pool中驱逐不健康的hosts
 	OutlierDetection *OutlierDetection `protobuf:"bytes,3,opt,name=outlier_detection,json=outlierDetection" json:"outlier_detection,omitempty"`
 	// TLS related settings for connections to the upstream service.
 	Tls *TLSSettings `protobuf:"bytes,4,opt,name=tls" json:"tls,omitempty"`

@@ -38,6 +38,8 @@ const (
 // ConfigMeta is metadata attached to each configuration unit.
 // The revision is optional, and if provided, identifies the
 // last update operation on the object.
+// ConfigMeta是和每个configuration unit相关的元数据
+// revision是可选的，如果提供了的话，用于标示该对象上一次的更新
 type ConfigMeta struct {
 	// Type is a short configuration name that matches the content message type
 	// (e.g. "route-rule")

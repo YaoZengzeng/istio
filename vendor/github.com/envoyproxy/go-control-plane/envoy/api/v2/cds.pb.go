@@ -304,6 +304,7 @@ type Cluster struct {
 	// This field supersedes :ref:`hosts<envoy_api_field_Cluster.hosts>` field.
 	// [#comment:TODO(dio): Deprecate the hosts field and add it to DEPRECATED.md
 	// once load_assignment is implemented.]
+	// 如果cluter类型为STATIC, STATIC_DNS或者LOGICAL_DNS，则需要指定load assignment
 	//
 	// .. attention::
 	//

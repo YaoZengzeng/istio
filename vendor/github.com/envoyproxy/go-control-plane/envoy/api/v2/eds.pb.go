@@ -24,6 +24,8 @@ var _ = math.Inf
 
 // Each route from RDS will map to a single cluster or traffic split across
 // clusters using weights expressed in the RDS WeightedCluster.
+// RDS的每个route都会映射到单个的cluster或者利用RDS WeightedCluster中的weights
+// 在clusters之间分流
 //
 // With EDS, each cluster is treated independently from a LB perspective, with
 // LB taking place between the Localities within a cluster and at a finer
@@ -37,8 +39,10 @@ type ClusterLoadAssignment struct {
 	// <envoy_api_msg_Cluster.EdsClusterConfig>`.
 	ClusterName string `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	// List of endpoints to load balance to.
+	// 用于进行load balancing的一系列endpoints
 	Endpoints []envoy_api_v2_endpoint.LocalityLbEndpoints `protobuf:"bytes,2,rep,name=endpoints" json:"endpoints"`
 	// Load balancing policy settings.
+	// Load balancing的策略设置
 	Policy *ClusterLoadAssignment_Policy `protobuf:"bytes,4,opt,name=policy" json:"policy,omitempty"`
 }
 

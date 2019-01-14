@@ -358,6 +358,8 @@ func (m *BindConfig) GetSocketOptions() []*SocketOption {
 // Addresses specify either a logical or physical address and port, which are
 // used to tell Envoy where to bind/listen, connect to upstream and find
 // management servers.
+// Addresses指定一个物理的或逻辑的端口和地址，它用来告诉Envoy怎么绑定/监听，连接upstream以及
+// 找到management servers
 type Address struct {
 	// Types that are valid to be assigned to Address:
 	//	*Address_SocketAddress

@@ -181,6 +181,7 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	})
 
 	// "local" service points to the current host and the in-process mixer http test endpoint
+	// "local" service指向当前的host
 	server.EnvoyXdsServer.MemRegistry.AddService("local.default.svc.cluster.local", &model.Service{
 		Hostname: "local.default.svc.cluster.local",
 		Address:  "10.10.0.4",
@@ -288,11 +289,12 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	// service4 has no endpoints
 	server.EnvoyXdsServer.MemRegistry.AddHTTPService("service4.default.svc.cluster.local", "10.1.0.4", 80)
 
+	// 增加edsIncSvc，并且设置其中的一个endpoints
 	server.EnvoyXdsServer.MemRegistry.AddHTTPService(edsIncSvc, edsIncVip, 8080)
 	server.EnvoyXdsServer.MemRegistry.SetEndpoints(edsIncSvc,
 		newEndpointWithAccount("127.0.0.1", "hello-sa", "v1"))
 	// Set the initial workload labels
-	// 设置初始的workload labels
+	// 设置初始的workload labels, id为"127.0.0.4"
 	server.EnvoyXdsServer.WorkloadUpdate("127.0.0.4", map[string]string{"version": "v1"}, nil)
 
 	// Update cache
@@ -445,6 +447,8 @@ func getLocalIP() string {
 
 // newEndpointWithAccount is a helper for IstioEndpoint creation. Creates endpoints with
 // port name "http", with the given IP, service account and a 'version' label.
+// newEndpointWithAccount是一个创建IstioEndpoint的helper函数
+// 创建的endpoints的名字是"http"，以及给定的IP，service account以及一个'version' label
 func newEndpointWithAccount(ip, account, version string) []*model.IstioEndpoint {
 	return []*model.IstioEndpoint{
 		&model.IstioEndpoint{

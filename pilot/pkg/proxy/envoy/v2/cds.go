@@ -25,6 +25,7 @@ import (
 )
 
 // clusters aggregate a DiscoveryResponse for pushing.
+// clusters聚合DiscoveryReponse用于推送
 func (con *XdsConnection) clusters(response []*xdsapi.Cluster) *xdsapi.DiscoveryResponse {
 	out := &xdsapi.DiscoveryResponse{
 		// All resources for CDS ought to be of the type ClusterLoadAssignment
@@ -34,7 +35,10 @@ func (con *XdsConnection) clusters(response []*xdsapi.Cluster) *xdsapi.Discovery
 		// available to it, irrespective of whether Envoy chooses to accept or reject CDS
 		// responses. Pilot believes in eventual consistency and that at some point, Envoy
 		// will begin seeing results it deems to be good.
+		// Pilot并不关心versioning，它总是提供当前能够获取到的，而不管Envoy是否选择接受或者拒绝CDS response
+		// Pilot坚信最终一致性，因为在某个时刻，Envoy终将看到正确的结果
 		VersionInfo: versionInfo(),
+		// Nonce就是当前的时间戳
 		Nonce:       nonce(),
 	}
 
@@ -56,6 +60,7 @@ func (s *DiscoveryServer) pushCds(con *XdsConnection, push *model.PushContext, v
 		con.CDSClusters = rawClusters
 	}
 	response := con.clusters(rawClusters)
+	// 发送response
 	err = con.send(response)
 	if err != nil {
 		adsLog.Warnf("CDS: Send failure, closing grpc %s: %v", con.modelNode.ID, err)
@@ -80,6 +85,7 @@ func (s *DiscoveryServer) generateRawClusters(con *XdsConnection, push *model.Pu
 	}
 
 	for _, c := range rawClusters {
+		// 对生成的cluster进行验证
 		if err = c.Validate(); err != nil {
 			retErr := fmt.Errorf("CDS: Generated invalid cluster for node %v: %v", con.modelNode, err)
 			adsLog.Errorf("CDS: Generated invalid cluster for node %s: %v, %v", con.modelNode, err, c)

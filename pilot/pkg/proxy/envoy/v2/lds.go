@@ -27,6 +27,7 @@ import (
 func (s *DiscoveryServer) pushLds(con *XdsConnection, push *model.PushContext, onConnect bool, version string) error {
 	// TODO: Modify interface to take services, and config instead of making library query registry
 
+	// 创建raw listeners
 	rawListeners, err := s.generateRawListeners(con, push)
 	if err != nil {
 		return err
@@ -34,6 +35,7 @@ func (s *DiscoveryServer) pushLds(con *XdsConnection, push *model.PushContext, o
 	if s.DebugConfigs {
 		con.LDSListeners = rawListeners
 	}
+	// 根据raw listeners构建lds discovery response
 	response := ldsDiscoveryResponse(rawListeners, *con.modelNode, version)
 	if version != versionInfo() {
 		// Just report for now - after debugging we can suppress the push.

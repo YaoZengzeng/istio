@@ -55,9 +55,12 @@ type Config struct {
 
 // ADSC implements a basic client for ADS, for use in stress tests and tools
 // or libraries that need to connect to Istio pilot or other ADS servers.
+// ADSC实现了一个基本的ADS client，用于压力测试以及那些需要连接Istio pilot或者其他ADS servers的工具或库的测试
 type ADSC struct {
 	// Stream is the GRPC connection stream, allowing direct GRPC send operations.
 	// Set after Dial is called.
+	// Stream时GRPC connection stream，允许直接的GRPC发送服务
+	// 在Dial被调用之后设置
 	stream ads.AggregatedDiscoveryService_StreamAggregatedResourcesClient
 
 	// NodeID is the node identity sent to Pilot.
@@ -80,12 +83,15 @@ type ADSC struct {
 
 	// Metadata has the node metadata to send to pilot.
 	// If nil, the defaults will be used.
+	// Metadata是发送给pilot的node的元数据
+	// 如果为nil，则会使用默认的
 	Metadata map[string]string
 
 	rdsNames     []string
 	clusterNames []string
 
 	// Updates includes the type of the last update received from the server.
+	// Updates包含从server接收到的最新更新的type
 	Updates     chan string
 	VersionInfo map[string]string
 
@@ -113,6 +119,7 @@ var (
 )
 
 // Dial connects to a ADS server, with optional MTLS authentication if a cert dir is specified.
+// Dial用于和一个ADS server连接，如果指定了cert dir的话，则增加可选的MTLS authentication
 func Dial(url string, certDir string, opts *Config) (*ADSC, error) {
 	adsc := &ADSC{
 		done:        make(chan error),
@@ -196,6 +203,7 @@ func (a *ADSC) Close() {
 }
 
 // Reconnect will reconnect after close.
+// Reconnect会在close之后重新进行连接
 func (a *ADSC) Reconnect() error {
 
 	// TODO: pass version info, nonce properly
@@ -226,7 +234,9 @@ func (a *ADSC) Reconnect() error {
 		return err
 	}
 
+	// 创建ads client
 	xds := ads.NewAggregatedDiscoveryServiceClient(conn)
+	// 从ads server获取资源
 	edsstr, err := xds.StreamAggregatedResources(context.Background())
 	if err != nil {
 		return err
@@ -245,6 +255,7 @@ func (a *ADSC) update(m string) {
 
 func (a *ADSC) handleRecv() {
 	for {
+		// 从ads server获取资源
 		msg, err := a.stream.Recv()
 		if err != nil {
 			log.Println("Connection closed ", err, a.nodeID)
@@ -254,13 +265,16 @@ func (a *ADSC) handleRecv() {
 			return
 		}
 
+		// 从返回的response中解析出listeners，clusters，routes以及eds
 		listeners := []*xdsapi.Listener{}
 		clusters := []*xdsapi.Cluster{}
 		routes := []*xdsapi.RouteConfiguration{}
 		eds := []*xdsapi.ClusterLoadAssignment{}
 		for _, rsc := range msg.Resources { // Any
+			// 记录某个资源类型的版本
 			a.VersionInfo[rsc.TypeUrl] = msg.VersionInfo
 			valBytes := rsc.Value
+			// 根据资源类型将资源解码
 			if rsc.TypeUrl == listenerType {
 				ll := &xdsapi.Listener{}
 				proto.Unmarshal(valBytes, ll)
@@ -307,9 +321,11 @@ func (a *ADSC) handleLDS(ll []*xdsapi.Listener) {
 	routes := []string{}
 	ldsSize := 0
 
+	// 遍历listeners
 	for _, l := range ll {
 		ldsSize += l.Size()
 		f0 := l.FilterChains[0].Filters[0]
+		// 根据filter的name进行处理
 		if f0.Name == "mixer" {
 			f0 = l.FilterChains[0].Filters[1]
 		}
@@ -323,6 +339,7 @@ func (a *ADSC) handleLDS(ll []*xdsapi.Listener) {
 
 			// Getting from config is too painful..
 			port := l.Address.GetSocketAddress().GetPortValue()
+			// 获取routes的名字
 			routes = append(routes, fmt.Sprintf("%d", port))
 			//log.Printf("HTTP: %s -> %d", l.Name, port)
 		} else if f0.Name == "envoy.mongo_proxy" {
@@ -334,6 +351,7 @@ func (a *ADSC) handleLDS(ll []*xdsapi.Listener) {
 	}
 
 	log.Println("LDS: http=", len(lh), "tcp=", len(lt), "size=", ldsSize)
+	// 如果routes的数目大于零，请求routes的相关信息
 	if len(routes) > 0 {
 		a.sendRsc(routeType, routes)
 	}
@@ -343,6 +361,7 @@ func (a *ADSC) handleLDS(ll []*xdsapi.Listener) {
 	a.TCPListeners = lt
 
 	select {
+	// 发送给a.Updates
 	case a.Updates <- "lds":
 	default:
 	}
@@ -413,6 +432,7 @@ func (a *ADSC) handleEDS(eds []*xdsapi.ClusterLoadAssignment) {
 
 	if a.InitialLoad == 0 {
 		// first load - Envoy loads listeners after endpoints
+		// Envoy在endpoints之后加载listeners
 		a.stream.Send(&xdsapi.DiscoveryRequest{
 			ResponseNonce: time.Now().String(),
 			Node:          a.node(),
@@ -472,6 +492,7 @@ func (a *ADSC) handleRDS(configurations []*xdsapi.RouteConfiguration) {
 
 // WaitClear will clear the waiting events, so next call to Wait will get
 // the next push type.
+// WaitClear会清除waiting events，因此下一次调用Wait会获得下一个push类型
 func (a *ADSC) WaitClear() {
 	for {
 		select {
@@ -483,6 +504,7 @@ func (a *ADSC) WaitClear() {
 }
 
 // Wait for an update of the specified type. If type is empty, wait for next update.
+// 等待给定类型的更新，如果类型为空，则等待下一次的更新
 func (a *ADSC) Wait(update string, to time.Duration) (string, error) {
 	t := time.NewTimer(to)
 
@@ -506,6 +528,7 @@ func (a *ADSC) EndpointsJSON() string {
 
 // Watch will start watching resources, starting with LDS. Based on the LDS response
 // it will start watching RDS and CDS.
+// Watch会开始监听resouces，从LDS开始，基于LDS的返回，它会开始监听RDS和CDS
 func (a *ADSC) Watch() {
 	a.watchTime = time.Now()
 	a.stream.Send(&xdsapi.DiscoveryRequest{
@@ -525,6 +548,7 @@ func (a *ADSC) sendRsc(typeurl string, rsc []string) {
 }
 
 func (a *ADSC) ack(msg *xdsapi.DiscoveryResponse) {
+	// 用msg.Nonce进行ack
 	a.stream.Send(&xdsapi.DiscoveryRequest{
 		ResponseNonce: msg.Nonce,
 		TypeUrl:       msg.TypeUrl,

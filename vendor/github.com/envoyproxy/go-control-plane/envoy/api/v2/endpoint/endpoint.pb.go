@@ -111,8 +111,10 @@ func (m *Endpoint_HealthCheckConfig) GetPortValue() uint32 {
 // 一个Envoy可以路由流量的Endpoint
 type LbEndpoint struct {
 	// Upstream host identifier
+	// Upstream host的标识符
 	Endpoint *Endpoint `protobuf:"bytes,1,opt,name=endpoint" json:"endpoint,omitempty"`
 	// Optional health status when known and supplied by EDS server.
+	// 可选的通过EDS server提供的健康选项
 	HealthStatus envoy_api_v2_core2.HealthStatus `protobuf:"varint,2,opt,name=health_status,json=healthStatus,proto3,enum=envoy.api.v2.core.HealthStatus" json:"health_status,omitempty"`
 	// The endpoint metadata specifies values that may be used by the load
 	// balancer to select endpoints in a cluster for a given request. The filter
@@ -120,6 +122,7 @@ type LbEndpoint struct {
 	// is *canary*, providing the optional canary status of the upstream host.
 	// This may be matched against in a route's ForwardAction metadata_match field
 	// to subset the endpoints considered in cluster load balancing.
+	// metadata指定values，用于load balancer为给定请求选择cluster中的endpoint
 	Metadata *envoy_api_v2_core.Metadata `protobuf:"bytes,3,opt,name=metadata" json:"metadata,omitempty"`
 	// The optional load balancing weight of the upstream host, in the range 1 -
 	// 128. Envoy uses the load balancing weight in some of the built in load

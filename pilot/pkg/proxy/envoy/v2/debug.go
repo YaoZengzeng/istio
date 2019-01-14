@@ -168,6 +168,8 @@ type MemServiceDiscovery struct {
 
 	// Used by GetProxyServiceInstance, used to configure inbound (list of services per IP)
 	// We generally expect a single instance - conflicting services need to be reported.
+	// 由GetProxyServiceInstance使用，用于配置inbound（每个IP一系列的services）
+	// 我们一般期望单个实例 - 有冲突的services需要被报告
 	ip2instance                   map[string][]*model.ServiceInstance
 	versions                      int
 	WantGetProxyServiceInstances  []*model.ServiceInstance
@@ -179,6 +181,7 @@ type MemServiceDiscovery struct {
 	ClusterID                     string
 
 	// XDSUpdater will push EDS changes to the ADS model.
+	// XDSUpdater会将EDS change推送到ADS model
 	EDSUpdater    model.XDSUpdater
 	ConfigUpdater model.ConfigUpdater
 
@@ -196,6 +199,7 @@ func (sd *MemServiceDiscovery) ClearErrors() {
 
 // AddHTTPService is a helper to add a service of type http, named 'http-main', with the
 // specified vip and port.
+// AddHTTPService是一个helper函数用于增加一个http类型的service，名字为'http-main'，参数为给定的vip以及port
 func (sd *MemServiceDiscovery) AddHTTPService(name, vip string, port int) {
 	sd.AddService(model.Hostname(name), &model.Service{
 		Hostname: model.Hostname(name),
@@ -269,6 +273,7 @@ func (sd *MemServiceDiscovery) SetEndpoints(service string, endpoints []*model.I
 	}
 
 	// remove old entries
+	// 移除老的entry
 	for k, v := range sd.ip2instance {
 		if len(v) > 0 && v[0].Service.Hostname == sh {
 			delete(sd.ip2instance, k)
@@ -289,6 +294,7 @@ func (sd *MemServiceDiscovery) SetEndpoints(service string, endpoints []*model.I
 		//servicePortName string, servicePort int, address string, port int
 		p, _ := svc.Ports.Get(e.ServicePortName)
 
+		// 将endpoint转换为ServiceInstance
 		instance := &model.ServiceInstance{
 			Service: svc,
 			Endpoint: model.NetworkEndpoint{
@@ -314,9 +320,11 @@ func (sd *MemServiceDiscovery) SetEndpoints(service string, endpoints []*model.I
 
 	}
 
+	// 调用EDSUpdate
 	err := sd.EDSUpdater.EDSUpdate(sd.ClusterID, service, endpoints)
 	if err != nil {
 		// Request a global push if we failed to do EDS only
+		// 如果我们只做EDS失败了，请求一个全局的推送
 		sd.ConfigUpdater.ConfigUpdate(true)
 	} else {
 		sd.ConfigUpdater.ConfigUpdate(false)

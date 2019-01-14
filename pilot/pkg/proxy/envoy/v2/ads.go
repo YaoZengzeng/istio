@@ -223,6 +223,7 @@ type XdsConnection struct {
 	nextPush *model.PushContext
 
 	// doneChannel will be closed when the client is closed.
+	// 当client关闭时，doneChannel就会被关闭
 	doneChannel chan int
 
 	// TODO: migrate other fields as needed from model.Proxy and replace it
@@ -234,6 +235,7 @@ type XdsConnection struct {
 	CDSClusters  []*xdsapi.Cluster
 
 	// Last nonce sent and ack'd (timestamps) used for debugging
+	// 上一次发送的和ack的nonce（时间戳）用于debug
 	ClusterNonceSent, ClusterNonceAcked   string
 	ListenerNonceSent, ListenerNonceAcked string
 	RouteNonceSent, RouteNonceAcked       string
@@ -247,6 +249,7 @@ type XdsConnection struct {
 	// TODO: TcpListeners (may combine mongo/etc)
 
 	// Both ADS and EDS streams implement this interface
+	// ADS和EDS都实现了这个接口
 	stream DiscoveryStream
 
 	// Routes is the list of watched Routes.
@@ -282,6 +285,8 @@ type XdsConnection struct {
 type XdsEvent struct {
 	// If not empty, it is used to indicate the event is caused by a change in the clusters.
 	// Only EDS for the listed clusters will be sent.
+	// 如果不为空，则用于表示event是由clusters的一个更改触发的
+	// 只有和listed clusters的EDS会被发送
 	edsUpdatedServices map[string]*model.EndpointShardsByService
 
 	push *model.PushContext
@@ -345,6 +350,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 	// check works, since it assumes ClearCache is called (and as such PushContext
 	// is initialized)
 	// InitContext returns immediately if the context was already initialized.
+	// 获取全局的PushContext
 	pc := s.globalPushContext()
 
 	err := pc.InitContext(s.Env)
@@ -384,6 +390,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 
 	for {
 		// Block until either a request is received or the ticker ticks
+		// 阻塞直到一个请求到达或者时钟触发
 		select {
 		case discReq, ok = <-reqChannel:
 			if !ok {
@@ -394,6 +401,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 				adsLog.Infof("Missing node id %s", discReq.String())
 				continue
 			}
+			// 从node id中解析出service node的配置信息
 			nt, err := model.ParseServiceNode(discReq.Node.Id)
 			if err != nil {
 				return err
@@ -402,6 +410,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 			con.mu.Lock()
 			con.modelNode = &nt
 			con.mu.Unlock()
+			// 对于第一次请求，创建connection id
 			if con.ConID == "" {
 				// first request
 				con.ConID = connectionID(discReq.Node.Id)
@@ -420,11 +429,13 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 			case ClusterType:
 				if con.CDSWatch {
 					// Already received a cluster watch request, this is an ACK
+					// 如果已经收到了一个cluster watch request，则这次请求是一个ACK
 					if discReq.ErrorDetail != nil {
 						adsLog.Warnf("ADS:CDS: ACK ERROR %v %s %v", peerAddr, con.ConID, discReq.String())
 						cdsReject.With(prometheus.Labels{"node": discReq.Node.Id, "err": discReq.ErrorDetail.Message}).Add(1)
 						totalXDSRejects.Add(1)
 					} else if discReq.ResponseNonce != "" {
+						// 赋值给ClusterNonceAcked
 						con.ClusterNonceAcked = discReq.ResponseNonce
 					}
 					adsLog.Debugf("ADS:CDS: ACK %v %v", peerAddr, discReq.String())
@@ -437,6 +448,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 				// 当CDS push返回之后，会立即伴随一个EDS REQ
 				adsLog.Infof("ADS:CDS: REQ %v %s %v raw: %s", peerAddr, con.ConID, time.Since(t0), discReq.String())
 				con.CDSWatch = true
+				// 首次是从全局的PushContext推送的
 				err := s.pushCds(con, s.globalPushContext(), versionInfo())
 				if err != nil {
 					return err
@@ -483,6 +495,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 						continue
 					}
 				}
+				// 记录envoy要求的routes
 				con.Routes = routes
 				adsLog.Debugf("ADS:RDS: REQ %s %s  routes: %d", peerAddr, con.ConID, len(con.Routes))
 				err := s.pushRoute(con, s.globalPushContext(), versionInfo())
@@ -526,6 +539,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 					s.addEdsCon(cn, con.ConID, con)
 				}
 
+				// 如果envoy发送eds请求的话，记录它要求的cluster
 				con.Clusters = clusters
 				adsLog.Debugf("ADS:EDS: REQ %s %s clusters: %d", peerAddr, con.ConID, len(con.Clusters))
 				err := s.pushEds(s.globalPushContext(), con, true, nil)
@@ -605,6 +619,7 @@ func (s *DiscoveryServer) pushAll(con *XdsConnection, pushEv *XdsEvent) error {
 		return nil
 	}
 
+	// 如果已经接受过CDS请求的话，当配置发生改变的时候就推送CDS
 	if con.CDSWatch {
 		err := s.pushCds(con, pushEv.push, pushEv.version)
 		if err != nil {
@@ -612,17 +627,20 @@ func (s *DiscoveryServer) pushAll(con *XdsConnection, pushEv *XdsEvent) error {
 		}
 	}
 	if len(con.Clusters) > 0 {
+		// 如果envoy有请求过eds，当配置发生改变时就推送Eds
 		err := s.pushEds(pushEv.push, con, true, nil)
 		if err != nil {
 			return err
 		}
 	}
 	if len(con.Routes) > 0 {
+		// 如果envoy有请求过rds，当配置发生改变的时候就推送Rds
 		err := s.pushRoute(con, pushEv.push, pushEv.version)
 		if err != nil {
 			return err
 		}
 	}
+	// 如果已经接收过LDS的话，当配置发生改变的时候就推送LDS
 	if con.LDSWatch {
 		err := s.pushLds(con, pushEv.push, false, pushEv.version)
 		if err != nil {

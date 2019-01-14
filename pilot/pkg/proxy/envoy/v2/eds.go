@@ -198,6 +198,7 @@ func newEndpoint(e *model.NetworkEndpoint) (*endpoint.LbEndpoint, error) {
 }
 
 // updateClusterInc computes an envoy cluster assignment from the service shards.
+// updateClusterInc从service shards计算一个envoy cluster的assignment
 func (s *DiscoveryServer) updateClusterInc(push *model.PushContext, clusterName string,
 	edsCluster *EdsCluster) error {
 
@@ -218,6 +219,7 @@ func (s *DiscoveryServer) updateClusterInc(push *model.PushContext, clusterName 
 	}
 
 	// The service was never updated - do the full update
+	// service从未更新 - 进行完整的update
 	se, f := s.EndpointShardsByService[string(hostname)]
 	if !f {
 		return s.updateCluster(push, clusterName, edsCluster)
@@ -228,6 +230,7 @@ func (s *DiscoveryServer) updateClusterInc(push *model.PushContext, clusterName 
 
 	// The shards are updated independently, now need to filter and merge
 	// for this cluster
+	// shard被独立更新，现在需要为cluster进行过滤或者整合
 	for _, es := range se.Shards {
 		for _, el := range es.Entries {
 			if svcPort.Name != el.ServicePortName {
@@ -252,6 +255,7 @@ func (s *DiscoveryServer) updateClusterInc(push *model.PushContext, clusterName 
 				localityEpMap[locality] = locLbEps
 			}
 			if el.EnvoyEndpoint == nil {
+				// 将serviceEntry转换为endpoint.LbEndpoint
 				el.EnvoyEndpoint = serviceEntry2Endpoint(el.UID, el.Family, el.Address, el.EndpointPort)
 			}
 			locLbEps.LbEndpoints = append(locLbEps.LbEndpoints, *el.EnvoyEndpoint)
@@ -272,6 +276,8 @@ func (s *DiscoveryServer) updateClusterInc(push *model.PushContext, clusterName 
 	// This could be prevented by a lock - but because the update may be slow, it may be
 	// better to accept the extra computations.
 	// We still lock the access to the LoadAssignments.
+	// 可能会有多个goroutines同时更新cluster
+	// 这可以通过一个锁来保护 - 但是更新可能很慢，所以最好接收额外的计算
 	edsCluster.mutex.Lock()
 	defer edsCluster.mutex.Unlock()
 
@@ -316,24 +322,31 @@ func (s *DiscoveryServer) updateServiceShards(push *model.PushContext) error {
 		// may individually update their endpoints incrementally
 		// 每个registry都作为一个shard - 我们不想合并它们，因为其中某些可能独自对它们的endpoints进行
 		// 增量式更新
+		// 遍历PushContext中的Services
 		for _, svc := range push.Services {
 			entries := []*model.IstioEndpoint{}
 			hn := string(svc.Hostname)
+			// 遍历Services中的Ports
 			for _, port := range svc.Ports {
+				// 对于UDP类型的端口就直接跳过
 				if port.Protocol == model.ProtocolUDP {
 					continue
 				}
 
 				// This loses track of grouping (shards)
+				// 这会失去对grouping的追踪
+				// 从registry中找到hostname和port对应的ServiceInstance数组
 				epi, err := reg.InstancesByPort(svc.Hostname, port.Port, model.LabelsCollection{})
 				if err != nil {
 					return err
 				}
 
+				// ep为返回的ServiceInstance实例
 				for _, ep := range epi {
 					//shard := ep.AvailabilityZone
 					l := map[string]string(ep.Labels)
 
+					// IstioEnpoint直接就是根据ServiceInstance转换而来
 					entries = append(entries, &model.IstioEndpoint{
 						Family:          ep.Endpoint.Family,
 						Address:         ep.Endpoint.Address,
@@ -354,6 +367,8 @@ func (s *DiscoveryServer) updateServiceShards(push *model.PushContext) error {
 				}
 			}
 
+			// hn为hostname，entries为[]*model.IstioEndpoint{}
+			// reg.ClusterID即为shard
 			s.edsUpdate(reg.ClusterID, hn, entries, true)
 		}
 	}
@@ -440,6 +455,8 @@ func (s *DiscoveryServer) SvcUpdate(cluster, hostname string, ports map[string]u
 
 // Update clusters for an incremental EDS push, and initiate the push.
 // Only clusters that changed are updated/pushed.
+// 更新clusters用于增量式的EDS push，并且初始化push
+// 只有改变了的clusters会被更新/推送
 func (s *DiscoveryServer) edsIncremental(version string, push *model.PushContext, edsUpdates map[string]*model.EndpointShardsByService) {
 	adsLog.Infof("XDS:EDSInc Pushing %s Services: %v, "+
 		"VirtualServices: %d, ConnectedEndpoints: %d", version, edsUpdates,
@@ -448,12 +465,14 @@ func (s *DiscoveryServer) edsIncremental(version string, push *model.PushContext
 
 	// First update all cluster load assignments. This is computed for each cluster once per config change
 	// instead of once per endpoint.
+	// 首先更新所有的cluster load assignments，一旦config改变而不是endpoint改变，这会为每个cluster计算
 	edsClusterMutex.Lock()
 	// Create a temp map to avoid locking the add/remove
 	cMap := make(map[string]*EdsCluster, len(edsClusters))
 	for k, v := range edsClusters {
 		_, _, hostname, _ := model.ParseSubsetKey(k)
 		if edsUpdates[string(hostname)] == nil {
+			// 如果Cluster没有更新，则跳过重新计算
 			// Cluster was not updated, skip recomputing.
 			continue
 		}
@@ -464,7 +483,10 @@ func (s *DiscoveryServer) edsIncremental(version string, push *model.PushContext
 	// UpdateCluster updates the cluster with a mutex, this code is safe ( but computing
 	// the update may be duplicated if multiple goroutines compute at the same time).
 	// In general this code is called from the 'event' callback that is throttled.
+	// UpdateCluster用mutex更新cluster，代码是安全的（但是如果多个goroutines同时计算，可能会导致重复）
+	// 一般这部分代码会在'event'的回调函数被限流的时候被调用
 	for clusterName, edsCluster := range cMap {
+		// 对有更新的cluster调用updateClusterInc
 		if err := s.updateClusterInc(push, clusterName, edsCluster); err != nil {
 			adsLog.Errorf("updateCluster failed with clusterName %s", clusterName)
 		}
@@ -482,6 +504,7 @@ func (s *DiscoveryServer) WorkloadUpdate(id string, labels map[string]string, an
 
 	if labels == nil {
 		// No push needed - the Endpoints object will also be triggered.
+		// 当labels为nil时，不需要进行push
 		delete(s.WorkloadsByID, id)
 		return
 	}
@@ -505,16 +528,22 @@ func (s *DiscoveryServer) WorkloadUpdate(id string, labels map[string]string, an
 	// Label changes require recomputing the config.
 	// TODO: we can do a push for the affected workload only, but we need to confirm
 	// no other workload can be affected. Safer option is to fallback to full push.
+	// Label改变了，需要对config重新计算
 
 	adsLog.Infof("Label change, full push %s ", id)
+	// label改变了，直接全量推送
 	s.ConfigUpdater.ConfigUpdate(true)
 }
 
 // EDSUpdate computes destination address membership across all clusters and networks.
+// EDSUpdate计算所有cluster和networks的destination address membership
 // This is the main method implementing EDS.
+// 这是实现EDS的主要方法
 // It replaces InstancesByPort in model - instead of iterating over all endpoints it uses
 // the hostname-keyed map. And it avoids the conversion from Endpoint to ServiceEntry to envoy
 // on each step: instead the conversion happens once, when an endpoint is first discovered.
+// 它替代了model中的InstancesByPort方法 - 它使用hostname作为key的map而不是遍历所有的endpoints
+// 并且它避免了从Endpoint到ServiceEntry的转换，并且只需要在endpoint第一次被发现时转换一次
 func (s *DiscoveryServer) EDSUpdate(shard, serviceName string,
 	entries []*model.IstioEndpoint) error {
 	return s.edsUpdate(shard, serviceName, entries, false)
@@ -544,6 +573,10 @@ func (s *DiscoveryServer) edsUpdate(shard, serviceName string,
 	// update. The endpoint updates may be grouped by K8S clusters, other service registries
 	// or by deployment. Multiple updates are debounced, to avoid too frequent pushes.
 	// After debounce, the services are merged and pushed.
+	// edsShardUpdate更换endpoints的一个子集，作为增量式更新的结果
+	// endpoint updates由K8S集群或者其他service registries一起完成
+	// 多次更新会被去抖，从而避免频繁地推送
+	// 在去抖之后，service会被整合再推送
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -555,12 +588,16 @@ func (s *DiscoveryServer) edsUpdate(shard, serviceName string,
 		// This endpoint is for a service that was not previously loaded.
 		// Return an error to force a full sync, which will also cause the
 		// EndpointsShardsByService to be initialized with all services.
+		// 一个service的endpoint之前从未被加载
+		// 返回一个error强行进行同步，这也会导致所有services的EndpointsShardsByService
+		// 被初始化
 		ep = &model.EndpointShardsByService{
 			Shards:          map[string]*model.EndpointShard{},
 			ServiceAccounts: map[string]bool{},
 		}
 		s.EndpointShardsByService[serviceName] = ep
 		if !internal {
+			// 如果不是internal，则开始一个全量的推送
 			adsLog.Infof("Full push, new service %s", serviceName)
 			s.ConfigUpdater.ConfigUpdate(true)
 		}
@@ -568,18 +605,23 @@ func (s *DiscoveryServer) edsUpdate(shard, serviceName string,
 
 	// 2. Update data for the specific cluster. Each cluster gets independent
 	// updates containing the full list of endpoints for the service in that cluster.
+	// 更新给定cluter的数据，每个cluster获取独立的更新，其中包含了cluster中的service完整的endpoints列表
 	ce := &model.EndpointShard{
 		Shard:   shard,
 		Entries: []*model.IstioEndpoint{},
 	}
 
 	for _, e := range entries {
+		// 遍历entrie添加到ce.Entries中
 		ce.Entries = append(ce.Entries, e)
 		if e.ServiceAccount != "" {
 			_, f = ep.ServiceAccounts[e.ServiceAccount]
+			// 如果对应的ServiceAccounts不存在且不是internal
 			if !f && !internal {
 				// The entry has a service account that was not previously associated.
 				// Requires a CDS push and full sync.
+				// entry有一个service account之前未被关联
+				// 需要一个CDS push以及完整的同步
 				adsLog.Infof("Endpoint updating service account %s %s", e.ServiceAccount, serviceName)
 				s.ConfigUpdater.ConfigUpdate(true)
 			}

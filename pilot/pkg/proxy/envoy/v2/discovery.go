@@ -96,6 +96,7 @@ type DiscoveryServer struct {
 
 	// EndpointShardsByService for a service. This is a global (per-server) list, built from
 	// incremental updates.
+	// 每一个service的EndpointShardsByService，这是一个全局的list，从incremental updates构建
 	EndpointShardsByService map[string]*model.EndpointShardsByService
 
 	// WorkloadsById keeps track of informations about a workload, based on direct notifications
@@ -115,6 +116,7 @@ type DiscoveryServer struct {
 	// updated. This should only be used in the xDS server - will be removed/made private in 1.1,
 	// once the last v1 pieces are cleaned. For 1.0.3+ it is used only for tracking incremental
 	// pushes between the 2 packages.
+	// Key是hostname（servicename）, Value在service的shard part更新的时候才会更新
 	edsUpdates map[string]*model.EndpointShardsByService
 }
 
@@ -260,6 +262,7 @@ func (s *DiscoveryServer) periodicRefreshMetrics() {
 // Push在配置更新的时候用ADS推送改变
 func (s *DiscoveryServer) Push(full bool, edsUpdates map[string]*model.EndpointShardsByService) {
 	if !full {
+		// 增量式地推送EDS
 		adsLog.Infof("XDS Incremental Push EDS:%d", len(edsUpdates))
 		// 对于EDS可以增量push。
 		go s.AdsPushAll(version, s.globalPushContext(), false, edsUpdates)

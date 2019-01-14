@@ -120,6 +120,8 @@ var (
 	// Push is used to request a push, when config changes. This is used to
 	// avoid adding a circular dependency from v1 to v2 - the method is implemented
 	// in the ADS server.
+	// Push用于请求一个推送，当config发生改变的时候，这用于防止增加v1到v2的循环依赖
+	// 该方法在ADS server中实现
 	Push func(fullPush bool, edsUpdates map[string]*model.EndpointShardsByService)
 
 	// BeforePush is called before a push. Like Push, it is an artifact of the split

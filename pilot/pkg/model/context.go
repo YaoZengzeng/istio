@@ -65,6 +65,7 @@ type Environment struct {
 // Proxy定义了供xDS identification使用的proxy属性
 type Proxy struct {
 	// ClusterID specifies the cluster where the proxy resides
+	// proxy所处的cluster
 	ClusterID string
 
 	// Type specifies the node type
@@ -76,10 +77,12 @@ type Proxy struct {
 	IPAddress string
 
 	// ID is the unique platform-specific sidecar proxy ID
+	// ID是独特的平台相关的sidecar proxy ID
 	ID string
 
 	// Domain defines the DNS domain suffix for short hostnames (e.g.
 	// "default.svc.cluster.local")
+	// Domain定义了short hostnames的DNS domain suffix
 	Domain string
 
 	// Metadata key-value pairs extending the Node identifier
