@@ -29,6 +29,7 @@ type RouteConfiguration struct {
 	// :ref:`envoy_api_msg_config.filter.network.http_connection_manager.v2.Rds`.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// An array of virtual hosts that make up the route table.
+	// 一个virtual hosts数组构建成了route table
 	VirtualHosts []envoy_api_v2_route.VirtualHost `protobuf:"bytes,2,rep,name=virtual_hosts,json=virtualHosts" json:"virtual_hosts"`
 	// Optionally specifies a list of HTTP headers that the connection manager
 	// will consider to be internal only. If they are found on external requests they will be cleaned

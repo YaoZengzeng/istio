@@ -163,7 +163,9 @@ func (c *memServiceController) Run(<-chan struct{}) {}
 // MemServiceDiscovery is a mock discovery interface
 type MemServiceDiscovery struct {
 	services            map[model.Hostname]*model.Service
+	// PortNum到ServiceInstance列表的映射
 	instancesByPortNum  map[string][]*model.ServiceInstance
+	// PortName到ServiceInstance列表的映射
 	instancesByPortName map[string][]*model.ServiceInstance
 
 	// Used by GetProxyServiceInstance, used to configure inbound (list of services per IP)
@@ -233,10 +235,12 @@ func (sd *MemServiceDiscovery) AddInstance(service model.Hostname, instance *mod
 	instance.Service = svc
 	sd.ip2instance[instance.Endpoint.Address] = []*model.ServiceInstance{instance}
 
+	// 扩展instancesByPortNum
 	key := fmt.Sprintf("%s:%d", service, instance.Endpoint.ServicePort.Port)
 	instanceList := sd.instancesByPortNum[key]
 	sd.instancesByPortNum[key] = append(instanceList, instance)
 
+	// 扩展instancesByPortName
 	key = fmt.Sprintf("%s:%s", service, instance.Endpoint.ServicePort.Name)
 	instanceList = sd.instancesByPortName[key]
 	sd.instancesByPortName[key] = append(instanceList, instance)

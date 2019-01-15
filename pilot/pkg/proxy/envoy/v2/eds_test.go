@@ -70,6 +70,7 @@ func TestEds(t *testing.T) {
 	// 30% faster than 1.0 config style. Keeping the test to track fixes and
 	// verify we fix the regression.
 	t.Run("MultipleRequest08", func(t *testing.T) {
+		// 非增量式推送，50个clients，5个pushes
 		multipleRequest(server, false, 50, 5, 20*time.Second,
 			map[string]string{}, t)
 	})
@@ -180,8 +181,10 @@ func edsUpdates(server *bootstrap.Server, adsc *adsc.ADSC, t *testing.T) {
 		AvailabilityZone: "az",
 	})
 
+	// 推送全部
 	v2.AdsPushAll(server.EnvoyXdsServer)
 	// will trigger recompute and push
+	// 触发重新计算以及推送
 
 	_, err := adsc.Wait("eds", 5*time.Second)
 	if err != nil {
@@ -233,6 +236,7 @@ func edsUpdateInc(server *bootstrap.Server, adsc *adsc.ADSC, t *testing.T) {
 	testTCPEndpoints("127.0.0.2", adsc, t)
 
 	// Update the endpoint with different SA - expect full
+	// 用不同的SA更新endpoint - 期望完整的推送
 	server.EnvoyXdsServer.MemRegistry.SetEndpoints(edsIncSvc,
 		newEndpointWithAccount("127.0.0.3", "account2", "v1"))
 	upd, err = adsc.Wait("", 5*time.Second)
@@ -243,6 +247,7 @@ func edsUpdateInc(server *bootstrap.Server, adsc *adsc.ADSC, t *testing.T) {
 	testTCPEndpoints("127.0.0.3", adsc, t)
 
 	// Update the endpoint again, no SA change - expect incremental
+	// 再次更新endpoint，SA不改变 - 期望增量式的推送
 	server.EnvoyXdsServer.MemRegistry.SetEndpoints(edsIncSvc,
 		newEndpointWithAccount("127.0.0.4", "account2", "v1"))
 
@@ -253,6 +258,7 @@ func edsUpdateInc(server *bootstrap.Server, adsc *adsc.ADSC, t *testing.T) {
 	testTCPEndpoints("127.0.0.4", adsc, t)
 
 	// Update the endpoint with different label - expect full
+	// 用不同的label更新endpoint - 期望完整的推送
 	server.EnvoyXdsServer.WorkloadUpdate("127.0.0.4", map[string]string{"version": "v2"}, nil)
 
 	upd, err = adsc.Wait("", 5*time.Second)
@@ -269,6 +275,8 @@ func edsUpdateInc(server *bootstrap.Server, adsc *adsc.ADSC, t *testing.T) {
 // Make a direct EDS grpc request to pilot, verify the result is as expected.
 // This test includes a 'bad client' regression test, which fails to read on the
 // stream.
+// 向pilot发送一个直接的EDS grpc请求，检测结果是符合预期的
+// 这个测试包含一个'bad client'的回归测试，它会读取stream失败
 func multipleRequest(server *bootstrap.Server, inc bool, nclients,
 	nPushes int, to time.Duration, meta map[string]string, t *testing.T) {
 	wgConnect := &sync.WaitGroup{}
@@ -277,11 +285,14 @@ func multipleRequest(server *bootstrap.Server, inc bool, nclients,
 
 	// Bad client - will not read any response. This triggers Write to block, which should
 	// be detected
+	// Bad client - 不会读取任何的response，这会触发写阻塞，应该被检测到
 	// This is not using adsc, which consumes the events automatically.
+	// 此处不应该使用adsc，因为它会自动处理events
 	ads, err := connectADS(util.MockPilotGrpcAddr)
 	if err != nil {
 		t.Fatal(err)
 	}
+	// 发送CDS请求
 	err = sendCDSReq(sidecarId(testIp(0x0a120001), "app3"), ads)
 	if err != nil {
 		t.Fatal(err)
@@ -297,6 +308,7 @@ func multipleRequest(server *bootstrap.Server, inc bool, nclients,
 		go func(id int) {
 			defer wg.Done()
 			// Connect and get initial response
+			// 连接并且获取initial response
 			adsc, err := adsc.Dial(util.MockPilotGrpcAddr, "", &adsc.Config{
 				IP: testIp(uint32(0x0a100000 + id)),
 			})
@@ -307,6 +319,7 @@ func multipleRequest(server *bootstrap.Server, inc bool, nclients,
 			}
 			defer adsc.Close()
 			adsc.Watch()
+			// 等待rds
 			_, err = adsc.Wait("rds", 5*time.Second)
 			if err != nil {
 				errChan <- err
@@ -314,6 +327,7 @@ func multipleRequest(server *bootstrap.Server, inc bool, nclients,
 				return
 			}
 
+			// adsc获取的EDS数目不为0
 			if len(adsc.EDS) == 0 {
 				errChan <- errors.New("No endpoints")
 				wgConnect.Done()
@@ -323,6 +337,7 @@ func multipleRequest(server *bootstrap.Server, inc bool, nclients,
 			wgConnect.Done()
 
 			// Check we received all pushes
+			// 检测我们得到了所有的pushes
 			log.Println("Waiting for pushes ", id)
 			for j := 0; j < nPushes; j++ {
 				// The time must be larger than write timeout: if we run all tests
@@ -349,6 +364,7 @@ func multipleRequest(server *bootstrap.Server, inc bool, nclients,
 	log.Println("Done connecting")
 
 	// All clients are connected - this can start pushing changes.
+	// 所有的clients都已经连接 - 可以开始推送变更了
 	for j := 0; j < nPushes; j++ {
 		if inc {
 			// This will be throttled - we want to trigger a single push
@@ -359,6 +375,7 @@ func multipleRequest(server *bootstrap.Server, inc bool, nclients,
 			}
 			server.EnvoyXdsServer.AdsPushAll(strconv.Itoa(j), server.EnvoyXdsServer.Env.PushContext, false, updates)
 		} else {
+			// 开始全量推送
 			v2.AdsPushAll(server.EnvoyXdsServer)
 		}
 		log.Println("Push done ", j)

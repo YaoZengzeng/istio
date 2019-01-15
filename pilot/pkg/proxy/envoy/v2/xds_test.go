@@ -455,6 +455,7 @@ func newEndpointWithAccount(ip, account, version string) []*model.IstioEndpoint 
 			Address:         ip,
 			ServicePortName: "http-main",
 			EndpointPort:    80,
+			// labels中设置version
 			Labels:          map[string]string{"version": version},
 			UID:             "uid1",
 			ServiceAccount:  account,

@@ -71,6 +71,7 @@ type Service struct {
 	// service DNS name.  External services are name-based solution to represent
 	// external service instances as a service inside the cluster.
 	// Deprecated : made obsolete by the MeshExternal and Resolution flags.
+	// ExternalName只针对external services设置并且保存external service DNS name
 	ExternalName Hostname `json:"external"`
 
 	// ServiceAccounts specifies the service accounts that run the service.
@@ -92,6 +93,11 @@ type Service struct {
 	// could either use DNS load balancing (i.e. proxy will query DNS server for the IP of the service)
 	// or use the passthrough model (i.e. proxy will forward the traffic to the network endpoint requested
 	// by the caller)
+	// Resolution表明在路由流量之前，service实例应该如何解析
+	// 大多数service registry中的services会使用static load balancing
+	// proxy会决定接受流量的service instance
+	// service entries可以使用DNS load balancing（proxy会通过查询DNS server获取service的IP）
+	// 或者使用passthrough model (proxy会将流量转发到调用者请求的network endpoint)
 	Resolution Resolution
 
 	// CreationTime records the time this service was created, if available.

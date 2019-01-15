@@ -179,6 +179,7 @@ func sendEDSNack(clusters []string, node string, edsstr ads.AggregatedDiscoveryS
 // If pilot is reset, envoy will connect with a nonce/version info set on the previous
 // connection to pilot. In HA case this may be a different pilot. This is a regression test for
 // reconnect problems.
+// 如果pilot被重置了，envoy会用之前连接的nonce/version信息进行连接
 func sendEDSReqReconnect(clusters []string, edsstr ads.AggregatedDiscoveryService_StreamAggregatedResourcesClient, res *xdsapi.DiscoveryResponse) error {
 	// 发送重连请求
 	err := edsstr.Send(&xdsapi.DiscoveryRequest{

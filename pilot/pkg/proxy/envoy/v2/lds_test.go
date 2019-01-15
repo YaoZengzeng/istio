@@ -30,6 +30,7 @@ func TestLDS(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// 发送LDS请求，当节点为sidecar时
 		err = sendLDSReq(sidecarId(app3Ip, "app3"), ldsr)
 		if err != nil {
 			t.Fatal(err)
@@ -50,6 +51,7 @@ func TestLDS(t *testing.T) {
 	})
 
 	// 'router' or 'gateway' type of listener
+	// 当listener类型为'router'或者'gateway'时
 	t.Run("gateway", func(t *testing.T) {
 		ldsr, err := connectADS(util.MockPilotGrpcAddr)
 		if err != nil {
@@ -80,6 +82,7 @@ func TestLDS(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// 当节点为ingress类型时
 		err = sendLDSReq(ingressId(ingressIP), ldsr)
 		if err != nil {
 			t.Fatal(err)

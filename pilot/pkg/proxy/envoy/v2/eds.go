@@ -546,6 +546,7 @@ func (s *DiscoveryServer) WorkloadUpdate(id string, labels map[string]string, an
 // 并且它避免了从Endpoint到ServiceEntry的转换，并且只需要在endpoint第一次被发现时转换一次
 func (s *DiscoveryServer) EDSUpdate(shard, serviceName string,
 	entries []*model.IstioEndpoint) error {
+	// 参数internal为false
 	return s.edsUpdate(shard, serviceName, entries, false)
 }
 

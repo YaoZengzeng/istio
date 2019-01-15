@@ -203,6 +203,7 @@ type IstioEndpoint struct {
 
 	// ServiceAccount holds the associated service account.
 	// May be replaced once a better optimization/struct is available for secure naming.
+	// ServiceAccount保存和service account相关的信息
 	ServiceAccount string
 }
 

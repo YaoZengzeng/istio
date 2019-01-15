@@ -78,6 +78,7 @@ func TestAdsReconnect(t *testing.T) {
 	_, _ = adsReceive(edsstr, 5*time.Second)
 
 	// envoy restarts and reconnects
+	// envoy重启并且重连
 	edsstr2, err := connectADS(util.MockPilotGrpcAddr)
 	if err != nil {
 		t.Fatal(err)
@@ -90,11 +91,13 @@ func TestAdsReconnect(t *testing.T) {
 	_, _ = adsReceive(edsstr2, 5*time.Second)
 
 	// closes old process
+	// 关闭老的edsstr进程
 	_ = edsstr.CloseSend()
 
 	time.Sleep(1 * time.Second)
 
 	// event happens
+	// 事件发生
 	v2.AdsPushAll(s.EnvoyXdsServer)
 	// will trigger recompute and push (we may need to make a change once diff is implemented
 	// 会触发重新计算以及push
@@ -123,6 +126,7 @@ func TestTLS(t *testing.T) {
 	}
 }
 
+// 检测ads cluster更新
 func TestAdsClusterUpdate(t *testing.T) {
 	server := initLocalPilotTestEnv(t)
 	edsstr, err := connectADS(util.MockPilotGrpcAddr)
@@ -131,10 +135,12 @@ func TestAdsClusterUpdate(t *testing.T) {
 	}
 
 	var sendEDSReqAndVerify = func(clusterName string) {
+		// 发送EDS请求
 		err = sendEDSReq([]string{clusterName}, sidecarId("1.1.1.1", "app3"), edsstr)
 		if err != nil {
 			t.Fatal(err)
 		}
+		// 接收EDS response
 		res, err := adsReceive(edsstr, 5*time.Second)
 		if err != nil {
 			t.Fatal("Recv failed", err)
@@ -147,6 +153,7 @@ func TestAdsClusterUpdate(t *testing.T) {
 			t.Error("Expecting type.googleapis.com/envoy.api.v2.ClusterLoadAssignment got ", res.Resources[0].TypeUrl)
 		}
 
+		// 获取load assignment
 		cla, err := getLoadAssignment(res)
 		if err != nil {
 			t.Fatal("Invalid EDS response ", err)
@@ -163,6 +170,7 @@ func TestAdsClusterUpdate(t *testing.T) {
 	sendEDSReqAndVerify(cluster1)
 
 	// register a second endpoint
+	// 注册第二个endpoint
 	_ = server.EnvoyXdsServer.MemRegistry.AddEndpoint("adsupdate2.default.svc.cluster.local",
 		"http-status", 2080, "10.2.0.2", 1081)
 

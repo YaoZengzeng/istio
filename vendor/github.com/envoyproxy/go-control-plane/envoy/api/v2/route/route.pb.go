@@ -151,9 +151,13 @@ func (RedirectAction_RedirectResponseCode) EnumDescriptor() ([]byte, []int) {
 // host header. This allows a single listener to service multiple top level domain path trees. Once
 // a virtual host is selected based on the domain, the routes are processed in order to see which
 // upstream cluster to route to or whether to perform a redirect.
+// routing configuration中的顶层组件是virtual host，每个virtual host都有一个logical name以及一系列的domains
+// 根据incoming request的host header进行路由，这允许单个的listener为多个顶层的domain path trees服务
+// 一旦一个virtual host基于domain被选中，routes就会被处理，从而获取路由的upstream cluster或者执行一个重定向
 type VirtualHost struct {
 	// The logical name of the virtual host. This is used when emitting certain
 	// statistics but is not relevant for routing.
+	// virtual host的logical name，但是和路由无关
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A list of domains (host/authority header) that will be matched to this
 	// virtual host. Wildcard hosts are supported in the form of “*.foo.com” or
@@ -167,9 +171,13 @@ type VirtualHost struct {
 	//   host/authority header. Only a single virtual host in the entire route
 	//   configuration can match on “*”. A domain must be unique across all virtual
 	//   hosts or the config will fail to load.
+	//   "*"可以匹配任何的host/authority header, 在整个route configuration中，只有一个virtual
+	//   host可以包含"*"，一个domain必须在所有virtual hosts都是独一无二的，否则config会加载失败
 	Domains []string `protobuf:"bytes,2,rep,name=domains" json:"domains,omitempty"`
 	// The list of routes that will be matched, in order, for incoming requests.
 	// The first route that matches will be used.
+	// 对于incoming requests，一系列用于匹配的routes
+	// 第一个被匹配的route会被使用
 	Routes []Route `protobuf:"bytes,3,rep,name=routes" json:"routes"`
 	// Specifies the type of TLS enforcement the virtual host expects. If this option is not
 	// specified, there is no TLS requirement for the virtual host.
@@ -291,6 +299,7 @@ func (m *VirtualHost) GetPerFilterConfig() map[string]*google_protobuf.Struct {
 
 // A route is both a specification of how to match a request as well as an indication of what to do
 // next (e.g., redirect, forward, rewrite, etc.).
+// 一个route既说明了如何匹配一个请求，也说明了匹配成功之后该做什么（重定向，转发，重新）
 //
 // .. attention::
 //

@@ -46,9 +46,11 @@ type Config struct {
 	Workload string
 
 	// Meta includes additional metadata for the node
+	// Meta包含了node额外的元数据
 	Meta map[string]string
 
 	// NodeType defaults to sidecar. "ingress" and "router" are also supported.
+	// NodeType默认为sidecar，"ingress"和"router"也同时支持
 	NodeType string
 	IP       string
 }
@@ -93,6 +95,7 @@ type ADSC struct {
 	// Updates includes the type of the last update received from the server.
 	// Updates包含从server接收到的最新更新的type
 	Updates     chan string
+	// 记录各个资源类型的版本信息
 	VersionInfo map[string]string
 
 	mutex sync.Mutex
@@ -141,6 +144,7 @@ func Dial(url string, certDir string, opts *Config) (*ADSC, error) {
 		opts.Workload = "test-1"
 	}
 
+	// 根据Config构建nodeID
 	adsc.nodeID = fmt.Sprintf("sidecar~%s~%s.%s~%s.svc.cluster.local", opts.IP,
 		opts.Workload, opts.Namespace, opts.Namespace)
 
@@ -297,6 +301,7 @@ func (a *ADSC) handleRecv() {
 		// TODO: add hook to inject nacks
 		a.ack(msg)
 
+		// 分别对接受到的listners, clusters, eds以及routes进行处理
 		if len(listeners) > 0 {
 			a.handleLDS(listeners)
 		}
@@ -314,7 +319,9 @@ func (a *ADSC) handleRecv() {
 }
 
 func (a *ADSC) handleLDS(ll []*xdsapi.Listener) {
+	// 包含http proxy的listener
 	lh := map[string]*xdsapi.Listener{}
+	// 包含tcp proxy的listener
 	lt := map[string]*xdsapi.Listener{}
 
 	clusters := []string{}
@@ -374,6 +381,7 @@ func (a *ADSC) handleCDS(ll []*xdsapi.Cluster) {
 	cds := map[string]*xdsapi.Cluster{}
 	for _, c := range ll {
 		cdsSize += c.Size()
+		// 如果返回的Cluster类型为EDS，则保存
 		if c.Type != xdsapi.Cluster_EDS {
 			// TODO: save them
 			continue
@@ -385,6 +393,7 @@ func (a *ADSC) handleCDS(ll []*xdsapi.Cluster) {
 	log.Println("CDS: ", len(cn), "size=", cdsSize)
 
 	if len(cn) > 0 {
+		// 对于EDS类型的cluster，发送eds请求
 		a.sendRsc(endpointType, cn)
 	}
 
@@ -459,13 +468,17 @@ func (a *ADSC) handleRDS(configurations []*xdsapi.RouteConfiguration) {
 	httpClusters := []string{}
 	rds := map[string]*xdsapi.RouteConfiguration{}
 
+	// 遍历RouteConfiguration
 	for _, r := range configurations {
+		// 遍历RouteConfiguration的VirtualHosts
 		for _, h := range r.VirtualHosts {
 			vh++
+			// 遍历VirtualHosts的Routes
 			for _, rt := range h.Routes {
 				rcount++
 				// Example: match:<prefix:"/" > route:<cluster:"outbound|9154||load-se-154.local" ...
 				//log.Println(rt.String())
+				// 从route中获取cluster信息
 				httpClusters = append(httpClusters, rt.GetRoute().GetCluster())
 			}
 		}
