@@ -103,15 +103,20 @@ type Controller struct {
 
 	// Env is set by server to point to the environment, to allow the controller to
 	// use env data and push status. It may be null in tests.
+	// Env是由server设置的用于指向environment，从而允许controller使用env data以及push status
+	// 在测试中可能为null
 	Env *model.Environment
 
 	// ClusterID identifies the remote cluster in a multicluster env.
+	// ClusterID表示在多cluster环境中的remote cluster
 	ClusterID string
 
 	// XDSUpdater will push EDS changes to the ADS model.
+	// XDSUpdater会将EDS的变更推送到ADS模型
 	EDSUpdater model.XDSUpdater
 
 	// ConfigUpdater is used to request global config updates.
+	// ConfigUpdater用来请求全局的config更新
 	ConfigUpdater model.ConfigUpdater
 
 	stop chan struct{}
@@ -126,10 +131,12 @@ type cacheHandler struct {
 // Created by bootstrap and multicluster (see secretcontroler).
 // NewController创建一个新的Kubernetes controller
 func NewController(client kubernetes.Interface, options ControllerOptions) *Controller {
+	// Service controller监听某个namespace中的service, endpoint, nodes以及pods，每隔options.ResyncPeriod刷新一次
 	log.Infof("Service controller watching namespace %q for service, endpoint, nodes and pods, refresh %d",
 		options.WatchedNamespace, options.ResyncPeriod)
 
 	// Queue requires a time duration for a retry delay after a handler error
+	// Queue在一个handler error之后需要一个时间间隔作为retry delay
 	out := &Controller{
 		domainSuffix:  options.DomainSuffix,
 		client:        client,
@@ -148,6 +155,7 @@ func NewController(client kubernetes.Interface, options ControllerOptions) *Cont
 		})
 
 	if out.EDSUpdater != nil {
+		// 如果EDSUpdater不为nil，则调用特定的createEDSInformer
 		out.endpoints = out.createEDSInformer(&v1.Endpoints{}, "Endpoints", options.ResyncPeriod,
 			func(opts meta_v1.ListOptions) (runtime.Object, error) {
 				return client.CoreV1().Endpoints(options.WatchedNamespace).List(opts)
@@ -165,6 +173,7 @@ func NewController(client kubernetes.Interface, options ControllerOptions) *Cont
 			})
 	}
 
+	// 创建node的informer
 	out.nodes = out.createInformer(&v1.Node{}, "Node", options.ResyncPeriod,
 		func(opts meta_v1.ListOptions) (runtime.Object, error) {
 			return client.CoreV1().Nodes().List(opts)
@@ -173,6 +182,7 @@ func NewController(client kubernetes.Interface, options ControllerOptions) *Cont
 			return client.CoreV1().Nodes().Watch(opts)
 		})
 
+	// 
 	out.pods = newPodCache(out.createInformer(&v1.Pod{}, "Pod", options.ResyncPeriod,
 		func(opts meta_v1.ListOptions) (runtime.Object, error) {
 			return client.CoreV1().Pods(options.WatchedNamespace).List(opts)
@@ -199,6 +209,8 @@ func (c *Controller) notify(obj interface{}, event model.Event) error {
 // Used for Service, Endpoint, Node and Pod.
 // See config/kube for CRD events.
 // See config/ingress for Ingress objects
+// createInformer为特定的event注册handlers
+// 当前的实现在queue.go中缓存了events，handler也进行了一定的限速
 func (c *Controller) createInformer(
 	o runtime.Object,
 	otype string,
@@ -237,6 +249,7 @@ func (c *Controller) createInformer(
 }
 
 // createEDSInformer is a special informer for Endpoints
+// createEDSInformer是一个专为Endpoints创建的informer
 func (c *Controller) createEDSInformer(
 	o runtime.Object,
 	otype string,
@@ -258,10 +271,14 @@ func (c *Controller) createEDSInformer(
 				// this requires pods to be updated before, and code to deal with eventual consistency,
 				// otherwise enpdoint update is too fast.
 				//c.updateEDS(obj.(*v1.Endpoints))
+				// 我们希望传播得更快，不需要等待queue
+				// 然而这需要pods之前已被更新，以及用于处理最终一致性的代码
+				// 否则endpoint的更新太快
 				c.queue.Push(Task{handler: handler.Apply, obj: obj, event: model.EventAdd})
 			},
 			UpdateFunc: func(old, cur interface{}) {
 				// Avoid pushes if only resource version changed (kube-scheduller, cluster-autoscaller, etc)
+				// 如果只有resouce version改变了，则避免推送
 				oldE := old.(*v1.Endpoints)
 				curE := cur.(*v1.Endpoints)
 
@@ -278,6 +295,7 @@ func (c *Controller) createEDSInformer(
 				// Deleting the endpoints results in an empty set from EDS perspective - only
 				// deleting the service should delete the resources. The full sync replaces the
 				// maps.
+				// 从EDS的角度，删除endpoints导致空集 - 只有删除service才能删除相应的资源
 				//c.updateEDS(obj.(*v1.Endpoints))
 				c.queue.Push(Task{handler: handler.Apply, obj: obj, event: model.EventDelete})
 			},
@@ -298,6 +316,7 @@ func (c *Controller) HasSynced() bool {
 }
 
 // Run all controllers until a signal is received
+// 运行所有的controllers直到接受到信号
 func (c *Controller) Run(stop <-chan struct{}) {
 	go c.queue.Run(stop)
 
@@ -306,6 +325,7 @@ func (c *Controller) Run(stop <-chan struct{}) {
 	go c.nodes.informer.Run(stop)
 
 	// To avoid endpoints without labels or ports, wait for sync.
+	// 为了避免endpoints没有labels或者ports，等待同步
 	cache.WaitForCacheSync(stop, c.nodes.informer.HasSynced, c.pods.informer.HasSynced,
 		c.services.informer.HasSynced)
 

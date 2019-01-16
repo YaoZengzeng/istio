@@ -79,6 +79,7 @@ func convertService(svc v1.Service, domainSuffix string) *model.Service {
 	}
 
 	if addr == model.UnspecifiedIP && external == "" { // headless services should not be load balanced
+		// 对于headless service，不应该使用load balance
 		loadBalancingDisabled = true
 		resolution = model.Passthrough
 	}
@@ -123,6 +124,7 @@ func convertService(svc v1.Service, domainSuffix string) *model.Service {
 }
 
 // serviceHostname produces FQDN for a k8s service
+// serviceHostname为一个k8s service创建FQDN
 func serviceHostname(name, namespace, domainSuffix string) model.Hostname {
 	return model.Hostname(fmt.Sprintf("%s.%s.svc.%s", name, namespace, domainSuffix))
 }

@@ -266,16 +266,21 @@ type IstioConfigStore interface {
 	ConfigStore
 
 	// ServiceEntries lists all service entries
+	// ServiceENtries列举所有的service entries
 	ServiceEntries() []Config
 
 	// Gateways lists all gateways bound to the specified workload labels
+	// Gateways列举所有和特定的workload labels相关的gateways
 	Gateways(workloadLabels LabelsCollection) []Config
 
 	// EnvoyFilter lists the envoy filter configuration bound to the specified workload labels
+	// EnvoyFilter列举所有和特定的workload labels相关的envoy filter
 	EnvoyFilter(workloadLabels LabelsCollection) *Config
 
 	// HTTPAPISpecByDestination selects Mixerclient HTTP API Specs
 	// associated with destination service instances.
+	// HTTPAPISpecByDestination筛选出和目标service instances相关的
+	// Mixerclient HTTP API SPecs
 	HTTPAPISpecByDestination(instance *ServiceInstance) []Config
 
 	// QuotaSpecByDestination selects Mixerclient quota specifications

@@ -82,6 +82,7 @@ type DiscoveryServer struct {
 	ConfigController model.ConfigStoreCache
 
 	// separate rate limiter for initial connection
+	// 对初始连接的建立进行限速
 	initThrottle chan time.Time
 
 	throttle chan time.Time
@@ -106,6 +107,7 @@ type DiscoveryServer struct {
 	WorkloadsByID map[string]*Workload
 
 	// ConfigUpdater implements the debouncing and tracks the change detection.
+	// ConfigUpdater实现了对于change detection的去抖以及追踪
 	// This is used to decouple the envoy/v2 from envoy/, artifact of the v1 deprecation.
 	// In 1.1 we'll simplify/cleanup further.
 	ConfigUpdater model.ConfigUpdater
@@ -153,6 +155,7 @@ func NewDiscoveryServer(env *model.Environment, generator core.ConfigGenerator) 
 		WorkloadsByID:           map[string]*Workload{},
 		edsUpdates:              map[string]*model.EndpointShardsByService{},
 	}
+	// 新建一个全局的PushContext
 	env.PushContext = model.NewPushContext()
 
 	go out.periodicRefresh()
@@ -167,9 +170,11 @@ func NewDiscoveryServer(env *model.Environment, generator core.ConfigGenerator) 
 	adsLog.Infof("Starting ADS server with throttle=%d burst=%d", pushThrottle, pushBurst)
 
 	// throttle rate limits the amount of `pushALL` work that is started as a result of events.
+	// 限制pushALl的速率
 	out.throttle = initThrottle("adsPushAll", pushBurst, pushThrottle)
 
 	// init throttle rate limits starting work on new connections from sidecars.
+	// 限制和sidecar建立新连接的速率
 	out.initThrottle = initThrottle("initConnection", pushBurst*2, pushThrottle*2)
 
 	// Note: in both cases it does not directly limit the amount of work being perform concurrently.

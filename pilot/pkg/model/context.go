@@ -37,9 +37,11 @@ type Environment struct {
 
 	// Accounts interface for listing service accounts
 	// Deprecated - use PushContext.ServiceAccounts
+	// Accounts接口用于列举service account
 	ServiceAccounts
 
 	// Config interface for listing routing rules
+	// Config interface用于列举routing rules
 	IstioConfigStore
 
 	// Mesh is the mesh config (to be merged into the config store)

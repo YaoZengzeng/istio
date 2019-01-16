@@ -42,6 +42,7 @@ import (
 // In future (post 1.0) it may be used for representing remote pilots.
 
 // InitDebug initializes the debug handlers and adds a debug in-memory registry.
+// InitDebug初始化debug handlers并且增加了一个debug in-memory registry
 func (s *DiscoveryServer) InitDebug(mux *http.ServeMux, sctl *aggregate.Controller, cfg model.ConfigUpdater) {
 	// For debugging and load testing v2 we add an memory registry.
 	s.MemRegistry = NewMemServiceDiscovery(

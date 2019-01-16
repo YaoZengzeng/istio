@@ -91,6 +91,7 @@ var (
 
 	// Default is enabled - can be set to "0" to restore previous behavior, in case of problems.
 	// Will be removed in 1.1 or 1.0.4 if we see no issues.
+	// 默认是开启的 - 可以设置为"0"从而恢复到之前的行为
 	directEDS = os.Getenv("PILOT_DIRECT_EDS") != "0"
 )
 
@@ -602,7 +603,9 @@ func (s *Server) makeCopilotMonitor(args *PilotArgs, configController model.Conf
 }
 
 // createK8sServiceControllers creates all the k8s service controllers under this pilot
+// createK8sServiceControllers在pilot之下创建所有k8s service controllers
 func (s *Server) createK8sServiceControllers(serviceControllers *aggregate.Controller, args *PilotArgs) (err error) {
+	// clusterID即为"Kubernetes"
 	clusterID := string(serviceregistry.KubernetesRegistry)
 	log.Infof("Primary Cluster name: %s", clusterID)
 	args.Config.ControllerOptions.ClusterID = clusterID
@@ -671,6 +674,7 @@ func (s *Server) initServiceControllers(args *PilotArgs) error {
 			// 初始化memory registry
 			s.initMemoryRegistry(serviceControllers)
 		case serviceregistry.KubernetesRegistry:
+			// 创建kubernetes registry
 			if err := s.createK8sServiceControllers(serviceControllers, args); err != nil {
 				return err
 			}
@@ -816,13 +820,16 @@ func (s *Server) initDiscoveryService(args *PilotArgs) error {
 	s.EnvoyXdsServer = envoyv2.NewDiscoveryServer(environment, istio_networking.NewConfigGenerator(args.Plugins))
 	s.EnvoyXdsServer.ConfigUpdater = s.discoveryService
 	// TODO: decouple v2 from the cache invalidation, use direct listeners.
+	// 设置上级envoy目录的Push变量为s.EnvoyXdsServer.Push函数
 	envoy.Push = s.EnvoyXdsServer.Push
+	// 设置上级envoy目录的Push变量为s.EnvoyXdsServer.BeforePush函数
 	envoy.BeforePush = s.EnvoyXdsServer.BeforePush
 
 	s.EnvoyXdsServer.Register(s.grpcServer)
 
 	if s.kubeRegistry != nil {
 		// kubeRegistry may use the environment for push status reporting.
+		// kubeRegistry可能使用environment用于推送状态的报告
 		// TODO: maybe all registries should have his as an optional field ?
 		s.kubeRegistry.Env = environment
 		s.kubeRegistry.ConfigUpdater = discovery

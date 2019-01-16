@@ -113,9 +113,11 @@ func init() {
 		"Disable discovery service from verifying the existence of CRDs at startup and then installing if not detected.  "+
 			"It is recommended to be disable for highly available setups.")
 	discoveryCmd.PersistentFlags().StringVar(&serverArgs.Config.FileDir, "configDir", "",
+		// 如果指定了FileDir，则这些文件作为config的来源而不是CRD client
 		"Directory to watch for updates to config yaml files. If specified, the files will be used as the source of config, rather than a CRD client.")
 	discoveryCmd.PersistentFlags().StringVarP(&serverArgs.Config.ControllerOptions.WatchedNamespace, "appNamespace",
 		"a", metav1.NamespaceAll,
+		// 默认监听所有的namespaces
 		"Restrict the applications namespace the controller manages; if not set, controller watches all namespaces")
 	discoveryCmd.PersistentFlags().DurationVar(&serverArgs.Config.ControllerOptions.ResyncPeriod, "resync", 60*time.Second,
 		"Controller resync interval")

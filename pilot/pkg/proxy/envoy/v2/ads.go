@@ -342,8 +342,10 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream ads.AggregatedDiscove
 	t0 := time.Now()
 	// rate limit the herd, after restart all endpoints will reconnect to the
 	// poor new pilot and overwhelm it.
+	// 进行限速，在重启之后所有的endpoints都会重连新的pilot并且压到它
 	// TODO: instead of readiness probe, let endpoints connect and wait here for
 	// config to become stable. Will better spread the load.
+	// 让endpoints连接并且等待直到config稳定，可以更好地分散负载
 	<-s.initThrottle
 
 	// first call - lazy loading, in tests. This should not happen if readiness

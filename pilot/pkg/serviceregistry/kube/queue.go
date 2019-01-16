@@ -31,9 +31,11 @@ type Queue interface {
 }
 
 // Handler specifies a function to apply on an object for a given event type
+// Handler指定了一个函数用于对一个对象应用给定的事件类型
 type Handler func(obj interface{}, event model.Event) error
 
 // Task object for the event watchers; processes until handler succeeds
+// Task对象用于event watchers；处理直到handler成功
 type Task struct {
 	handler Handler
 	obj     interface{}
@@ -53,6 +55,7 @@ type queueImpl struct {
 }
 
 // NewQueue instantiates a queue with a processing function
+// NewQueue用一个processing function实例化一个queue
 func NewQueue(errorDelay time.Duration) Queue {
 	return &queueImpl{
 		delay:   errorDelay,
@@ -87,6 +90,7 @@ func (q *queueImpl) Run(stop <-chan struct{}) {
 
 		if len(q.queue) == 0 {
 			q.cond.L.Unlock()
+			// 如果队列长度为0，则必须关闭
 			// We must be shutting down.
 			return
 		}

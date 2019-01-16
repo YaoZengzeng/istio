@@ -44,6 +44,7 @@ import (
 )
 
 // IstioObject is a k8s wrapper interface for config objects
+// IstioObject是一个config objects对于k8s接口的一个封装
 type IstioObject interface {
 	runtime.Object
 	GetSpec() map[string]interface{}
@@ -59,6 +60,7 @@ type IstioObjectList interface {
 }
 
 // Client is a basic REST client for CRDs implementing config store
+// Client是一个基本的REST client用于操作CRDs的config store
 type Client struct {
 	// Map of apiVersion to restClient.
 	clientset map[string]*restClient

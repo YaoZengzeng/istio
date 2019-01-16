@@ -30,11 +30,13 @@ import (
 
 // ConvertObject converts an IstioObject k8s-style object to the
 // internal configuration model.
+// ConvertObject将一个k8s风格的IstioObject转换为内部的configuration model
 func ConvertObject(schema model.ProtoSchema, object IstioObject, domain string) (*model.Config, error) {
 	data, err := schema.FromJSONMap(object.GetSpec())
 	if err != nil {
 		return nil, err
 	}
+	// 获取元数据
 	meta := object.GetObjectMeta()
 
 	//// FIXME this is a gross hack to hardcode a service's domain name in kubernetes

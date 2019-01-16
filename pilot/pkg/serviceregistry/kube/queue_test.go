@@ -34,6 +34,7 @@ func TestQueue(t *testing.T) {
 		if out == 4 {
 			close(done)
 		}
+		// 第一个task会重新入队
 		if !err {
 			return nil
 		}
@@ -53,6 +54,7 @@ func TestQueue(t *testing.T) {
 	}, obj: 1})
 
 	// wait for all task processed
+	// 等待所有process处理完成
 	<-done
 	close(stop)
 }
@@ -68,6 +70,7 @@ func TestChainedHandler(t *testing.T) {
 			return nil
 		}
 	}
+	// handler.Apply会依次调用ChainHandler中包含的各个handler
 	handler := ChainHandler{
 		funcs: []Handler{f(1), f(2)},
 	}

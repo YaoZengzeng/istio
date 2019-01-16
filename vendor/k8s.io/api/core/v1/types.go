@@ -3708,6 +3708,7 @@ type ServiceAccountList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Endpoints is a collection of endpoints that implement the actual service. Example:
+// Endpoints是一系列实现了actual service的endpoints
 //   Name: "mysvc",
 //   Subsets: [
 //     {

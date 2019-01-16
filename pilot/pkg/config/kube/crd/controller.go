@@ -35,6 +35,8 @@ import (
 
 // controller is a collection of synchronized resource watchers.
 // Caches are thread-safe
+// controller是一个同步的resource watchers的集合
+// Caches是线程安全的
 type controller struct {
 	client *Client
 	queue  kube.Queue
@@ -43,6 +45,7 @@ type controller struct {
 
 type cacheHandler struct {
 	informer cache.SharedIndexInformer
+	// ChainHandler线性调用注册的handler
 	handler  *kube.ChainHandler
 }
 
@@ -69,10 +72,13 @@ func init() {
 
 // NewController creates a new Kubernetes controller for CRDs
 // Use "" for namespace to listen for all namespace changes
+// NewController创建一个新的Kubernetes controller
+// 如果namespace为""则监听所有的namespace更新
 func NewController(client *Client, options kube.ControllerOptions) model.ConfigStoreCache {
 	log.Infof("CRD controller watching namespaces %q", options.WatchedNamespace)
 
 	// Queue requires a time duration for a retry delay after a handler error
+	// Queue需要一个时间间隔用于在一个handler错误之后进行的retry delay
 	out := &controller{
 		client: client,
 		queue:  kube.NewQueue(1 * time.Second),
@@ -80,6 +86,7 @@ func NewController(client *Client, options kube.ControllerOptions) model.ConfigS
 	}
 
 	// add stores for CRD kinds
+	// 为各种CRD创建stores
 	for _, schema := range client.ConfigDescriptor() {
 		out.addInformer(schema, options.WatchedNamespace, options.ResyncPeriod)
 	}
@@ -88,6 +95,8 @@ func NewController(client *Client, options kube.ControllerOptions) model.ConfigS
 }
 
 func (c *controller) addInformer(schema model.ProtoSchema, namespace string, resyncPeriod time.Duration) {
+	// 为各个类型创建informer
+	// 倒数第二个参数为List函数，倒数第一个函数为Watch函数
 	c.kinds[schema.Type] = c.createInformer(knownTypes[schema.Type].object.DeepCopyObject(), schema.Type, resyncPeriod,
 		func(opts meta_v1.ListOptions) (result runtime.Object, err error) {
 			result = knownTypes[schema.Type].collection.DeepCopyObject()
@@ -123,8 +132,11 @@ func (c *controller) addInformer(schema model.ProtoSchema, namespace string, res
 
 // notify is the first handler in the handler chain.
 // Returning an error causes repeated execution of the entire chain.
+// notify是handler chain中的第一个handler
+// 返回error会导致整个handler chain的重新执行
 func (c *controller) notify(obj interface{}, event model.Event) error {
 	if !c.HasSynced() {
+		// 等待直到全部完成
 		return errors.New("waiting till full synchronization")
 	}
 	_, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
@@ -141,18 +153,24 @@ func (c *controller) createInformer(
 	lf cache.ListFunc,
 	wf cache.WatchFunc) cacheHandler {
 	handler := &kube.ChainHandler{}
+	// 在hanler中增加c.notify函数
 	handler.Append(c.notify)
 
 	// TODO: finer-grained index (perf)
+	// 调用k8s库，创建informer
 	informer := cache.NewSharedIndexInformer(
 		&cache.ListWatch{ListFunc: lf, WatchFunc: wf}, o,
 		resyncPeriod, cache.Indexers{})
 
 	informer.AddEventHandler(
+		// 创建事件处理函数
 		cache.ResourceEventHandlerFuncs{
 			// TODO: filtering functions to skip over un-referenced resources (perf)
+			// 增加过滤函数用于跳过无关的资源
 			AddFunc: func(obj interface{}) {
 				k8sEvents.With(prometheus.Labels{"type": otype, "event": "add"}).Add(1)
+				// 将从k8s获取的事件推送到c.queue中
+				// 此处的handler就是各个类型对应的handler
 				c.queue.Push(kube.NewTask(handler.Apply, obj, model.EventAdd))
 			},
 			UpdateFunc: func(old, cur interface{}) {
@@ -184,6 +202,7 @@ func (c *controller) RegisterEventHandler(typ string, f func(model.Config, model
 			if err != nil {
 				log.Warnf("error translating object for schema %#v : %v\n Object:\n%#v", schema, err, object)
 			} else {
+				// 调用处理函数进行处理
 				f(*config, ev)
 			}
 		}
@@ -192,6 +211,7 @@ func (c *controller) RegisterEventHandler(typ string, f func(model.Config, model
 }
 
 func (c *controller) HasSynced() bool {
+	// 遍历各个类型，检测是否同步完成
 	for kind, ctl := range c.kinds {
 		if !ctl.informer.HasSynced() {
 			log.Infof("controller %q is syncing...", kind)
@@ -202,8 +222,10 @@ func (c *controller) HasSynced() bool {
 }
 
 func (c *controller) Run(stop <-chan struct{}) {
+	// 运行queue
 	go c.queue.Run(stop)
 
+	// 运行各个handler
 	for _, ctl := range c.kinds {
 		go ctl.informer.Run(stop)
 	}
@@ -222,6 +244,7 @@ func (c *controller) Get(typ, name, namespace string) (*model.Config, bool) {
 		return nil, false
 	}
 
+	// 找到对应类型的informer的store
 	store := c.kinds[typ].informer.GetStore()
 	data, exists, err := store.GetByKey(kube.KeyFunc(name, namespace))
 	if !exists {
@@ -238,6 +261,7 @@ func (c *controller) Get(typ, name, namespace string) (*model.Config, bool) {
 		return nil, false
 	}
 
+	// 将IstioObject类型的对象转换为model.Config
 	config, err := ConvertObject(schema, obj, c.client.domainSuffix)
 	if err != nil {
 		return nil, false
