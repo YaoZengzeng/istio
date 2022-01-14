@@ -130,6 +130,7 @@ var (
 		"Kuberenetes service host, set automatically when running in-cluster")
 
 	// ThirdPartyJWTPath is the well-known location of the projected K8S JWT. This is mounted on all workloads, as well as istiod.
+	// ThirdPartyJWTPath是projected K8S JWT的已知地址，它会挂载到所有的负载上，同样包含istiod
 	ThirdPartyJWTPath = "./var/run/secrets/tokens/istio-token"
 
 	// This value can also be extracted from the mounted token

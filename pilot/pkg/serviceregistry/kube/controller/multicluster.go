@@ -50,6 +50,7 @@ type kubeController struct {
 }
 
 // Multicluster structure holds the remote kube Controllers and multicluster specific attributes.
+// Multicluster结构维护远程的kube Controllers以及multicluster特定的特性
 type Multicluster struct {
 	WatchedNamespaces string
 	DomainSuffix      string
@@ -74,6 +75,7 @@ type Multicluster struct {
 
 // NewMulticluster initializes data structure to store multicluster information
 // It also starts the secret controller
+// NewMulticluster维护数据结构来存储multicluster的信息，它同时启动secret controller
 func NewMulticluster(kc kubernetes.Interface, secretNamespace string, opts Options,
 	serviceController *aggregate.Controller, xds model.XDSUpdater, networksWatcher mesh.NetworksWatcher) (*Multicluster, error) {
 
@@ -99,6 +101,7 @@ func NewMulticluster(kc kubernetes.Interface, secretNamespace string, opts Optio
 		endpointMode:          opts.EndpointMode,
 		syncInterval:          opts.GetSyncInterval(),
 	}
+	// 初始化secret controller
 	mc.initSecretController(kc)
 
 	return mc, nil
@@ -107,6 +110,8 @@ func NewMulticluster(kc kubernetes.Interface, secretNamespace string, opts Optio
 // AddMemberCluster is passed to the secret controller as a callback to be called
 // when a remote cluster is added.  This function needs to set up all the handlers
 // to watch for resources being added, deleted or changed on remote clusters.
+// AddMemberCluster作为一个回调函数添加至secret controller，当一个远端cluster被添加之后被调用
+// 这个函数需要设置所有的handlers用于远端集群资源的添加、删除或者变更
 func (m *Multicluster) AddMemberCluster(clients kubelib.Client, clusterID string) error {
 	// stopCh to stop controller created here when cluster removed.
 	stopCh := make(chan struct{})
@@ -131,11 +136,13 @@ func (m *Multicluster) AddMemberCluster(clients kubelib.Client, clusterID string
 	remoteKubeController.Controller = kubectl
 	m.serviceController.AddRegistry(kubectl)
 
+	// 构建remote KubeControllers
 	m.remoteKubeControllers[clusterID] = &remoteKubeController
 	m.m.Unlock()
 
 	// Only need to add service handler for kubernetes registry as `initRegistryEventHandlers`,
 	// because when endpoints update `XDSUpdater.EDSUpdate` has already been called.
+	// 为kubernetes registry添加service handler
 	_ = kubectl.AppendServiceHandler(func(svc *model.Service, ev model.Event) { m.updateHandler(svc) })
 
 	go kubectl.Run(stopCh)
@@ -189,13 +196,17 @@ func (m *Multicluster) DeleteMemberCluster(clusterID string) error {
 
 func (m *Multicluster) updateHandler(svc *model.Service) {
 	if m.XDSUpdater != nil {
+		// 构建PushRequest
 		req := &model.PushRequest{
 			Full: true,
 			ConfigsUpdated: map[model.ConfigKey]struct{}{{
+				// 类型为ServiceEntry
 				Kind:      gvk.ServiceEntry,
 				Name:      string(svc.Hostname),
 				Namespace: svc.Attributes.Namespace,
 			}: {}},
+			// 没有包含PushContext
+			// TriggerReason为UnknownTrigger
 			Reason: []model.TriggerReason{model.UnknownTrigger},
 		}
 		m.XDSUpdater.ConfigUpdate(req)

@@ -48,6 +48,7 @@ type RegistryOptions struct {
 }
 
 // PilotArgs provides all of the configuration parameters for the Pilot discovery service.
+// PilotArgs提供了所有Pilot服务发现所需的配置参数
 type PilotArgs struct {
 	ServerOptions      DiscoveryServerOptions
 	InjectionOptions   InjectionOptions

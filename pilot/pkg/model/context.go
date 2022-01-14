@@ -47,14 +47,18 @@ var _ mesh.Holder = &Environment{}
 var _ mesh.NetworksHolder = &Environment{}
 
 // Environment provides an aggregate environmental API for Pilot
+// Environment提供了Pilot所需的聚合环境API
 type Environment struct {
 	// Discovery interface for listing services and instances.
+	// 用于list services以及instances的Discovery接口
 	ServiceDiscovery
 
 	// Config interface for listing routing rules
+	// 用于list routing rules的Config接口
 	IstioConfigStore
 
 	// Watcher is the watcher for the mesh config (to be merged into the config store)
+	// 用于监听mesh config的watcher
 	mesh.Watcher
 
 	// NetworksWatcher (loaded from a config map) provides information about the
@@ -62,10 +66,15 @@ type Environment struct {
 	// network. Each network provides information about the endpoints in a
 	// routable L3 network. A single routable L3 network can have one or more
 	// service registries.
+	// NetworksWatcher（从configmap中加载）提供了关于一个mesh中一系列的networks的信息以及如何路由到
+	// 每个network的endpoints中，每个network提供信息关于在一个可路由的三层网络中的endpoints
+	// 单个的可路由的L3 network可以有一个或者多个service registries
 	mesh.NetworksWatcher
 
 	// PushContext holds informations during push generation. It is reset on config change, at the beginning
 	// of the pushAll. It will hold all errors and stats and possibly caches needed during the entire cache computation.
+	// PushContext维护push generation中所需的信息，它在配置变更的时候重置，在pushAll的开始
+	// 它维护所有的错误，stats以及在整个缓存计算过程中所需的缓存
 	// DO NOT USE EXCEPT FOR TESTS AND HANDLING OF NEW CONNECTIONS.
 	// ALL USE DURING A PUSH SHOULD USE THE ONE CREATED AT THE
 	// START OF THE PUSH, THE GLOBAL ONE MAY CHANGE AND REFLECT A DIFFERENT

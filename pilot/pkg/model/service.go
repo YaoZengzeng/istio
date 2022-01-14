@@ -102,6 +102,7 @@ type Service struct {
 
 	// MeshExternal (if true) indicates that the service is external to the mesh.
 	// These services are defined using Istio's ServiceEntry spec.
+	// MeshExternal（如果为true）表示service是网格之外的，这些services使用Istio的ServiceEntry结构定义
 	MeshExternal bool
 }
 
@@ -412,6 +413,7 @@ type IstioEndpoint struct {
 }
 
 // ServiceAttributes represents a group of custom attributes of the service.
+// ServiceAttributes描述了service的一系列自定义属性
 type ServiceAttributes struct {
 	// ServiceRegistry indicates the backing service registry system where this service
 	// was sourced from.
@@ -434,9 +436,11 @@ type ServiceAttributes struct {
 	LabelSelectors map[string]string
 
 	// For Kubernetes platform
+	// 针对Kubernetes平台特定的配置
 
 	// ClusterExternalAddresses is a mapping between a cluster name and the external
 	// address(es) to access the service from outside the cluster.
+	// ClusterExternalAddresses是一个cluster name和从集群外访问service的外部地址
 	// Used by the aggregator to aggregate the Attributes.ClusterExternalAddresses
 	// for clusters where the service resides
 	ClusterExternalAddresses map[string][]string
@@ -446,6 +450,8 @@ type ServiceAttributes struct {
 	// node port IPs, we need to use the kubernetes assigned node ports of the service
 	// The port that the user provides in the meshNetworks config is the service port.
 	// We translate that to the appropriate node port here.
+	// ClusterExternalPorts是一个cluster name以及service port到node port之间的映射，对于一个给定的
+	// service
 	ClusterExternalPorts map[string]map[uint32]uint32
 }
 

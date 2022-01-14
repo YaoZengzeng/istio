@@ -195,6 +195,7 @@ type controllerInterface interface {
 var _ controllerInterface = &Controller{}
 
 // Controller is a collection of synchronized resource watchers
+// Controller一个同步资源的watcher的集合
 // Caches are thread-safe
 type Controller struct {
 	client kubernetes.Interface

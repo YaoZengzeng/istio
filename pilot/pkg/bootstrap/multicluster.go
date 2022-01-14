@@ -21,6 +21,8 @@ import (
 
 // initClusterRegistries starts the secret controller to watch for remote
 // clusters and initialize the multicluster structures.
+// initClusterRegistries启动secret controller来监听remote clusters
+// 并且初始化multicluster结构
 func (s *Server) initClusterRegistries(args *PilotArgs) (err error) {
 	if hasKubeRegistry(args.RegistryOptions.Registries) {
 		log.Info("initializing Kubernetes cluster registry")
@@ -36,6 +38,7 @@ func (s *Server) initClusterRegistries(args *PilotArgs) (err error) {
 			return err
 		}
 
+		// 初始化multi cluster结构
 		s.multicluster = mc
 	}
 	return nil

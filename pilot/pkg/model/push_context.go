@@ -208,6 +208,7 @@ type PushContext struct {
 	Version string
 
 	// cache gateways addresses for each network
+	// 为每个network缓存的gateway地址，这主要用于k8s的多集群场景
 	// this is mainly used for kubernetes multi-cluster scenario
 	networkGateways map[string][]*Gateway
 
@@ -274,30 +275,44 @@ type XDSUpdater interface {
 }
 
 // PushRequest defines a request to push to proxies
+// PushRequest定义了一个推送到proxies的请求
 // It is used to send updates to the config update debouncer and pass to the PushQueue.
+// 它用于发送updates到config udpate debouncer并且传输到PushQueue
 type PushRequest struct {
 	// Full determines whether a full push is required or not. If false, an incremental update will be sent.
+	// Full决定是否需要一个full push，如果为false的话，则会发送一个incremental update
 	// Incremental pushes:
 	// * Do not recompute the push context
 	// * Do not recompute proxy state (such as ServiceInstances)
 	// * Are not reported in standard metrics such as push time
+	// Incremental pushes如下：
+	// * 不重新计算push context
+	// * 不重新计算proxy state（例如ServiceInstances）
+	// * 不在standard metrics中汇报，例如push time
 	// As a result, configuration updates should never be incremental. Generally, only EDS will set this, but
 	// in the future SDS will as well.
+	// 因此，配置更新绝不应该是incremental的，一般来说，只有EDS会设置它，但是以后的SDS也会
 	Full bool
 
 	// ConfigsUpdated keeps track of configs that have changed.
+	// ConfigsUpdated追踪已经发生变更的配置
 	// This is used as an optimization to avoid unnecessary pushes to proxies that are scoped with a Sidecar.
+	// 这是作为一个优化，来避免对已经被Sidecar限制的proxies做不必要的推送
 	// If this is empty, then all proxies will get an update.
+	// 如果为空，则所有的proxies都会收到推送
 	// Otherwise only proxies depend on these configs will get an update.
+	// 否则只有依赖这些配置的proxies才会收到更新
 	// The kind of resources are defined in pkg/config/schemas.
 	ConfigsUpdated map[ConfigKey]struct{}
 
 	// Push stores the push context to use for the update. This may initially be nil, as we will
 	// debounce changes before a PushContext is eventually created.
+	// Push包含了用于更新的push context，这可能为nil，因为我们会在一个PushContext创建前debounce changes
 	Push *PushContext
 
 	// Start represents the time a push was started. This represents the time of adding to the PushQueue.
 	// Note that this does not include time spent debouncing.
+	// Start代表一个push启动的时间，这代表添加到PushQueue中的时间
 	Start time.Time
 
 	// Reason represents the reason for requesting a push. This should only be a fixed set of values,

@@ -119,6 +119,7 @@ type Server struct {
 	kubeClient     kubelib.Client
 
 	// kubeRegistry is the service registry handling the primary cluster.
+	// kubeRegistry是用来处理primary cluster的service registry
 	kubeRegistry *kubecontroller.Controller
 	multicluster *kubecontroller.Multicluster
 
@@ -152,6 +153,7 @@ type Server struct {
 	SecureGrpcListener net.Listener
 
 	// fileWatcher used to watch mesh config, networks and certificates.
+	// fileWatcher用于监听mesh config，networks以及证书
 	fileWatcher filewatcher.FileWatcher
 
 	certController *chiron.WebhookController
@@ -186,6 +188,7 @@ func NewServer(args *PilotArgs) (*Server, error) {
 		DomainSuffix: args.RegistryOptions.KubeOptions.DomainSuffix,
 	}
 	e.SetLedger(buildLedger(args.RegistryOptions))
+	// 构建aggregate controller
 	ac := aggregate.NewController(aggregate.Options{
 		MeshHolder: e,
 	})
@@ -194,6 +197,7 @@ func NewServer(args *PilotArgs) (*Server, error) {
 	s := &Server{
 		clusterID:       getClusterID(args),
 		environment:     e,
+		// 构建Discovery Server
 		XDSServer:       xds.NewDiscoveryServer(e, args.Plugins, args.PodName),
 		fileWatcher:     filewatcher.NewWatcher(),
 		httpMux:         http.NewServeMux(),
@@ -223,17 +227,21 @@ func NewServer(args *PilotArgs) (*Server, error) {
 	prometheus.EnableHandlingTimeHistogram()
 
 	// Apply the arguments to the configuration.
+	// 初始化kube client
 	if err := s.initKubeClient(args); err != nil {
 		return nil, fmt.Errorf("error initializing kube client: %v", err)
 	}
 
+	// 初始化网格配置
 	s.initMeshConfiguration(args, s.fileWatcher)
+	// 初始化trust domain
 	spiffe.SetTrustDomain(s.environment.Mesh().GetTrustDomain())
 
 	s.initMeshNetworks(args, s.fileWatcher)
 	s.initMeshHandlers()
 
 	// Parse and validate Istiod Address.
+	// 解析并且检测istiod的地址
 	istiodHost, _, err := e.GetDiscoveryAddress()
 	if err != nil {
 		return nil, err
@@ -246,6 +254,7 @@ func NewServer(args *PilotArgs) (*Server, error) {
 	s.initJwtPolicy()
 
 	// Options based on the current 'defaults' in istio.
+	// 基于istio当前默认值的选项
 	caOpts := &caOptions{
 		TrustDomain:      s.environment.Mesh().TrustDomain,
 		Namespace:        args.Namespace,
@@ -254,6 +263,7 @@ func NewServer(args *PilotArgs) (*Server, error) {
 	}
 
 	// CA signing certificate must be created first if needed.
+	// 如果需要的话，必须首先创建CA
 	if err := s.maybeCreateCA(caOpts); err != nil {
 		return nil, err
 	}
@@ -269,6 +279,7 @@ func NewServer(args *PilotArgs) (*Server, error) {
 	}
 
 	// Secure gRPC Server must be initialized after CA is created as may use a Citadel generated cert.
+	// 一个安全的gRPC Server必须在CA创建完成之后初始化，因为可能使用Citadel创建的cert
 	if err := s.initSecureDiscoveryService(args); err != nil {
 		return nil, fmt.Errorf("error initializing secure gRPC Listener: %v", err)
 	}
@@ -292,6 +303,7 @@ func NewServer(args *PilotArgs) (*Server, error) {
 		return nil, fmt.Errorf("error initializing handlers: %v", err)
 	}
 
+	// 初始化服务发现
 	s.initDiscoveryService(args)
 
 	args.RegistryOptions.KubeOptions.FetchCaRoot = nil
@@ -1076,6 +1088,7 @@ func (s *Server) initJwtPolicy() {
 }
 
 // maybeCreateCA creates and initializes CA Key if needed.
+// maybeCreateCA创建并且初始化CA Key，如果需要的话
 func (s *Server) maybeCreateCA(caOpts *caOptions) error {
 	// CA signing certificate must be created only if CA is enabled.
 	if s.EnableCA() {
