@@ -48,6 +48,7 @@ const (
 )
 
 // InternalGen is a Generator for XDS status updates: connect, disconnect, nacks, acks
+// InternalGen是一个Generator用于XDS的状态更新：connect, disconnect, nacks以及acks
 type InternalGen struct {
 	Server *DiscoveryServer
 

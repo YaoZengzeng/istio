@@ -148,6 +148,8 @@ func newGatewayIndex() gatewayIndex {
 // PushContext tracks the status of a push - metrics and errors.
 // Metrics are reset after a push - at the beginning all
 // values are zero, and when push completes the status is reset.
+// PushContext追踪一个push的状态 - metrics以及errors，Metrics在一个push之后
+// 被重置 - 在一开始所有的值都为0并且在push完成之后status被重置
 // The struct is exposed in a debug endpoint - fields public to allow
 // easy serialization as json.
 type PushContext struct {

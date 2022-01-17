@@ -88,11 +88,14 @@ func (s *DiscoveryServer) findGenerator(typeURL string, con *Connection) model.X
 // Push an XDS resource for the given connection. Configuration will be generated
 // based on the passed in generator. Based on the updates field, generators may
 // choose to send partial or even no response if there are no changes.
+// 推送一个XDS资源到给定的连接，配置会基于传入到generator的内存生成
+// 基于updates字段，generators可能选择发送部分，甚至不发送response，当没有变更发生时
 func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 	currentVersion string, w *model.WatchedResource, req *model.PushRequest) error {
 	if w == nil {
 		return nil
 	}
+	// 找到对应的generator
 	gen := s.findGenerator(w.TypeUrl, con)
 	if gen == nil {
 		return nil
@@ -100,9 +103,11 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 
 	t0 := time.Now()
 
+	// generator生成resources
 	cl := gen.Generate(con.proxy, push, w, req)
 	if cl == nil {
 		// If we have nothing to send, report that we got an ACK for this version.
+		// 如果我们没有东西要发送，报告我们获取了这个版本的一个ACK
 		if s.StatusReporter != nil {
 			s.StatusReporter.RegisterEvent(con.ConID, w.TypeUrl, push.Version)
 		}
@@ -110,6 +115,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 	}
 	defer func() { recordPushTime(w.TypeUrl, time.Since(t0)) }()
 
+	// 构建DiscoveryResponse
 	resp := &discovery.DiscoveryResponse{
 		TypeUrl:     w.TypeUrl,
 		VersionInfo: currentVersion,
@@ -124,6 +130,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 	}
 
 	// Some types handle logs inside Generate, skip them here
+	// 有的类型在Generator中处理logs，现在跳过
 	if _, f := SkipLogTypes[w.TypeUrl]; !f {
 		adsLog.Infof("%s: PUSH for node:%s resources:%d", v3.GetShortType(w.TypeUrl), con.proxy.ID, len(cl))
 	}

@@ -178,6 +178,8 @@ func (s *DiscoveryServer) receive(con *Connection, reqChannel chan *discovery.Di
 // processRequest is handling one request. This is currently called from the 'main' thread, which also
 // handles 'push' requests and close - the code will eventually call the 'push' code, and it needs more mutex
 // protection. Original code avoided the mutexes by doing both 'push' and 'process requests' in same thread.
+// processRequest用来处理一个请求，当前从'main' thread中被调用，它同时处理'push'和关闭请求 - 代码最终会调用'push'
+// 它需要更多的锁保护，之前的代码通过将'push'和'process requests'放在同一个thread中避免了使用锁
 func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *Connection) error {
 	if s.StatusReporter != nil {
 		s.StatusReporter.RegisterEvent(con.ConID, req.TypeUrl, req.ResponseNonce)
@@ -187,6 +189,7 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 		return nil
 	}
 
+	// 获取全局的Push Context
 	push := s.globalPushContext()
 
 	return s.pushXds(con, push, versionInfo(), con.Watched(req.TypeUrl), &model.PushRequest{Full: true})
@@ -256,19 +259,26 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream discovery.AggregatedD
 
 	for {
 		// Block until either a request is received or a push is triggered.
+		// 阻塞直到接收到一个请求或者一个push被触发
 		// We need 2 go routines because 'read' blocks in Recv().
+		// 我们需要2个goroutines，因此在Recv()中'read'是被阻塞的
 		//
 		// To avoid 2 routines, we tried to have Recv() in StreamAggregateResource - and the push
 		// on different short-lived go routines started when the push is happening. This would cut in 1/2
 		// the number of long-running go routines, since push is throttled. The main problem is with
 		// closing - the current gRPC library didn't allow closing the stream.
+		// 为了避免2个goroutines，我们试着在StreamAggregateResource中拥有Recv() - 并且在另一个短生命周期的goroutine
+		// 中进行Push，这会减少1/2的long-running goroutines，因为push被限制了，主要是关闭，当前的gRPC库不支持
+		// 关闭stream
 		select {
 		case req, ok := <-reqChannel:
 			if !ok {
 				// Remote side closed connection or error processing the request.
+				// 远端关闭连接或者在处理请求的时候发生了错误
 				return receiveError
 			}
 			// processRequest is calling pushXXX, accessing common structs with pushConnection.
+			// processRequest调用pushXXX，访问pushConnection中的公共结构
 			// Adding sync is the second issue to be resolved if we want to save 1/2 of the threads.
 			err := s.processRequest(req, con)
 			if err != nil {
@@ -293,12 +303,16 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream discovery.AggregatedD
 
 // shouldRespond determines whether this request needs to be responded back. It applies the ack/nack rules as per xds protocol
 // using WatchedResource for previous state and discovery request for the current state.
+// shouldRespond决定这个请求是否需要回复，它应用ack/nack规则，因为每个xds protocol都使用WatchedResource用于之前的状态
+// 以及discovery request用于现在的状态
 func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.DiscoveryRequest) bool {
 	stype := v3.GetShortType(request.TypeUrl)
 
 	// If there is an error in request that means previous response is erroneous.
 	// We do not have to respond in that case. In this case request's version info
 	// will be different from the version sent. But it is fragile to rely on that.
+	// 如果在请求中有错误，这意味着之前的response有问题，这种情况下我们不用回复
+	// 这种情况下，请求的版本会和发送的版本不同，但是依赖这点是很脆弱的
 	if request.ErrorDetail != nil {
 		errCode := codes.Code(request.ErrorDetail.Code)
 		adsLog.Warnf("ADS:%s: ACK ERROR %s %s:%s", stype, con.ConID, errCode.String(), request.ErrorDetail.GetMessage())
@@ -312,17 +326,21 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	if shouldUnsubscribe(request) {
 		adsLog.Debugf("ADS:%s: UNSUBSCRIBE %s %s %s", stype, con.ConID, request.VersionInfo, request.ResponseNonce)
 		con.proxy.Lock()
+		// 从WatchedResources删除
 		delete(con.proxy.WatchedResources, request.TypeUrl)
 		con.proxy.Unlock()
 		return false
 	}
 
 	// This is first request - initialize typeUrl watches.
+	// 当ResponseNonce为空时，这是第一个请求，初始化对于typeUrl的监听
 	if request.ResponseNonce == "" {
 		adsLog.Debugf("ADS:%s: INIT %s %s %s", stype, con.ConID, request.VersionInfo, request.ResponseNonce)
 		con.proxy.Lock()
+		// 记录对于资源的监听
 		con.proxy.WatchedResources[request.TypeUrl] = &model.WatchedResource{TypeUrl: request.TypeUrl, ResourceNames: request.ResourceNames, LastRequest: request}
 		con.proxy.Unlock()
+		// 直接返回，因为是第一次请求
 		return true
 	}
 
@@ -334,6 +352,8 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	// information about this typeUrl, but Envoy sends response nonce - either
 	// because Istiod is restarted or Envoy disconnects and reconnects.
 	// We should always respond with the current resource names.
+	// 这是Envoy重连Istiod的场景，Istiod没有关于这个typeUrl的信息，但是Envoy发送response nonce - 
+	// 因为Istiod重启了或者Envoy断开连接并且重连，我们总是应该用当前的resource names进行回复
 	if previousInfo == nil {
 		adsLog.Debugf("ADS:%s: RECONNECT %s %s %s", stype, con.ConID, request.VersionInfo, request.ResponseNonce)
 		con.proxy.Lock()
@@ -344,6 +364,7 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 
 	// If there is mismatch in the nonce, that is a case of expired/stale nonce.
 	// A nonce becomes stale following a newer nonce being sent to Envoy.
+	// 如果nonce不匹配，这可能是nonce过期或者老化，nonce会变为老化，当一个新的nonce被发送给Envoy的时候
 	if request.ResponseNonce != previousInfo.NonceSent {
 		adsLog.Debugf("ADS:%s: REQ %s Expired nonce received %s, sent %s", stype,
 			con.ConID, request.ResponseNonce, previousInfo.NonceSent)
@@ -353,6 +374,8 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 
 	// If it comes here, that means nonce match. This an ACK. We should record
 	// the ack details and respond if there is a change in resource names.
+	// 如果到了这里，说明nonce匹配，这是一个ACK，我们应该记录ack的细节并且回复，如果
+	// resource names有变更
 	con.proxy.Lock()
 	previousResources := con.proxy.WatchedResources[request.TypeUrl].ResourceNames
 	con.proxy.WatchedResources[request.TypeUrl].VersionAcked = request.VersionInfo
@@ -363,10 +386,14 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 
 	// Envoy can send two DiscoveryRequests with same version and nonce
 	// when it detects a new resource. We should respond if they change.
+	// Envoy可以发送两个有着同样的version和nonce的DiscoveryRequests
+	// 当它检测到一个新的resource，我们应该回复，如果它发生了改变
 	if listEqualUnordered(previousResources, request.ResourceNames) {
+		// 如果请求的资源对象相等，则说明是一个ACK
 		adsLog.Debugf("ADS:%s: ACK %s %s %s", stype, con.ConID, request.VersionInfo, request.ResponseNonce)
 		return false
 	}
+	// 否则说明请求中有新的resources
 	adsLog.Debugf("ADS:%s: RESOURCE CHANGE previous resources: %v, new resources: %v %s %s %s", stype,
 		previousResources, request.ResourceNames, con.ConID, request.VersionInfo, request.ResponseNonce)
 
@@ -378,17 +405,24 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 // unsubscribe from RDS. NOTE: This may happen as part of the initial request. If
 // there are no routes needed, Envoy will send an empty request, which this
 // properly handles by not adding it to the watched resource list.
+// shouldUnsubscribe检查我们是否需要取消订阅，这在Envoy不再watching的时候调用，例如，我们移除了所有
+// RDS的引用，我们会从RDS取消订阅，注意：这可能作为initial request的一部分发生
+// 如果不需要路由，Envoy会发送一个空的请求，这能够被妥善处理，通过不将它加入到watched resource list
 func shouldUnsubscribe(request *discovery.DiscoveryRequest) bool {
 	return len(request.ResourceNames) == 0 && !isWildcardTypeURL(request.TypeUrl)
 }
 
 // isWildcardTypeURL checks whether a given type is a wildcard type
+// isWildcardTypeURL检查给定的类型是否是一个通配符类型
 // https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol#how-the-client-specifies-what-resources-to-return
 // If the list of resource names becomes empty, that means that the client is no
 // longer interested in any resources of the specified type. For Listener and
 // Cluster resource types, there is also a “wildcard” mode, which is triggered
 // when the initial request on the stream for that resource type contains no
 // resource names.
+// 对于非通配符类型，如果resource names为空，这意味着client不再对给定类型的任何资源感兴趣
+// 对于Listener和Cluster，有一个"通配符"模式，在该资源类型的初始请求不包含任何resource names
+// 的时候被触发
 func isWildcardTypeURL(typeURL string) bool {
 	switch typeURL {
 	case v3.SecretType, v3.EndpointType, v3.RouteType:

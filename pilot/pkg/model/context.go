@@ -256,37 +256,48 @@ type Proxy struct {
 }
 
 // WatchedResource tracks an active DiscoveryRequest subscription.
+// WatchedResource追踪对于一个active DiscoveryRequest订阅的追踪
 type WatchedResource struct {
 	// TypeUrl is copied from the DiscoveryRequest.TypeUrl that initiated watching this resource.
+	// TypeUrl从DiscoveryRequest.TypeUrl中拷贝而来，初始化这个资源的监听
 	// nolint
 	TypeUrl string
 
 	// ResourceNames tracks the list of resources that are actively watched. If empty, all resources of the
 	// TypeUrl type are watched.
+	// ResourceNames追踪一系列被活跃监听的资源，如果为空，该TypeUrl类型的所有资源都会被监听
 	// For endpoints the resource names will have list of clusters and for clusters it is empty.
+	// 对于endpoints，resource names会有一系列的clusters，对于clusters，这为空
 	ResourceNames []string
 
 	// VersionSent is the version of the resource included in the last sent response.
 	// It corresponds to the [Cluster/Route/Listener]VersionSent in the XDS package.
+	// VersionSent是上一次发送的reponse中包含的resource的版本
 	VersionSent string
 
 	// NonceSent is the nonce sent in the last sent response. If it is equal with NonceAcked, the
 	// last message has been processed. If empty: we never sent a message of this type.
+	// NonceSent是上一次发送的response中的nonce，如果它和NonceAcked相等，则最近的一个message已经被处理了
+	// 如果为空：我们从未发送过这个类型的message
 	NonceSent string
 
 	// VersionAcked represents the version that was applied successfully. It can be different from
 	// VersionSent: if NonceSent == NonceAcked and versions are different it means the client rejected
 	// the last version, and VersionAcked is the last accepted and active config.
 	// If empty it means the client has no accepted/valid version, and is not ready.
+	// VersionAcked代表成功应用的版本，它可以和VersionSent不同：如果NonceSent == NonceAcked，但是版本不同，这意味
+	// 着client拒绝了最新的版本，VersionAcked是最近被接收并且处于活跃状态的配置
 	VersionAcked string
 
 	// NonceAcked is the last acked message.
+	// NonceAcked是上一个ack的message
 	NonceAcked string
 
 	// LastSent tracks the time of the generated push, to determine the time it takes the client to ack.
 	LastSent time.Time
 
 	// Updates count the number of generated updates for the resource
+	// Updates计算资源更新的次数
 	Updates int
 
 	// LastSize tracks the size of the last update
@@ -297,6 +308,9 @@ type WatchedResource struct {
 	// and may use the information in DiscoveryRequest.
 	// Note that Envoy may send multiple requests for the same type, for
 	// example to update the set of watched resources or to ACK/NACK.
+	// 包含了这个类型接收到的最新的DiscoveryRequest，Generators在每个请求之后立即被调用
+	// 并且可能使用DiscoveryRequest中的信息
+	// 注意Envoy可能对同一种类型发送多个请求，例如更新一系列的watched resources或者用于ACK/NACK
 	LastRequest *discovery.DiscoveryRequest
 }
 
