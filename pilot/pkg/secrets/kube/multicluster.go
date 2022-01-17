@@ -26,6 +26,7 @@ import (
 )
 
 // Multicluster structure holds the remote kube Controllers and multicluster specific attributes.
+// Multicluster结构维护远端的kube controllers以及多集群特定的属性
 type Multicluster struct {
 	remoteKubeControllers map[string]*SecretsController
 	m                     sync.Mutex // protects remoteKubeControllers
@@ -41,8 +42,10 @@ func NewMulticluster(client kube.Client, localCluster, secretNamespace string) *
 		localCluster:          localCluster,
 	}
 	// Add the local cluster
+	// 添加本地的cluster
 	m.addMemberCluster(client, localCluster)
 	sc := secretcontroller.StartSecretController(client,
+		// 启动secret controller
 		func(c kube.Client, k string) error { m.addMemberCluster(c, k); return nil },
 		func(c kube.Client, k string) error { m.updateMemberCluster(c, k); return nil },
 		func(k string) error { m.deleteMemberCluster(k); return nil },

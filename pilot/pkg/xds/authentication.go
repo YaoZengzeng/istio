@@ -27,7 +27,9 @@ import (
 )
 
 // authenticate authenticates the ADS request using the configured authenticators.
+// authenticate使用配置好的authenticators来对ADS请求进行认证
 // Returns the validated principals or an error.
+// 返回校验过的principals或者错误
 // If no authenticators are configured, or if the request is on a non-secure
 // stream ( 15010 ) - returns an empty list of principals and no errors.
 func (s *DiscoveryServer) authenticate(ctx context.Context) ([]string, error) {
@@ -36,6 +38,7 @@ func (s *DiscoveryServer) authenticate(ctx context.Context) ([]string, error) {
 	}
 
 	// Authenticate - currently just checks that request has a certificate signed with the our key.
+	// Authenticate - 当前只检查请求包含用我们的key签名的证书
 	// Protected by flag to avoid breaking upgrades - should be enabled in multi-cluster/meshexpansion where
 	// XDS is exposed.
 	peerInfo, ok := peer.FromContext(ctx)
@@ -43,6 +46,7 @@ func (s *DiscoveryServer) authenticate(ctx context.Context) ([]string, error) {
 		return nil, errors.New("invalid context")
 	}
 	// Not a TLS connection, we will not perform authentication
+	// 不是一个TLS连接，我们不会执行认证
 	// TODO: add a flag to prevent unauthenticated requests ( 15010 )
 	// request not over TLS on the insecure port
 	if _, ok := peerInfo.AuthInfo.(credentials.TLSInfo); !ok {

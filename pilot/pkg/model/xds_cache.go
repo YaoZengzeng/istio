@@ -100,6 +100,7 @@ type XdsCacheEntry interface {
 }
 
 // XdsCache interface defines a store for caching XDS responses.
+// XdsCache接口定义了一个store用于缓存XDS responses
 // All operations are thread safe.
 type XdsCache interface {
 	// Add adds the given XdsCacheEntry with the value to the cache.

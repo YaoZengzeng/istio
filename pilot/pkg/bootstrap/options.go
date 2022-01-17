@@ -28,6 +28,7 @@ import (
 // RegistryOptions provide configuration options for the configuration controller. If FileDir is set, that directory will
 // be monitored for CRD yaml files and will update the controller as those files change (This is used for testing
 // purposes). Otherwise, a CRD client is created based on the configuration.
+// RegistryOptions为configuration controller提供了配置选项
 type RegistryOptions struct {
 	// If FileDir is set, the below kubernetes options are ignored
 	FileDir string

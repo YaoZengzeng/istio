@@ -295,6 +295,7 @@ func (s *DiscoveryServer) generateEndpoints(b EndpointBuilder) *endpoint.Cluster
 
 // EdsGenerator implements the new Generate method for EDS, using the in-memory, optimized endpoint
 // storage in DiscoveryServer.
+// EdsGenerator为EDS实现了新的Generate方法，在DiscoveryServer中使用内存中的，缓存的endpoint存储
 type EdsGenerator struct {
 	Server *DiscoveryServer
 }

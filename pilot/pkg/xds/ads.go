@@ -45,6 +45,7 @@ var (
 	sendTimeout = features.XdsPushSendTimeout
 
 	// Tracks connections, increment on each new connection.
+	// 追踪连接，每个新连接之后加一
 	connectionNumber = int64(0)
 )
 
@@ -56,6 +57,7 @@ type DiscoveryStream interface {
 }
 
 // Connection holds information about connected client.
+// Connection维护连接的客户端的信息
 type Connection struct {
 	// PeerAddr is the address of the client, from network layer.
 	PeerAddr string
@@ -68,6 +70,8 @@ type Connection struct {
 
 	// ConID is the connection identifier, used as a key in the connection table.
 	// Currently based on the node name and a counter.
+	// ConnID是连接的标识符，作为key在connection table中使用
+	// 当前基于node name和一个counter
 	ConID string
 
 	// proxy is the client to which this connection is established.
@@ -77,6 +81,7 @@ type Connection struct {
 	pushChannel chan *Event
 
 	// Both ADS and SDS streams implement this interface
+	// ADS和SDS streams都实现了这个接口
 	stream DiscoveryStream
 
 	// Original node metadata, to avoid unmarshal/marshal.
@@ -139,6 +144,7 @@ func (s *DiscoveryServer) receive(con *Connection, reqChannel chan *discovery.Di
 			return
 		}
 		// This should be only set for the first request. The node id may not be set - for example malicious clients.
+		// 只应该对第一个请求进行设置，node id可能还没有设置 - 例如恶意的客户端
 		if firstReq {
 			firstReq = false
 			if req.Node == nil || req.Node.Id == "" {
@@ -187,6 +193,7 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 }
 
 // StreamAggregatedResources implements the ADS interface.
+// StreamAggregatedResources实现了ADS接口
 func (s *DiscoveryServer) StreamAggregatedResources(stream discovery.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	// Check if server is ready to accept clients and process new requests.
 	// Currently ready means caches have been synced and hence can build
@@ -195,6 +202,9 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream discovery.AggregatedD
 	// configuration. This is an additional safety check inaddition to adding
 	// cachesSynced logic to readiness probe to handle cases where kube-proxy
 	// ip tables update latencies.
+	// 检查server是否准备好接收clients并且处理新的请求
+	// 当前ready意味着缓存已经同步了并且因此可以正确地构建clusters
+	// 没有这一个检查，下面的InitContext()调用会初始化空的config，导致重连的Envoy失去配置
 	// See https://github.com/istio/istio/issues/25495.
 	if !s.IsServerReady() {
 		return errors.New("server is not ready to serve discovery information")
@@ -203,9 +213,11 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream discovery.AggregatedD
 	ctx := stream.Context()
 	peerAddr := "0.0.0.0"
 	if peerInfo, ok := peer.FromContext(ctx); ok {
+		// 获取对端的地址信息
 		peerAddr = peerInfo.Addr.String()
 	}
 
+	// 基于ctx进行认证？
 	ids, err := s.authenticate(ctx)
 	if err != nil {
 		return err
@@ -223,6 +235,7 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream discovery.AggregatedD
 		adsLog.Warnf("Error reading config %v", err)
 		return err
 	}
+	// 构建新的connection
 	con := newConnection(peerAddr, stream)
 	con.Identities = ids
 
@@ -230,11 +243,13 @@ func (s *DiscoveryServer) StreamAggregatedResources(stream discovery.AggregatedD
 	// when the connection is no longer used. Closing the channel can cause subtle race conditions
 	// with push. According to the spec: "It's only necessary to close a channel when it is important
 	// to tell the receiving goroutines that all data have been sent."
+	// 不要调用：defer close(con.pushChannel)，push channel会被垃圾回收，当连接不再使用的时候
 
 	// Reading from a stream is a blocking operation. Each connection needs to read
 	// discovery requests and wait for push commands on config change, so we add a
 	// go routine. If go grpc adds gochannel support for streams this will not be needed.
 	// This also detects close.
+	// 从一个stream中读取是一个阻塞操作，每个连接都需要读取discovery requests并在配置变更的时候等待push commands
 	var receiveError error
 	reqChannel := make(chan *discovery.DiscoveryRequest, 1)
 	go s.receive(con, reqChannel, &receiveError)
@@ -408,6 +423,7 @@ func listEqualUnordered(a []string, b []string) bool {
 
 // update the node associated with the connection, after receiving a a packet from envoy, also adds the connection
 // to the tracking map.
+// 更新和连接相关的node信息，在从envoy接受到一个packet之后，同时将连接加入到tracking map中
 func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection) error {
 	proxy, err := s.initProxy(node, con)
 	if err != nil {
@@ -415,6 +431,7 @@ func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection) error
 	}
 
 	// Based on node metadata and version, we can associate a different generator.
+	// 基于node metadata和version，我们可以关联一个不同的generator
 	// TODO: use a map of generators, so it's easily customizable and to avoid deps
 	proxy.WatchedResources = map[string]*model.WatchedResource{}
 
@@ -423,6 +440,7 @@ func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection) error
 	}
 
 	// First request so initialize connection id and start tracking it.
+	// 第一个请求，因此初始化connectino id并且开始追踪它
 	con.proxy = proxy
 	con.ConID = connectionID(node.Id)
 	con.node = node
@@ -469,6 +487,7 @@ func connectionID(node string) string {
 }
 
 // initProxy initializes the Proxy from node.
+// initProxy基于节点初始化Proxy
 func (s *DiscoveryServer) initProxy(node *core.Node, con *Connection) (*model.Proxy, error) {
 	meta, err := model.ParseMetadata(node.Metadata)
 	if err != nil {

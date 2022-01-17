@@ -168,6 +168,8 @@ type XdsUpdates = map[ConfigKey]struct{}
 // with a Proxy, the default (a networking.core.ConfigGenerator instance) will be used.
 // The server may associate a different generator based on client metadata. Different
 // WatchedResources may use same or different Generator.
+// XdsResourceGenerator为一个typeURL DiscoveryRequest创建response，如果没有generator和这个Proxy相关联，默认的
+// 就会使用，server可能会基于client元数据关联一个不同的generator，不同的WatchedResources可能使用相同或者不同的Generator
 type XdsResourceGenerator interface {
 	Generate(proxy *Proxy, push *PushContext, w *WatchedResource, updates *PushRequest) Resources
 }
@@ -175,6 +177,8 @@ type XdsResourceGenerator interface {
 // Proxy contains information about an specific instance of a proxy (envoy sidecar, gateway,
 // etc). The Proxy is initialized when a sidecar connects to Pilot, and populated from
 // 'node' info in the protocol as well as data extracted from registries.
+// Proxy包含一个特定的proxy实例的信息（envoy sidecar，gateway等等），Proxy在sidecar连接到Pilot的时候
+// 初始化并且基于协议中的'node'以及从registries中获取来的数据填充信息
 //
 // In current Istio implementation nodes use a 4-parts '~' delimited ID.
 // Type~IPAddress~ID~Domain

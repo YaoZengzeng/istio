@@ -27,10 +27,13 @@ import (
 )
 
 // ConfigGenerator represents the interfaces to be implemented by code that generates xDS responses
+// ConfigGenerator代表了待实现的接口用于创建xDS responses
 type ConfigGenerator interface {
 	// BuildListeners returns the list of inbound/outbound listeners for the given proxy. This is the LDS output
 	// Internally, the computation will be optimized to ensure that listeners are computed only
 	// once and shared across multiple invocations of this function.
+	// BuildListeners为给定的proxy返回一系列inbound/outbound listeners，这是LDS output的输出
+	// 在内部，计算会被优化来确保listeners只被计算一次并且在这个函数被多次调用之间共享
 	BuildListeners(node *model.Proxy, push *model.PushContext) []*listener.Listener
 
 	// BuildClusters returns the list of clusters for the given proxy. This is the CDS output
@@ -43,10 +46,12 @@ type ConfigGenerator interface {
 	BuildNameTable(node *model.Proxy, push *model.PushContext) *nds.NameTable
 
 	// ConfigChanged is invoked when mesh config is changed, giving a chance to rebuild any cached config.
+	// ConfigChanged是在mesh配置发生变更时被调用，给一个机会来重新构建缓存的配置
 	MeshConfigChanged(mesh *meshconfig.MeshConfig)
 }
 
 // NewConfigGenerator creates a new instance of the dataplane configuration generator
+// NewConfigGenerator创建数据面的configuration generator的一个新实例
 func NewConfigGenerator(plugins []string, cache model.XdsCache) ConfigGenerator {
 	return v1alpha3.NewConfigGenerator(registry.NewPlugins(plugins), cache)
 }

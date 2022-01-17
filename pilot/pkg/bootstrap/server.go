@@ -443,6 +443,7 @@ func (s *Server) WaitUntilCompletion() {
 }
 
 // initSDSServer starts the SDS server
+// initSDSServer启动SDS server
 func (s *Server) initSDSServer(args *PilotArgs) {
 	if features.EnableSDSServer && s.kubeClient != nil {
 		if !features.EnableXDSIdentityCheck {
@@ -452,6 +453,7 @@ func (s *Server) initSDSServer(args *PilotArgs) {
 		} else {
 			sc := kubesecrets.NewMulticluster(s.kubeClient, s.clusterID, args.RegistryOptions.ClusterRegistriesNamespace)
 			sc.AddEventHandler(func(name, namespace string) {
+				// 调用XDS server的ConfigUpdate推送变更
 				s.XDSServer.ConfigUpdate(&model.PushRequest{
 					Full: false,
 					ConfigsUpdated: map[model.ConfigKey]struct{}{
@@ -569,10 +571,12 @@ func (s *Server) initIstiodAdminServer(args *PilotArgs, wh *inject.Webhook) erro
 }
 
 // initDiscoveryService intializes discovery server on plain text port.
+// initDiscoveryService在明文端口初始化discovery server
 func (s *Server) initDiscoveryService(args *PilotArgs) {
 	log.Infof("starting discovery service")
 	// Implement EnvoyXdsServer grace shutdown
 	s.addStartFunc(func(stop <-chan struct{}) error {
+		// 启动ADS server
 		log.Infof("Starting ADS server")
 		s.XDSServer.Start(stop)
 		return nil

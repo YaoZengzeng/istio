@@ -29,6 +29,7 @@ import (
 )
 
 // MergedGateway describes a set of gateways for a workload merged into a single logical gateway.
+// MergedGateway描述了一个workload的一系列gateways合并到单个的logical gateway
 //
 // TODO: do we need a `func (m *MergedGateway) MergeInto(gateway *networking.Gateway)`?
 type MergedGateway struct {

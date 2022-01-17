@@ -67,6 +67,7 @@ type debounceOptions struct {
 }
 
 // DiscoveryServer is Pilot's gRPC implementation for Envoy's xds APIs
+// DiscoveryServer是Pilot对于Envoy的xds APIs的gRPC实现
 type DiscoveryServer struct {
 	// Env is the model environment.
 	Env *model.Environment
@@ -107,6 +108,7 @@ type DiscoveryServer struct {
 	debugHandlers map[string]string
 
 	// adsClients reflect active gRPC channels, for both ADS and EDS.
+	// adsClients反映active gRPC channels，对于ADS和EDS
 	adsClients      map[string]*Connection
 	adsClientsMutex sync.RWMutex
 
@@ -120,6 +122,7 @@ type DiscoveryServer struct {
 	WorkloadEntryController *workloadentry.Controller
 
 	// serverReady indicates caches have been synced up and server is ready to process requests.
+	// serverReady表示缓存已经同步完成，server已经准备好处理请求
 	serverReady bool
 
 	debounceOptions debounceOptions
@@ -133,6 +136,8 @@ type DiscoveryServer struct {
 // EndpointShards holds the set of endpoint shards of a service. Registries update
 // individual shards incrementally. The shards are aggregated and split into
 // clusters when a push for the specific cluster is needed.
+// EndpointShards维护了一个service的一系列endpoint shards，Registries增量式地更新每个
+// shards，shards被聚集在一起并且分裂成集群，当需要对一个特定的cluster进行推送时
 type EndpointShards struct {
 	// mutex protecting below map.
 	mutex sync.RWMutex
@@ -140,6 +145,8 @@ type EndpointShards struct {
 	// Shards is used to track the shards. EDS updates are grouped by shard.
 	// Current implementation uses the registry name as key - in multicluster this is the
 	// name of the k8s cluster, derived from the config (secret).
+	// Shards用于追踪shards，EDS基于shard按批更新
+	// 当前的实现使用registry name作为key - 在多集群中就是k8s的名字，从config（secret）衍生出来
 	Shards map[string][]*model.IstioEndpoint
 
 	// ServiceAccounts has the concatenation of all service accounts seen so far in endpoints.
@@ -172,6 +179,7 @@ func NewDiscoveryServer(env *model.Environment, plugins []string, instanceID str
 	}
 
 	// Flush cached discovery responses when detecting jwt public key change.
+	// 当检测到jwt public key发生变更时，刷新缓存的discovery responses
 	model.GetJwtKeyResolver().PushFunc = func() {
 		out.ConfigUpdate(&model.PushRequest{Full: true, Reason: []model.TriggerReason{model.UnknownTrigger}})
 	}
@@ -179,6 +187,7 @@ func NewDiscoveryServer(env *model.Environment, plugins []string, instanceID str
 	out.initGenerators()
 
 	if features.EnableXDSCaching {
+		// 构建xds cache
 		out.Cache = model.NewXdsCache()
 	}
 
@@ -474,6 +483,7 @@ func (s *DiscoveryServer) sendPushes(stopCh <-chan struct{}) {
 }
 
 // initGenerators initializes generators to be used by XdsServer.
+// initGenerators初始化供XdsServer使用的generators
 func (s *DiscoveryServer) initGenerators() {
 	edsGen := &EdsGenerator{Server: s}
 	s.InternalGen = NewInternalGen(s)

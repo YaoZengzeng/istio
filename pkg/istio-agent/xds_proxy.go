@@ -181,6 +181,9 @@ type ProxyConnection struct {
 // Every time envoy makes a fresh connection to the agent, we reestablish a new connection to the upstream xds
 // This ensures that a new connection between istiod and agent doesn't end up consuming pending messages from envoy
 // as the new connection may not go to the same istiod. Vice versa case also applies.
+// 每次envoy和agent建立一个新的连接，我们重新构建一个到upstream xds的新连接
+// 这确保istiod和agent之间的新连接不会消费来自envoy的pending messages
+// 因为新的连接可能不会发往同一个istiod
 func (p *XdsProxy) StreamAggregatedResources(downstream discovery.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	proxyLog.Infof("Envoy ADS stream established")
 
