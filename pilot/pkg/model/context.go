@@ -158,9 +158,11 @@ func (e *Environment) SetLedger(l ledger.Ledger) {
 }
 
 // Request is an alias for array of marshaled resources.
+// Request是序列化的resources的数组
 type Resources = []*any.Any
 
 // XdsUpdates include information about the subset of updated resources.
+// XdsUpdates包含了更新的resources的子集的信息
 // See for example EDS incremental updates.
 type XdsUpdates = map[ConfigKey]struct{}
 
@@ -952,10 +954,13 @@ func isValidIPAddress(ip string) bool {
 // sent to Envoy. This should not be confused with the CaptureMode in the API that indicates
 // how the user wants traffic to be intercepted for the listener. TrafficInterceptionMode is
 // always derived from the Proxy metadata
+// API中的CaptureMode表示用户想要流量如何被listener协议，TrafficInterceptionMode总是从Proxy metadata
+// 中获取
 type TrafficInterceptionMode string
 
 const (
 	// InterceptionNone indicates that the workload is not using IPtables for traffic interception
+	// InterceptionNone表示workload不使用IPtables用于流量拦截
 	InterceptionNone TrafficInterceptionMode = "NONE"
 
 	// InterceptionTproxy implies traffic intercepted by IPtables with TPROXY mode
@@ -963,6 +968,7 @@ const (
 
 	// InterceptionRedirect implies traffic intercepted by IPtables with REDIRECT mode
 	// This is our default mode
+	// InterceptionRedirect表示IPtables使用IPtables的REDIRECT模式进行拦截，这是我们默认的模式
 	InterceptionRedirect TrafficInterceptionMode = "REDIRECT"
 )
 

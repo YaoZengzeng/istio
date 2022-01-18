@@ -40,9 +40,11 @@ func ldsNeedsPush(req *model.PushRequest) bool {
 	}
 	if !req.Full {
 		// LDS only handles full push
+		// LDS只处理full push
 		return false
 	}
 	// If none set, we will always push
+	// 如果没有设置，我们总是会push
 	if len(req.ConfigsUpdated) == 0 {
 		return true
 	}
@@ -58,6 +60,7 @@ func (l LdsGenerator) Generate(proxy *model.Proxy, push *model.PushContext, w *m
 	if !ldsNeedsPush(req) {
 		return nil
 	}
+	// 构建listeners
 	listeners := l.Server.ConfigGenerator.BuildListeners(proxy, push)
 	resources := model.Resources{}
 	for _, c := range listeners {

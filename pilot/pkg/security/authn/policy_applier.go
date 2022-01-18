@@ -23,6 +23,7 @@ import (
 
 // PolicyApplier is the interface provides essential functionalities to help config Envoy (xDS) to enforce
 // authentication policy. Each version of authentication policy will implement this interface.
+// PolicyApplier用于提供必要的功能来帮助配置Envoy（xDS）执行认证策略，每个版本的认证策略都要实现这个接口
 type PolicyApplier interface {
 	// InboundFilterChain returns inbound filter chain(s) for the given endpoint (aka workload) port to
 	// enforce the underlying authentication policy.

@@ -92,6 +92,7 @@ const (
 
 	// DefaultSdsUdsPath is the path used for SDS communication between istio-agent and proxy during
 	// mtls.
+	// DefaultSdsUdsPath是istio-agent和proxy之间用于SDS交互的路径
 	DefaultSdsUdsPath = "unix:./etc/istio/proxy/SDS"
 
 	// DefaultServiceAccountName is the default service account to use for remote cluster access.

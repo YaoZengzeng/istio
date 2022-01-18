@@ -51,9 +51,13 @@ var (
 )
 
 // A stateful listener builder
+// 一个有状态的listener builder
 // Support the below intentions
+// 支持如下意图
 // 1. Use separate inbound capture listener(:15006) and outbound capture listener(:15001)
+// 1. 使用分开的inbound capture listener(:15006)以及outbound capture listener(:15001)
 // 2. The above listeners use bind_to_port sub listeners or filter chains.
+// 2. 上述的listeners使用bind_to_port sub listeners或者filter chains
 type ListenerBuilder struct {
 	node              *model.Proxy
 	push              *model.PushContext
@@ -61,6 +65,7 @@ type ListenerBuilder struct {
 	inboundListeners  []*listener.Listener
 	outboundListeners []*listener.Listener
 	// HttpProxyListener is a specialize outbound listener. See MeshConfig.proxyHttpPort
+	// HttpProxyListener是一个特殊的outbound listener
 	httpProxyListener       *listener.Listener
 	virtualOutboundListener *listener.Listener
 	virtualInboundListener  *listener.Listener
@@ -331,10 +336,12 @@ func (lb *ListenerBuilder) buildVirtualOutboundListener(configgen *ConfigGenerat
 	actualWildcard, _ := getActualWildcardAndLocalHost(lb.node)
 
 	// add an extra listener that binds to the port that is the recipient of the iptables redirect
+	// 增加一个额外的listener，绑定到端口，它是iptables转发的接收者
 	ipTablesListener := &listener.Listener{
 		Name:                                VirtualOutboundListenerName,
 		Address:                             util.BuildAddress(actualWildcard, uint32(lb.push.Mesh.ProxyListenPort)),
 		Transparent:                         isTransparentProxy,
+		// 使用original dst
 		HiddenEnvoyDeprecatedUseOriginalDst: proto.BoolTrue,
 		FilterChains:                        filterChains,
 		TrafficDirection:                    core.TrafficDirection_OUTBOUND,
@@ -345,7 +352,9 @@ func (lb *ListenerBuilder) buildVirtualOutboundListener(configgen *ConfigGenerat
 }
 
 // TProxy uses only the virtual outbound listener on 15001 for both directions
+// TProxy在两个方向上都只使用监听在15001上的virtual outbound listener
 // but we still ship the no-op virtual inbound listener, so that the code flow is same across REDIRECT and TPROXY.
+// 但是我们仍然会构建一个no-op的virtual inbound listener，这样code flow在REDIRECT和TPROXY是一样的
 func (lb *ListenerBuilder) buildVirtualInboundListener(configgen *ConfigGeneratorImpl) *ListenerBuilder {
 	var isTransparentProxy *wrappers.BoolValue
 	if lb.node.GetInterceptionMode() == model.InterceptionTproxy {
@@ -354,6 +363,7 @@ func (lb *ListenerBuilder) buildVirtualInboundListener(configgen *ConfigGenerato
 
 	actualWildcard, _ := getActualWildcardAndLocalHost(lb.node)
 	// add an extra listener that binds to the port that is the recipient of the iptables redirect
+	// 增加一个额外的listener，绑定的端口，作为iptables转发的接收者
 	filterChains, needTLSForPassThroughFilterChain := buildInboundCatchAllNetworkFilterChains(configgen, lb.node, lb.push)
 	if features.EnableProtocolSniffingForInbound {
 		filterChains = append(filterChains, buildInboundCatchAllHTTPFilterChains(configgen, lb.node, lb.push)...)
@@ -449,8 +459,10 @@ func (lb *ListenerBuilder) getListeners() []*listener.Listener {
 }
 
 // Create pass through filter chains matching ipv4 address and ipv6 address independently.
+// 创建pass through filter chains，独立地匹配ipv4地址和ipv6地址
 // This function also returns a boolean indicating whether or not the TLS inspector is needed
 // for the filter chain.
+// 这个函数同时返回一个boolean表示filter chain是否需要TLS inspector
 func buildInboundCatchAllNetworkFilterChains(configgen *ConfigGeneratorImpl,
 	node *model.Proxy, push *model.PushContext) ([]*listener.FilterChain, bool) {
 	// ipv4 and ipv6 feature detect
@@ -471,6 +483,7 @@ func buildInboundCatchAllNetworkFilterChains(configgen *ConfigGeneratorImpl,
 			Filters: []*listener.Filter{{
 				Name: wellknown.TCPProxy,
 				ConfigType: &listener.Filter_TypedConfig{TypedConfig: util.MessageToAny(&tcp.TcpProxy{
+					// 添加blackhole cluster
 					StatPrefix:       util.BlackHoleCluster,
 					ClusterSpecifier: &tcp.TcpProxy_Cluster{Cluster: util.BlackHoleCluster},
 				})},
@@ -721,11 +734,14 @@ func buildOutboundCatchAllNetworkFilterChains(_ *ConfigGeneratorImpl,
 				// We should not allow requests to the listen port directly. Requests must be
 				// sent to some other original port and iptables redirected to 15001. This
 				// ensures we do not passthrough back to the listen port.
+				// 我们不应该允许请求直接到listen port，请求必须发送到其他端口然后被iptables转发到15001
+				// 这确保我们不会passthrough转发到listen port
 				DestinationPort: &wrappers.UInt32Value{Value: uint32(push.Mesh.ProxyListenPort)},
 			},
 			Filters: []*listener.Filter{{
 				Name: wellknown.TCPProxy,
 				ConfigType: &listener.Filter_TypedConfig{TypedConfig: util.MessageToAny(&tcp.TcpProxy{
+					// 进入BlackHoleCluster
 					StatPrefix:       util.BlackHoleCluster,
 					ClusterSpecifier: &tcp.TcpProxy_Cluster{Cluster: util.BlackHoleCluster},
 				})},

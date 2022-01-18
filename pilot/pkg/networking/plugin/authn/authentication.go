@@ -37,6 +37,7 @@ func NewPlugin() plugin.Plugin {
 func (Plugin) OnInboundFilterChains(in *plugin.InputParams) []networking.FilterChain {
 	return factory.NewPolicyApplier(in.Push,
 		in.Node.Metadata.Namespace, labels.Collection{in.Node.Metadata.Labels}).InboundFilterChain(
+												  // 默认的SDS UDS路径，即unix:./etc/istio/proxy/SDS
 		in.ServiceInstance.Endpoint.EndpointPort, constants.DefaultSdsUdsPath, in.Node,
 		in.ListenerProtocol, trustDomainsForValidation(in.Push.Mesh))
 }

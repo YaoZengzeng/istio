@@ -38,10 +38,12 @@ const (
 	// ListenerProtocolThrift is a Thrift listener.
 	ListenerProtocolThrift
 	// ListenerProtocolAuto enables auto protocol detection
+	// ListenerProtocolAuto使能自动协议检测
 	ListenerProtocolAuto
 )
 
 // ModelProtocolToListenerProtocol converts from a config.Protocol to its corresponding plugin.ListenerProtocol
+// ModelProtocolToListenerProtocol转换config.Protocol到它对应的plugin.ListenerProtocol
 func ModelProtocolToListenerProtocol(p protocol.Instance,
 	trafficDirection core.TrafficDirection) ListenerProtocol {
 	// If protocol sniffing is not enabled, the default value is TCP
@@ -64,6 +66,7 @@ func ModelProtocolToListenerProtocol(p protocol.Instance,
 	case protocol.HTTP, protocol.HTTP2, protocol.GRPC, protocol.GRPCWeb:
 		return ListenerProtocolHTTP
 	case protocol.TCP, protocol.HTTPS, protocol.TLS,
+		// HTTPS也归类到TCP
 		protocol.Mongo, protocol.Redis, protocol.MySQL:
 		return ListenerProtocolTCP
 	case protocol.Thrift:
@@ -82,13 +85,17 @@ func ModelProtocolToListenerProtocol(p protocol.Instance,
 }
 
 // FilterChain describes a set of filters (HTTP or TCP) with a shared TLS context.
+// FilterChain描述了一系列filters（HTTP或者TCP）并且有着共享的TLS context
 type FilterChain struct {
 	// FilterChainMatch is the match used to select the filter chain.
+	// FilterChainMatch用于匹配选择filter chain
 	FilterChainMatch *listener.FilterChainMatch
 	// TLSContext is the TLS settings for this filter chains.
+	// TLSContext是这个filter chains的TLS配置
 	TLSContext *tls.DownstreamTlsContext
 	// ListenerFilters are the filters needed for the whole listener, not particular to this
 	// filter chain.
+	// ListenerFilters是这个listeners需要的filters，不特别针对这个filter chain
 	ListenerFilters []*listener.ListenerFilter
 	// ListenerProtocol indicates whether this filter chain is for HTTP or TCP
 	// Note that HTTP filter chains can also have network filters
@@ -109,13 +116,16 @@ type FilterChain struct {
 }
 
 // MutableObjects is a set of objects passed to On*Listener callbacks. Fields may be nil or empty.
+// MutableObjects是一系列传递给On*Listener回调函数的对象，字段可能为nil或者为空
 // Any lists should not be overridden, but rather only appended to.
 // Non-list fields may be mutated; however it's not recommended to do this since it can affect other plugins in the
 // chain in unpredictable ways.
 type MutableObjects struct {
 	// Listener is the listener being built. Must be initialized before Plugin methods are called.
+	// Listener是被构建的listener，必须在Plugin方法被调用的时候初始化
 	Listener *listener.Listener
 
 	// FilterChains is the set of filter chains that will be attached to Listener.
+	// FilterChains是一系列会被关联到Listener的filter chains
 	FilterChains []FilterChain
 }

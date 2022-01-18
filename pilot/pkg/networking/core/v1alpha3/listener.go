@@ -81,6 +81,7 @@ const (
 
 const (
 	// RDSHttpProxy is the special name for HTTP PROXY route
+	// RDSHttpProxy是特殊的名字由于HTTP PROXY路由
 	RDSHttpProxy = "http_proxy"
 
 	// VirtualOutboundListenerName is the name for traffic capture listener
@@ -134,6 +135,8 @@ var (
 	// These are sniffed by the HTTP Inspector in the outbound listener
 	// We need to forward these ALPNs to upstream so that the upstream can
 	// properly use a HTTP or TCP listener
+	// 这些由outbound listener的HTTP Inspector探测到
+	// 我们需要转发这些ALPNs到upstream，这样upstream就能决定使用一个HTTP或者TCP listener
 	plaintextHTTPALPNs = []string{"http/1.0", "http/1.1", "h2c"}
 	mtlsHTTPALPNs      = []string{"istio-http/1.0", "istio-http/1.1", "istio-h2"}
 
@@ -157,8 +160,10 @@ var (
 	inboundPermissiveFilterChainMatchOptions = []FilterChainMatchOptions{
 		{
 			// client side traffic was detected as HTTP by the outbound listener, sent over mTLS
+			// 客户端的流量被outbound listener检测为HTTP，通过mTLS发送
 			ApplicationProtocols: mtlsHTTPALPNs,
 			// If client sends mTLS traffic, transport protocol will be set by the TLS inspector
+			// 如果客户端发送mTLS流量，transport protocol会由TLS inspector设置
 			TransportProtocol: xdsfilters.TLSTransportProtocol,
 			Protocol:          istionetworking.ListenerProtocolHTTP,
 		},
@@ -180,6 +185,8 @@ var (
 			// client side traffic could not be identified by the outbound listener, sent over plaintext
 			// or it could be that the client has no sidecar. In this case, this filter chain is simply
 			// receiving plaintext TCP traffic.
+			// 客户端流量不能被outbound listener识别，通过plaintext发送或者客户端没有sidecar，这种情况下，这个
+			// filter chain简单地接收plaintext的TCP流量
 			Protocol:          istionetworking.ListenerProtocolTCP,
 			TransportProtocol: xdsfilters.RawBufferTransportProtocol,
 		},
@@ -288,6 +295,7 @@ func init() {
 }
 
 // BuildListeners produces a list of listeners and referenced clusters for all proxies
+// BuildListeners生成一系列的listeners以及引用的clusters，对于所有的proxies
 func (configgen *ConfigGeneratorImpl) BuildListeners(node *model.Proxy,
 	push *model.PushContext) []*listener.Listener {
 	builder := NewListenerBuilder(node, push)
@@ -304,6 +312,7 @@ func (configgen *ConfigGeneratorImpl) BuildListeners(node *model.Proxy,
 }
 
 // buildSidecarListeners produces a list of listeners for sidecar proxies
+// buildSidecarListeners为sidecar proxies产生一系列的listeners
 func (configgen *ConfigGeneratorImpl) buildSidecarListeners(builder *ListenerBuilder) *ListenerBuilder {
 	if builder.push.Mesh.ProxyListenPort > 0 {
 		// Any build order change need a careful code review
@@ -318,7 +327,9 @@ func (configgen *ConfigGeneratorImpl) buildSidecarListeners(builder *ListenerBui
 }
 
 // buildSidecarInboundListeners creates listeners for the server-side (inbound)
+// buildSidecarInboundListeners为服务端（inbound）构建listeners
 // configuration for co-located service proxyInstances.
+// 配置用于co-located service proxyInstances
 func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 	node *model.Proxy,
 	push *model.PushContext) []*listener.Listener {
@@ -331,8 +342,10 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 
 	if !sidecarScope.HasCustomIngressListeners {
 		// There is no user supplied sidecarScope for this namespace
+		// 对于这个ns，没有用户提供的sidecarScope
 		// Construct inbound listeners in the usual way by looking at the ports of the service instances
 		// attached to the proxy
+		// 按照正常方式，构建inbound listeners，通过查看这个proxy关联的service instances的端口
 		// We should not create inbound listeners in NONE mode based on the service instances
 		// Doing so will prevent the workloads from starting as they would be listening on the same port
 		// Users are required to provide the sidecar config to define the inbound listeners
@@ -342,11 +355,15 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 
 		// inbound connections/requests are redirected to the endpoint address but appear to be sent
 		// to the service address.
+		// inbound connections/requests会被转发到endpoint地址，但是看着像是发送给service地址
 		//
 		// Protocol sniffing for inbound listener.
+		// 对于inbound listener的协议探测
 		// If there is no ingress listener, for each service instance, the listener port protocol is determined
 		// by the service port protocol. If user doesn't specify the service port protocol, the listener will
 		// be generated using protocol sniffing.
+		// 如果没有ingress listener，对于每个service instancee，listener的端口协议是由service port protocol决定的
+		// 如果用户不指定service port protocol，listener会由协议探测产生
 		// For example, the set of service instances
 		//      --> Endpoint
 		//              Address:Port 172.16.0.1:1111
@@ -359,12 +376,15 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 		//              ServicePort 9999|Unknown
 		//
 		//	The pilot will generate three listeners, the last one will use protocol sniffing.
+		//  pilot会产生三个listeners，最后一个会使用协议探测
 		//
 		for _, instance := range node.ServiceInstances {
 			endpoint := instance.Endpoint
 			// Inbound listeners will be aggregated into a single virtual listener (port 15006)
+			// Inbound listeners会被聚合为一个单个的virutal listener（端口为15006）
 			// As a result, we don't need to worry about binding to the endpoint IP; we already know
 			// all traffic for these listeners is inbound.
+			// 作为结果，我们不需要担心绑定到endpoint IP；我们已经知道所有这些listeners的流量都是inbound
 			// TODO: directly build filter chains rather than translating listeneners to filter chains
 			wildcard, _ := getActualWildcardAndLocalHost(node)
 			bind := wildcard
@@ -374,6 +394,9 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 			// VIP. Localhost bypasses the proxy and doesn't need any TCP
 			// route config. Endpoint IP is handled below and Service IP is handled
 			// by outbound routes.
+			// Local service实例可以通过以下三个地址之一被访问：localhost, endpoint IP以及service
+			// VIP，localhost跳过proxy并且不需要任何TCP路由配置，Endpoint IP在下面被处理并且Service IP
+			// 被outbound routes处理
 			// Traffic sent to our service VIP is redirected by remote
 			// services' kubeproxy to our specific endpoint IP.
 			port := *instance.ServicePort
@@ -393,12 +416,14 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 				Push:             push,
 			}
 
+			// listenerMap是全局的
 			if l := configgen.buildSidecarInboundListenerForPortOrUDS(node, listenerOpts, pluginParams, listenerMap); l != nil {
 				listeners = append(listeners, l)
 			}
 		}
 
 	} else {
+		// 获取Sidecar规则
 		rule := sidecarScope.Config.Spec.(*networking.Sidecar)
 		for _, ingressListener := range rule.Ingress {
 			// determine the bindToPort setting for listeners. Validation guarantees that these are all IP listeners.
@@ -478,10 +503,12 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundHTTPListenerOptsForPort
 	httpOpts := &httpListenerOpts{
 		routeConfig: configgen.buildSidecarInboundHTTPRouteConfig(pluginParams.Node,
 			pluginParams.Push, pluginParams.ServiceInstance, clusterName),
+		// 对于inbound流量，没有RDS
 		rds:              "", // no RDS for inbound traffic
 		useRemoteAddress: false,
 		connectionManager: &hcm.HttpConnectionManager{
 			// Append and forward client cert to backend.
+			// 将client cert添加到后端
 			ForwardClientCertDetails: hcm.HttpConnectionManager_APPEND_FORWARD,
 			SetCurrentClientCertDetails: &hcm.HttpConnectionManager_SetCurrentClientCertDetails{
 				Subject: proto.BoolTrue,
@@ -528,6 +555,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarThriftListenerOptsForPortOrUDS
 
 // buildSidecarInboundListenerForPortOrUDS creates a single listener on the server-side (inbound)
 // for a given port or unix domain socket
+// buildSidecarInboundListenerForPortOrUDS为一个给定的端口或者uds构建一个服务端的single listener
 func (configgen *ConfigGeneratorImpl) buildSidecarInboundListenerForPortOrUDS(node *model.Proxy, listenerOpts buildListenerOpts,
 	pluginParams *plugin.InputParams, listenerMap map[int]*inboundListenerEntry) *listener.Listener {
 	// Local service instances can be accessed through one of four addresses:
@@ -542,6 +570,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListenerForPortOrUDS(no
 	if old, exists := listenerMap[listenerOpts.port.Port]; exists {
 		// If we already setup this hostname, its not a conflict. This may just mean there are multiple
 		// IPs for this hostname
+		// 如果我们已经设置了这个hostname，这不是一个冲突，这可能只是意味着这个hostname有多个ip
 		if old.instanceHostname != pluginParams.ServiceInstance.Service.Hostname {
 			// For sidecar specified listeners, the caller is expected to supply a dummy service instance
 			// with the right port and a hostname constructed from the sidecar config's name+namespace
@@ -551,17 +580,20 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListenerForPortOrUDS(no
 					old.instanceHostname, pluginParams.ServiceInstance.Service.Hostname))
 		}
 		// Skip building listener for the same port
+		// 对于同样的端口，跳过构建listener
 		return nil
 	}
 
 	var allChains []istionetworking.FilterChain
 	for _, p := range configgen.Plugins {
+		// 调用plugins，构建chains
 		chains := p.OnInboundFilterChains(pluginParams)
 		allChains = append(allChains, chains...)
 	}
 
 	if len(allChains) == 0 {
 		// add one empty entry to the list so we generate a default listener below
+		// 增加一个空的entry到list，这样我们下面会产生一个默认的listener
 		allChains = []istionetworking.FilterChain{{}}
 	}
 
@@ -571,6 +603,7 @@ allChainsLabel:
 	for _, c := range allChains {
 		for _, lf := range c.ListenerFilters {
 			if lf.Name == wellknown.TlsInspector {
+				// 如果ListenerFilters中包含TlsInspector
 				tlsInspectorEnabled = true
 				break allChainsLabel
 			}
@@ -611,7 +644,7 @@ allChainsLabel:
 	}
 
 	// name all the filter chains
-
+	// 对所有的filter chains进行命名
 	for id, chain := range allChains {
 		var httpOpts *httpListenerOpts
 		var thriftOpts *thriftListenerOpts
@@ -689,6 +722,7 @@ allChainsLabel:
 	}
 
 	// call plugins
+	// 调用plugins构建listener
 	l := buildListener(listenerOpts)
 	l.TrafficDirection = core.TrafficDirection_INBOUND
 
@@ -702,11 +736,13 @@ allChainsLabel:
 		}
 	}
 	// Filters are serialized one time into an opaque struct once we have the complete list.
+	// 当我们有完整的list之后，Filters被序列化到一个opaque struct
 	if err := buildCompleteFilterChain(mutable, listenerOpts); err != nil {
 		log.Warna("buildSidecarInboundListeners ", err.Error())
 		return nil
 	}
 
+	// 端口到inbound listener entry之间的映射
 	listenerMap[listenerOpts.port.Port] = &inboundListenerEntry{
 		instanceHostname: pluginParams.ServiceInstance.Service.Hostname,
 	}
@@ -770,6 +806,7 @@ func (c outboundListenerConflict) addMetric(metrics model.Metrics) {
 
 // buildSidecarOutboundListeners generates http and tcp listeners for
 // outbound connections from the proxy based on the sidecar scope associated with the proxy.
+// buildSidecarOutboundListeners为outbound连接构建http以及tcp listener
 func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.Proxy,
 	push *model.PushContext) []*listener.Listener {
 
@@ -978,6 +1015,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 	}
 
 	// Now validate all the listeners. Collate the tcp listeners first and then the HTTP listeners
+	// 现在验证所有的listeners，首先整理tcp listeners，再HTTP listeners
 	// TODO: This is going to be bad for caching as the order of listeners in tcpListeners or httpListeners is not
 	// guaranteed.
 	for _, l := range listenerMap {
@@ -989,6 +1027,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 	}
 	tcpListeners = append(tcpListeners, httpListeners...)
 	// Build pass through filter chains now that all the non-passthrough filter chains are ready.
+	// 构建passthrouhg filter chains，现在所有的non-passthrough filter chains已经ready
 	for _, listener := range tcpListeners {
 		configgen.appendListenerFallthroughRouteForCompleteListener(listener, node, push)
 	}
@@ -1004,6 +1043,7 @@ func (configgen *ConfigGeneratorImpl) buildHTTPProxy(node *model.Proxy,
 	}
 
 	// enable HTTP PROXY port if necessary; this will add an RDS route for this port
+	// 使能HTTP PROXY端口，如果需要的话，这会为这个端口增加一个RDS路由
 	_, listenAddress := getActualWildcardAndLocalHost(node)
 
 	httpOpts := &core.Http1ProtocolOptions{
@@ -1642,6 +1682,7 @@ const (
 )
 
 // buildListenerOpts are the options required to build a Listener
+// buildListenerOpts是构建一个Listener所需的options
 type buildListenerOpts struct {
 	// nolint: maligned
 	push              *model.PushContext
@@ -1878,12 +1919,14 @@ func buildThriftProxy(thriftOpts *thriftListenerOpts) *thrift.ThriftProxy {
 }
 
 // buildListener builds and initializes a Listener proto based on the provided opts. It does not set any filters.
+// buildListener构建并且初始化一个listener proto基于给定的opts，它不设置任何的filters
 func buildListener(opts buildListenerOpts) *listener.Listener {
 	filterChains := make([]*listener.FilterChain, 0, len(opts.filterChainOpts))
 	listenerFiltersMap := make(map[string]bool)
 	var listenerFilters []*listener.ListenerFilter
 
 	// add a TLS inspector if we need to detect ServerName or ALPN
+	// 增加一个TLS inspector，如果我们需要检测ServerName或者ALPN
 	needTLSInspector := false
 	for _, chain := range opts.filterChainOpts {
 		needsALPN := chain.tlsContext != nil && chain.tlsContext.CommonTlsContext != nil && len(chain.tlsContext.CommonTlsContext.AlpnProtocols) > 0
@@ -1964,6 +2007,7 @@ func buildListener(opts buildListenerOpts) *listener.Listener {
 		}
 		filterChains = append(filterChains, &listener.FilterChain{
 			FilterChainMatch: match,
+			// 构建downstream tls transport socket
 			TransportSocket:  buildDownstreamTLSTransportSocket(chain.tlsContext),
 		})
 	}
@@ -2008,6 +2052,7 @@ func getMatchAllFilterChain(l *listener.Listener) (int, *listener.FilterChain) {
 
 // Create pass through filter chain for the listener assuming all the other filter chains are ready.
 // The match member of pass through filter chain depends on the existing non-passthrough filter chain.
+// 为listener创建pass through filster chain，假设所有其他filter chains已经ready
 // TODO(lambdai): Calculate the filter chain match to replace the wildcard and replace appendListenerFallthroughRoute.
 func (configgen *ConfigGeneratorImpl) appendListenerFallthroughRouteForCompleteListener(l *listener.Listener, node *model.Proxy, push *model.PushContext) {
 	matchIndex, matchAll := getMatchAllFilterChain(l)
@@ -2048,6 +2093,7 @@ func (configgen *ConfigGeneratorImpl) appendListenerFallthroughRouteForCompleteL
 }
 
 // buildCompleteFilterChain adds the provided TCP and HTTP filters to the provided Listener and serializes them.
+// buildCompleteFilterChain添加给定的TCP以及HTTP filters到给定的Listener并且序列化他们
 //
 // TODO: should we change this from []plugins.FilterChains to [][]listener.Filter, [][]*hcm.HttpFilter?
 // TODO: given how tightly tied listener.FilterChains, opts.filterChainOpts, and mutable.FilterChains are to eachother
@@ -2101,9 +2147,12 @@ func buildCompleteFilterChain(mutable *istionetworking.MutableObjects, opts buil
 				len(thriftProxies[i].ThriftFilters), mutable.Listener.Name, i)
 		} else if opt.httpOpts == nil {
 			// we are building a network filter chain (no http connection manager) for this filter chain
+			// 对于这个filter chain，我们构建一个network filter chain（没有http connection manager）
 			// In HTTP, we need to have RBAC, etc. upfront so that they can enforce policies immediately
 			// For network filters such as mysql, mongo, etc., we need the filter codec upfront. Data from this
 			// codec is used by RBAC later.
+			// 在HTTP中，我们需要RBAC在前，这样它们能立即应用策略
+			// 对于network filters，例如mysql, mongo等等，我们需要filter codec在前，来自codec的数据由后面的RBAC使用
 
 			if len(opt.networkFilters) > 0 {
 				// this is the terminating filter
@@ -2120,12 +2169,14 @@ func buildCompleteFilterChain(mutable *istionetworking.MutableObjects, opts buil
 			log.Debugf("attached %d network filters to listener %q filter chain %d", len(chain.TCP)+len(opt.networkFilters), mutable.Listener.Name, i)
 		} else {
 			// Add the TCP filters first.. and then the HTTP connection manager
+			// 首先添加TCP filters，之后再是HTTP connection manager
 			mutable.Listener.FilterChains[i].Filters = append(mutable.Listener.FilterChains[i].Filters, chain.TCP...)
 
 			// If statPrefix has been set before calling this method, respect that.
 			if len(opt.httpOpts.statPrefix) == 0 {
 				opt.httpOpts.statPrefix = strings.ToLower(mutable.Listener.TrafficDirection.String()) + "_" + mutable.Listener.Name
 			}
+			// 构建http connection manager
 			httpConnectionManagers[i] = buildHTTPConnectionManager(opts, opt.httpOpts, chain.HTTP)
 			filter := &listener.Filter{
 				Name:       wellknown.HTTPConnectionManager,

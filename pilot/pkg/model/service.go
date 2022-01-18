@@ -58,6 +58,7 @@ type Service struct {
 
 	// Ports is the set of network ports where the service is listening for
 	// connections
+	// Ports是一系列的网络端口，service用于监听连接
 	Ports PortList `json:"ports,omitempty"`
 
 	// ServiceAccounts specifies the service accounts that run the service.
@@ -166,14 +167,17 @@ const (
 // Port represents a network port where a service is listening for
 // connections. The port should be annotated with the type of protocol
 // used by the port.
+// Port代表一个网络端口，service用它来监听连接，port必须注释端口使用的网络协议的类型
 type Port struct {
 	// Name ascribes a human readable name for the port object. When a
 	// service has multiple ports, the name field is mandatory
+	// Name描述了port对象的一个人类可读的名字，当service有多个端口时，name字段是强制的
 	Name string `json:"name,omitempty"`
 
 	// Port number where the service can be reached. Does not necessarily
 	// map to the corresponding port numbers for the instances behind the
 	// service.
+	// service可以被访问到的端口号，不一定映射到service背后实例的端口号
 	Port int `json:"port"`
 
 	// Protocol to be used for the port.
@@ -211,12 +215,17 @@ type ProbeList []*Probe
 // of a service. It binds a network endpoint (ip:port), the service
 // description (which is oblivious to various versions) and a set of labels
 // that describe the service version associated with this instance.
+// ServiceInstance代表特定版本的service的单个实例，它绑定到一个network endpoint (ip:port)
+// service描述以及一些的labels，描述和这个实例相关的service版本
 //
 // Since a ServiceInstance has a single IstioEndpoint, which has a single port,
 // multiple ServiceInstances are required to represent a workload that listens
 // on multiple ports.
+// 因为一个ServiceInstance有着单个的IstioEndpoint，它有着单个的端口，如果listeners监听
+// 多个端口，则需要多个ServiceInstances
 //
 // The labels associated with a service instance are unique per a network endpoint.
+// 和service intance相关的labels对于每个network endpoint都是独有的
 // There is one well defined set of labels for each service instance network endpoint.
 //
 // For example, the set of service instances associated with catalog.mystore.com
@@ -554,6 +563,8 @@ func (s *Service) External() bool {
 
 // BuildSubsetKey generates a unique string referencing service instances for a given service name, a subset and a port.
 // The proxy queries Pilot with this key to obtain the list of instances in a subset.
+// BuildSubsetKey构建一个unique string引用service instances，用一个给定的service name, 一个subset以及一个port
+// proxy用这个key来询问Pilot获取这个subset中的一系列实例
 func BuildSubsetKey(direction TrafficDirection, subsetName string, hostname host.Name, port int) string {
 	return string(direction) + "|" + strconv.Itoa(port) + "|" + subsetName + "|" + string(hostname)
 }

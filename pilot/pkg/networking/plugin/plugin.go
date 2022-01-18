@@ -31,11 +31,15 @@ const (
 // InputParams is a set of values passed to Plugin callback methods. Not all fields are guaranteed to
 // be set, it's up to the callee to validate required fields are set and emit error if they are not.
 // These are for reading only and should not be modified.
+// InputParams是传输给Plugin回调函数的一系列值，不是所有值都会被设置
 type InputParams struct {
 	// ListenerProtocol is the protocol/class of listener (TCP, HTTP etc.). Must be set.
 	// This is valid only for the inbound listener
+	// ListenerProtocol是listener的协议（TCP, HTTP），必须被设置，这只对inbound listener是合法的
 	// Outbound listeners could have multiple filter chains, where one filter chain could be
 	// a HTTP connection manager with TLS context, while the other could be a tcp proxy with sni
+	// Outbound listeners可以有多个filter chains，一个filter chain可以是有着TLS context的HTTP connection
+	// manager，同时另一个可以是有着sni的tcp proxy
 	ListenerProtocol istionetworking.ListenerProtocol
 	// Node is the node the response is for.
 	Node *model.Proxy
@@ -50,6 +54,8 @@ type InputParams struct {
 // Plugin is called during the construction of a listener.Listener which may alter the Listener in any
 // way. Examples include AuthenticationPlugin that sets up mTLS authentication on the inbound Listener
 // and outbound Cluster, etc.
+// Plugin在一个listener的构建过程中被调用，Listener可能以任何方式改变Listener
+// 例子包括AuthenticationPlugin为inbound Listener以及outbound Cluster构建mTLS authentication
 type Plugin interface {
 	// OnOutboundListener is called whenever a new outbound listener is added to the LDS output for a given service.
 	// Can be used to add additional filters on the outbound path.

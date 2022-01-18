@@ -50,6 +50,7 @@ var (
 )
 
 // DiscoveryStream is an interface for ADS.
+// DiscoveryStream是ADS的一个接口
 type DiscoveryStream interface {
 	Send(*discovery.DiscoveryResponse) error
 	Recv() (*discovery.DiscoveryRequest, error)
@@ -796,13 +797,16 @@ func (s *DiscoveryServer) removeCon(conID string) {
 }
 
 // Send with timeout
+// 发送并且设置超时
 func (conn *Connection) send(res *discovery.DiscoveryResponse) error {
 	errChan := make(chan error, 1)
 	// hardcoded for now - not sure if we need a setting
+	// 当前超时时间默认为5s
 	t := time.NewTimer(sendTimeout)
 	go func() {
 		start := time.Now()
 		defer func() { recordSendTime(time.Since(start)) }()
+		// 调用stream的Send函数进行发送
 		errChan <- conn.stream.Send(res)
 		close(errChan)
 	}()
@@ -815,6 +819,7 @@ func (conn *Connection) send(res *discovery.DiscoveryResponse) error {
 		return status.Errorf(codes.DeadlineExceeded, "timeout sending")
 	case err := <-errChan:
 		if err == nil {
+			// 发送成功
 			sz := 0
 			for _, rc := range res.Resources {
 				sz += len(rc.Value)
@@ -822,6 +827,7 @@ func (conn *Connection) send(res *discovery.DiscoveryResponse) error {
 			conn.proxy.Lock()
 			if res.Nonce != "" {
 				if conn.proxy.WatchedResources[res.TypeUrl] == nil {
+					// 记录watchedResoure
 					conn.proxy.WatchedResources[res.TypeUrl] = &model.WatchedResource{TypeUrl: res.TypeUrl}
 				}
 				conn.proxy.WatchedResources[res.TypeUrl].NonceSent = res.Nonce
