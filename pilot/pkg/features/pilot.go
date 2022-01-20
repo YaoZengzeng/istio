@@ -393,6 +393,8 @@ var (
 			"associated WorkloadEntry is cleaned up.").Get()
 
 	PilotEnableLoopBlockers = env.RegisterBoolVar("PILOT_ENABLE_LOOP_BLOCKER", true,
+		// 如果enabled的话，Envoy会配置为防止任何直接发往inbound/outbound的流量
+		// 这能防止traffic loops，
 		"If enabled, Envoy will be configured to prevent traffic directly the the inbound/outbound "+
 			"ports (15001/15006). This prevents traffic loops. This option will be removed, and considered always enabled, in 1.9.").Get()
 )

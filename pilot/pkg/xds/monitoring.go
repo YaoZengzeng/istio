@@ -161,6 +161,7 @@ var (
 func recordXDSClients(version string, delta float64) {
 	xdsClientTrackerMutex.Lock()
 	defer xdsClientTrackerMutex.Unlock()
+	// 记载各个版本client的数目
 	xdsClientTracker[version] += delta
 	xdsClients.With(versionTag.Value(version)).Record(xdsClientTracker[version])
 }

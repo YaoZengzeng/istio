@@ -173,9 +173,13 @@ type filterchain struct {
 }
 
 var (
+	// 明文的HTTP的ALPN
 	plaintextHTTPALPNs = []string{"http/1.0", "http/1.1", "h2c"}
+	// istio的HTTP明文
 	istioHTTPPlaintext = []string{"istio", "istio-http/1.0", "istio-http/1.1", "istio-h2"}
+	// http的tls
 	httpTLS            = []string{"http/1.0", "http/1.1", "h2c", "istio-http/1.0", "istio-http/1.1", "istio-h2"}
+	// TCP的tls
 	tcpTLS             = []string{"istio-peer-exchange", "istio"}
 
 	protDescrs = map[string][]string{

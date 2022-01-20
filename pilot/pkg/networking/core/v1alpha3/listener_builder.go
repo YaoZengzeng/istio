@@ -76,6 +76,9 @@ type ListenerBuilder struct {
 // Setup the filter chain match so that the match should work under both
 // - bind_to_port == false listener
 // - virtual inbound listener
+// 设置filter chain match，这样match就应该同时在以下场景能工作
+// - bind_to_port == false的listener
+// - virtual inbound listener
 func amendFilterChainMatchFromInboundListener(chain *listener.FilterChain, l *listener.Listener) enabledInspector {
 	if chain.FilterChainMatch == nil {
 		chain.FilterChainMatch = &listener.FilterChainMatch{}
@@ -122,6 +125,7 @@ func isBindtoPort(l *listener.Listener) bool {
 }
 
 // enabledInspector captures if for a given listener, listener filter inspectors are added
+// enabledInspector获取对于一个给定的listener，listener filter inspectors被添加
 type enabledInspector struct {
 	HTTPInspector bool
 	TLSInspector  bool
@@ -135,14 +139,18 @@ func reduceInboundListenerToFilterChains(listeners []*listener.Listener) ([]*lis
 		// default bindToPort is true and these listener should be skipped
 		if isBindtoPort(l) {
 			// A listener on real port should not be intercepted by virtual inbound listener
+			// 一个绑定真正端口的listener不应该被virtual inbound listener拦截
 			continue
 		}
 		for _, c := range l.FilterChains {
 			chain := golangproto.Clone(c).(*listener.FilterChain)
 			inspectors := amendFilterChainMatchFromInboundListener(chain, l)
+			// 扩展chains
 			chains = append(chains, chain)
 			// Aggregate the inspector options. If any listener on the port needs inspector, we should add it
 			// Generally there is 1 listener per port anyways.
+			// 聚合inspector选项，如果任何监听在这个端口的listener需要inspector，我们需要添加它
+			// 通常来说，总是一个listener一个端口
 			port := int(l.Address.GetSocketAddress().GetPortValue())
 			if port > 0 {
 				prev := inspectorsMap[port]
@@ -181,10 +189,12 @@ func (lb *ListenerBuilder) aggregateVirtualInboundListener(needTLSForPassThrough
 		return filterChains[i].Name < filterChains[j].Name
 	})
 
+	// 添加filter chain到virtualInboundListener中
 	lb.virtualInboundListener.FilterChains =
 		append(lb.virtualInboundListener.FilterChains, filterChains...)
 
 	if needsTLS(inspectors) || needTLSForPassThroughFilterChain {
+		// 需要添加tls inspector
 		lb.virtualInboundListener.ListenerFilters =
 			append(lb.virtualInboundListener.ListenerFilters, buildTLSInspector(inspectors))
 	}
@@ -197,6 +207,8 @@ func (lb *ListenerBuilder) aggregateVirtualInboundListener(needTLSForPassThrough
 	// Note: the HTTP inspector should be after TLS inspector.
 	// If TLS inspector sets transport protocol to tls, the http inspector
 	// won't inspect the packet.
+	// 注意：HTTP inspector应该在TLS inspector之后，如果TLS inspector将transport protocol
+	// 设置为tls，则http inspector不会检查packet
 	if features.EnableProtocolSniffingForInbound {
 		lb.virtualInboundListener.ListenerFilters =
 			append(lb.virtualInboundListener.ListenerFilters, buildHTTPInspector(inspectors))
@@ -211,6 +223,8 @@ func (lb *ListenerBuilder) aggregateVirtualInboundListener(needTLSForPassThrough
 
 	// All listeners except bind_to_port=true listeners are now a part of virtual inbound and not needed
 	// we can filter these ones out.
+	// 现在所有的listeners，除了bind_to_port为true的listeners，都是virtual inbound的一部分并且不再需要了
+	// 我们可以过滤掉他们
 	bindToPortInbound := make([]*listener.Listener, 0, len(lb.inboundListeners))
 	for _, i := range lb.inboundListeners {
 		if isBindtoPort(i) {
@@ -248,9 +262,11 @@ func buildTLSInspector(inspectors map[int]enabledInspector) *listener.ListenerFi
 
 // buildHTTPInspector creates an http inspector filter. Based on the configured ports, this may be enabled
 // for only some ports.
+// buildHTTPInspector创建一个http inspector filter，基于配置的端口，它可能只对有些端口使能
 func buildHTTPInspector(inspectors map[int]enabledInspector) *listener.ListenerFilter {
 	ports := make([]int, 0, len(inspectors))
 	// Collect all ports where HTTP inspector is disabled.
+	// 选择所有禁用HTTP inspector的端口
 	for p, i := range inspectors {
 		if !i.HTTPInspector {
 			ports = append(ports, p)
@@ -274,6 +290,9 @@ func buildHTTPInspector(inspectors map[int]enabledInspector) *listener.ListenerF
 // match everything except the passed in ports. This is useful, for example, to
 // enable protocol sniffing on every port except port X and Y, because X and Y
 // are explicitly declared.
+// listenerPredicateExcludePorts返回一个listener filter predicate，它会匹配everything
+// 除了传入的ports，这很有用，例如，在所有端口进行protocol sniffing，除了端口X和Y
+// 因为端口X和Y被显示声明了
 func listenerPredicateExcludePorts(ports []int) *listener.ListenerFilterChainMatchPredicate {
 	ranges := []*listener.ListenerFilterChainMatchPredicate{}
 	for _, p := range ports {
@@ -468,6 +487,7 @@ func buildInboundCatchAllNetworkFilterChains(configgen *ConfigGeneratorImpl,
 	// ipv4 and ipv6 feature detect
 	ipVersions := make([]string, 0, 2)
 	if node.SupportsIPv4() {
+		// inbound passthrough cluster
 		ipVersions = append(ipVersions, util.InboundPassthroughClusterIpv4)
 	}
 	if node.SupportsIPv6() {
@@ -483,7 +503,7 @@ func buildInboundCatchAllNetworkFilterChains(configgen *ConfigGeneratorImpl,
 			Filters: []*listener.Filter{{
 				Name: wellknown.TCPProxy,
 				ConfigType: &listener.Filter_TypedConfig{TypedConfig: util.MessageToAny(&tcp.TcpProxy{
-					// 添加blackhole cluster
+					// 添加blackhole cluster，防止直接发往15006端口的流量
 					StatPrefix:       util.BlackHoleCluster,
 					ClusterSpecifier: &tcp.TcpProxy_Cluster{Cluster: util.BlackHoleCluster},
 				})},
@@ -518,15 +538,18 @@ func buildInboundCatchAllNetworkFilterChains(configgen *ConfigGeneratorImpl,
 		}
 		var allChains []istionetworking.FilterChain
 		for _, p := range configgen.Plugins {
+			// 构建passthrough filter chains
 			chains := p.OnInboundPassthroughFilterChains(in)
 			allChains = append(allChains, chains...)
 		}
 
 		if len(allChains) == 0 {
 			// Add one empty entry to the list if none of the plugins are interested in updating the filter chains.
+			// 增加一个空的entry到list，如果没有plugins对更新filter chains感兴趣
 			allChains = []istionetworking.FilterChain{{}}
 		}
 		// Override the filter chain match to make sure the pass through filter chain captures the pass through traffic.
+		// 覆盖filter chain match来确保pass through filter chain抓取pass through流量
 		for i := range allChains {
 			chain := &allChains[i]
 			if chain.FilterChainMatch == nil {
@@ -544,12 +567,14 @@ func buildInboundCatchAllNetworkFilterChains(configgen *ConfigGeneratorImpl,
 			FilterChains: allChains,
 		}
 		for _, p := range configgen.Plugins {
+			// 构建inbound passthrough filter chains
 			if err := p.OnInboundPassthrough(in, mutable); err != nil {
 				log.Errorf("Build inbound passthrough filter chains error: %v", err)
 			}
 		}
 
 		// Construct the actual filter chains for each of the filter chain from the plugin.
+		// 构建真正的filter chains，为每个来自plugin的filter chain
 		for _, chain := range allChains {
 			filterChain := &listener.FilterChain{
 				FilterChainMatch: chain.FilterChainMatch,
@@ -558,6 +583,7 @@ func buildInboundCatchAllNetworkFilterChains(configgen *ConfigGeneratorImpl,
 			if chain.TLSContext != nil {
 				filterChain.FilterChainMatch.TransportProtocol = xdsfilters.TLSTransportProtocol
 				// Update transport socket from the TLS context configured by the plugin.
+				// 更新transport socket，基于plugin配置的TLS context
 				filterChain.TransportSocket = &core.TransportSocket{
 					Name:       util.EnvoyTLSSocketName,
 					ConfigType: &core.TransportSocket_TypedConfig{TypedConfig: util.MessageToAny(chain.TLSContext)},
@@ -571,6 +597,7 @@ func buildInboundCatchAllNetworkFilterChains(configgen *ConfigGeneratorImpl,
 					break
 				}
 			}
+			// name设置为VirtualInboundListenerName
 			filterChain.Name = VirtualInboundListenerName
 			filterChains = append(filterChains, filterChain)
 		}

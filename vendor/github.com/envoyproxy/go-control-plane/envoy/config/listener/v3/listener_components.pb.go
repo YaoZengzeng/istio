@@ -400,6 +400,7 @@ func (x *FilterChainMatch) GetApplicationProtocols() []string {
 
 // A filter chain wraps a set of match criteria, an option TLS context, a set of filters, and
 // various other parameters.
+// 一个filter chain封装了一系列匹配场景，一个可选的TLS context，一系列的filters以及各种其他参数
 // [#next-free-field: 9]
 type FilterChain struct {
 	state         protoimpl.MessageState
@@ -407,11 +408,15 @@ type FilterChain struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The criteria to use when matching a connection to this filter chain.
+	// 当匹配一个连接到这个filter chain使用的标准
 	FilterChainMatch *FilterChainMatch `protobuf:"bytes,1,opt,name=filter_chain_match,json=filterChainMatch,proto3" json:"filter_chain_match,omitempty"`
 	// A list of individual network filters that make up the filter chain for
 	// connections established with the listener. Order matters as the filters are
 	// processed sequentially as connection events happen. Note: If the filter
 	// list is empty, the connection will close by default.
+	// 一系列独立的network filters，构成了这个filter chain，用于在listener上构建的连接
+	// 顺序很重要，因为filters是按顺序执行的，当连接事件发生时，注意：如果filter list为空
+	// 则连接会默认关闭
 	Filters []*Filter `protobuf:"bytes,3,rep,name=filters,proto3" json:"filters,omitempty"`
 	// Whether the listener should expect a PROXY protocol V1 header on new
 	// connections. If this option is enabled, the listener will assume that that
@@ -423,10 +428,12 @@ type FilterChain struct {
 	// [#not-implemented-hide:] filter chain metadata.
 	Metadata *v3.Metadata `protobuf:"bytes,5,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	// Optional custom transport socket implementation to use for downstream connections.
+	// 可选的custom transport socekt实现，用于donwstream connections
 	// To setup TLS, set a transport socket with name `tls` and
 	// :ref:`DownstreamTlsContext <envoy_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the `typed_config`.
 	// If no transport socket configuration is specified, new connections
 	// will be set up with plaintext.
+	// 如果没有配置transport socket，新的连接会按照明文设置
 	TransportSocket *v3.TransportSocket `protobuf:"bytes,6,opt,name=transport_socket,json=transportSocket,proto3" json:"transport_socket,omitempty"`
 	// [#not-implemented-hide:] The unique name (or empty) by which this filter chain is known. If no
 	// name is provided, Envoy will allocate an internal UUID for the filter chain. If the filter

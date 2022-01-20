@@ -131,6 +131,7 @@ type FilterChainMatchOptions struct {
 
 // A set of pre-allocated variables related to protocol sniffing logic for
 // propagating the ALPN to upstreams
+// 一系列和协议嗅探逻辑相关的pre-allocated variables，用于填充到upstreams的ALPN
 var (
 	// These are sniffed by the HTTP Inspector in the outbound listener
 	// We need to forward these ALPNs to upstream so that the upstream can
@@ -614,6 +615,7 @@ allChainsLabel:
 
 	var filterChainMatchOption []FilterChainMatchOptions
 	// Detect protocol by sniffing and double the filter chain
+	// 通过嗅探检测协议并且double filter chain
 	if pluginParams.ListenerProtocol == istionetworking.ListenerProtocolAuto {
 		allChains = append(allChains, allChains...)
 		if tlsInspectorEnabled {
