@@ -39,6 +39,7 @@ const (
 )
 
 // Server is the gPRC server that exposes SDS through UDS.
+// Server是一个gRPC server，通过UDS暴露UDS
 type Server struct {
 	workloadSds *sdsservice
 	gatewaySds  *sdsservice
@@ -52,6 +53,7 @@ type Server struct {
 }
 
 // NewServer creates and starts the Grpc server for SDS.
+// NewServer创建并且启动Grpc server用于SDS
 func NewServer(options *ca2.Options, workloadSecretCache, gatewaySecretCache ca2.SecretManager) (*Server, error) {
 	s := &Server{
 		workloadSds: newSDSService(workloadSecretCache,
@@ -170,6 +172,7 @@ func (s *Server) initWorkloadSdsService(options *ca2.Options) error { //nolint: 
 	s.workloadSds.register(s.grpcWorkloadServer)
 
 	var err error
+	// 构建UDS listener
 	s.grpcWorkloadListener, err = uds.NewListener(options.WorkloadUDSPath)
 	if err != nil {
 		sdsServiceLog.Errorf("Failed to set up UDS path: %v", err)

@@ -371,6 +371,7 @@ func (sa *Agent) FindRootCAForCA() string {
 }
 
 // newWorkloadSecretCache creates the cache for workload secrets and/or gateway secrets.
+// newWorkloadSecretCache为workload secrets以及gateway secrets创建缓存
 func (sa *Agent) newWorkloadSecretCache() (workloadSecretCache *cache.SecretCache, caClient security.Client) {
 	fetcher := &secretfetcher.SecretFetcher{}
 
@@ -447,6 +448,7 @@ func (sa *Agent) newSecretCache(namespace string) (gatewaySecretCache *cache.Sec
 	gSecretFetcher := &secretfetcher.SecretFetcher{}
 	// TODO: use the common init !
 	// If gateway is using file mounted certs, we do not have to setup secret fetcher.
+	// 如果gateway使用文件挂载的证书，我们不用设置secret fetcher
 	if !sa.secOpts.FileMountedCerts {
 		cs, err := kube.CreateClientset("", "")
 		if err != nil {
@@ -454,8 +456,10 @@ func (sa *Agent) newSecretCache(namespace string) (gatewaySecretCache *cache.Sec
 			os.Exit(1)
 		}
 
+		// 设置fallback secret name为"gateway-fallback"
 		gSecretFetcher.FallbackSecretName = "gateway-fallback"
 
+		// 初始化secret fetcher
 		gSecretFetcher.InitWithKubeClientAndNs(cs.CoreV1(), namespace)
 
 		stopCh := make(chan struct{})

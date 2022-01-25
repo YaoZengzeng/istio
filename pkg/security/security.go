@@ -28,6 +28,8 @@ const (
 	// etc/certs files are used with external CA managing the certs,
 	// i.e. mounted Secret or external plugin.
 	// If present, FileMountedCerts should be true.
+	// etc/certs文件用于外部CA管理的certs，通过Secret挂载或者外部的plugin
+	// 如果存在的话，应该使用FileMountedCerts
 
 	// The well-known path for an existing certificate chain file
 	DefaultCertChainFilePath = "./etc/certs/cert-chain.pem"
@@ -62,6 +64,7 @@ var (
 
 // Options provides all of the configuration parameters for secret discovery service
 // and CA configuration. Used in both Istiod and Agent.
+// Options提供了SDS以及CA配置的所有配置参数，同时用于Istiod和Agent
 // TODO: ProxyConfig should have most of those, and be passed to all components
 // (as source of truth)
 type Options struct {
@@ -113,13 +116,17 @@ type Options struct {
 	DebugPort int
 
 	// EnableWorkloadSDS indicates whether node agent works as SDS server for workload proxies.
+	// EnableWorkloadSDS表明node agent是否作为SDS server用于workload proxies
 	EnableWorkloadSDS bool
 
 	// EnableGatewaySDS indicates whether node agent works as ingress gateway agent.
+	// EnableGatewaySDS表明node agent是否作为ingress gateway的agent
 	EnableGatewaySDS bool
 
 	// UseLocalJWT is set when the sds server should use its own local JWT, and not expect one
 	// from the UDS caller. Used when it runs in the same container with Envoy.
+	// UseLocalJWT被设置，当sds server应该使用它的local JWT，并且不期望来自UDS的调用者
+	// 这会在和Envoy在同一个容器中使用
 	UseLocalJWT bool
 
 	// Whether to generate PKCS#8 private keys.
@@ -211,21 +218,28 @@ type Client interface {
 }
 
 // SecretManager defines secrets management interface which is used by SDS.
+// SecretManager定义了由SDS使用的secrets管理的接口
 type SecretManager interface {
 	// GenerateSecret generates new secret and cache the secret.
+	// GenerateSecret生成新的secret并且缓存之
 	// Current implementation constructs the SAN based on the token's 'sub'
 	// claim, expected to be in the K8S format. No other JWTs are currently supported
 	// due to client logic. If JWT is missing/invalid, the resourceName is used.
+	// 当前的实现基于token的'sub' claim构建SAN，期望它以K8S的形式，不支持其他的JWTs，因为client的逻辑
+	// 如果JWT缺失或者非法，使用resourceName
 	GenerateSecret(ctx context.Context, connectionID, resourceName, token string) (*SecretItem, error)
 
-	// ShouldWaitForIngressGatewaySecret indicates whether a valid ingress gateway secret is expected.
+	// ShouldWaitForIngressGatewaySecret indicates whether a valid ingress gateway secret is expected
+	// ShouldWaitForIngressGatewaySecret表明是否期望一个合法的ingress gateway secret
 	ShouldWaitForGatewaySecret(connectionID, resourceName, token string, fileMountedCertsOnly bool) bool
 
 	// SecretExist checks if secret already existed.
 	// This API is used for sds server to check if coming request is ack request.
+	// SecretExist检查secret是否已经存在，这个API用于sds server检查到来的请求是不是ack request
 	SecretExist(connectionID, resourceName, token, version string) bool
 
 	// DeleteSecret deletes a secret by its key from cache.
+	// DeleteSecret基于key将secret从cache中删除
 	DeleteSecret(connectionID, resourceName string)
 }
 
@@ -266,6 +280,7 @@ type SecretItem struct {
 
 type CredFetcher interface {
 	// GetPlatformCredential fetches workload credential provided by the platform.
+	// GetPlatformCredential获取platform提供的workload credential
 	GetPlatformCredential() (string, error)
 
 	// GetType returns credential fetcher type. Currently the supported type is "GoogleComputeEngine".

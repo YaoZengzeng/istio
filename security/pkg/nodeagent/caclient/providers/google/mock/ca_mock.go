@@ -26,6 +26,7 @@ import (
 )
 
 // CAService is a simple mocked Google CA Service.
+// CAService是一个简单的mocked Google CA服务
 type CAService struct {
 	Certs []string
 	Err   error
@@ -47,6 +48,7 @@ type CAServer struct {
 }
 
 // CreateServer creates a mocked local Google CA server and runs it in a separate thread.
+// CreateServer创建一个mocked本地Google CA server并且运行在一个独立的thread中
 // nolint: interfacer
 func CreateServer(addr string, service *CAService) (*CAServer, error) {
 	// create a local grpc server

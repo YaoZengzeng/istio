@@ -68,6 +68,7 @@ var (
 )
 
 // sdsEvent represents a secret event that results in a push.
+// sdsEvent代表一个secret event，会触发一次push
 type sdsEvent struct{}
 
 type sdsConnection struct {
@@ -119,6 +120,7 @@ type sdsservice struct {
 	closing chan bool
 
 	// skipToken indicates whether token is required.
+	// skipToken表明是否需要token
 	skipToken bool
 
 	fileMountedCertsOnly bool
@@ -152,6 +154,7 @@ type Debug struct {
 }
 
 // newSDSService creates Secret Discovery Service which implements envoy SDS API.
+// newSDSService创建SDS，它实现了envoy SDS API
 func newSDSService(st security.SecretManager,
 	secOpt *security.Options,
 	skipTokenVerification bool) *sdsservice {
@@ -397,6 +400,7 @@ func (s *sdsservice) StreamSecrets(stream sds.SecretDiscoveryService_StreamSecre
 }
 
 // FetchSecrets generates and returns secret from SecretManager in response to DiscoveryRequest
+// FetchSecrets生成并且返回从SecretManager获取的secret，作为对DiscoveryRequest的response
 func (s *sdsservice) FetchSecrets(ctx context.Context, discReq *discovery.DiscoveryRequest) (*discovery.DiscoveryResponse, error) {
 	token := ""
 	if s.localJWT {
@@ -492,6 +496,8 @@ func clearStaledClients() {
 
 // NotifyProxy sends notification to proxy about secret update,
 // SDS will close streaming connection if secret is nil.
+// NotifyProxy发送通知到proxy，关于secret的更新，SDS会关闭streaming connection
+// 如果secret为nil
 // TODO: this method may have a race condition and a very confusing logic,
 // it may work if the push channel somehow prevents other secret rotations
 // happening in other go-routines from replacing the per-connection fields
@@ -509,10 +515,12 @@ func NotifyProxy(connKey cache.ConnKey, secret *security.SecretItem) error {
 		return fmt.Errorf("no connection with id %q can be found", connKey.ConnectionID)
 	}
 	conn.mutex.Lock()
+	// 对secret进行赋值
 	conn.secret = secret
 	conn.mutex.Unlock()
 	sdsClientsMutex.Unlock()
 
+	// 推送SDS EVENT到Push Channel
 	conn.pushChannel <- &sdsEvent{}
 	return nil
 }

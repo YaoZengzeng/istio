@@ -145,6 +145,7 @@ yTi7LtqQOBVq0veaVudHd+9I/JrJ
 
 func createRealSDSServer(t *testing.T, socket string) *Server {
 	// Create a local grpc server to mock Mesh CA
+	// 创建一个本地的grpc server用于模拟Mesh的CA
 	caService := &mca.CAService{Certs: validCerts, Err: nil}
 	mockMeshCAServer, err := mca.CreateServer(mockCAAddress, caService)
 	if err != nil {
@@ -160,6 +161,7 @@ func createRealSDSServer(t *testing.T, socket string) *Server {
 	fmt.Println("STS server is up.")
 
 	// Create a SDS server talking to the fake servers
+	// 创建一个SDS server用来和fake servers进行交互
 	stsclient.GKEClusterURL = msts.FakeGKEClusterURL
 	stsclient.SecureTokenEndpoint = mockSTSServer.URL + "/v1/identitybindingtoken"
 	arg := security.Options{
@@ -168,6 +170,7 @@ func createRealSDSServer(t *testing.T, socket string) *Server {
 		RecycleInterval:   100 * time.Millisecond,
 		WorkloadUDSPath:   socket,
 	}
+	// 构建caClient
 	caClient, err := gca.NewGoogleCAClient(mockMeshCAServer.Address, false)
 	if err != nil {
 		t.Fatalf("failed to create secretFetcher for workload proxy: %v", err)
@@ -183,6 +186,7 @@ func createRealSDSServer(t *testing.T, socket string) *Server {
 	workloadSdsCacheOptions.TokenExchangers = NewPlugins([]string{"GoogleTokenExchange"})
 	workloadSdsCacheOptions.RotationInterval = 10 * time.Minute
 	workloadSdsCacheOptions.InitialBackoffInMilliSec = 10
+	// 构建Secret Cache
 	workloadSecretCache := cache.NewSecretCache(wSecretFetcher, NotifyProxy, workloadSdsCacheOptions)
 
 	server, err := NewServer(&arg, workloadSecretCache, nil)
@@ -247,9 +251,11 @@ func TestNodeAgentBasic(t *testing.T) {
 	atomic.StoreInt64(&connectionNumber, 0)
 
 	socket := fmt.Sprintf("/tmp/gotest%s.sock", string(uuid.NewUUID()))
+	// 创建真正的SDS Server
 	server := createRealSDSServer(t, socket)
 	defer server.Stop()
 
+	// 创建SDS Client
 	connTwo, streamTwo := createSDSClient(t, socket)
 	proxyIDTwo := "sidecar~127.0.0.1~SecretsPushStreamTwo~local"
 	notifyChanTwo := make(chan notifyMsg)

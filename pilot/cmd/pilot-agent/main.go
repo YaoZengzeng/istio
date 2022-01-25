@@ -106,6 +106,7 @@ var (
 		"Explicitly set the root CA to expect for the CA connection.").Get()
 
 	outputKeyCertToDir = env.RegisterStringVar("OUTPUT_CERTS", "",
+		// key和certificate的输出目录，如果为空，key和certificate不会被保存，对于VM必须设置用来生成certificates
 		"The output directory for the key and certificate. If empty, key and certificate will not be saved. "+
 			"Must be set for VMs using provisioning certificates.").Get()
 	proxyConfigEnv = env.RegisterStringVar(
@@ -126,6 +127,7 @@ var (
 		"The trust domain for spiffe certificates").Get()
 
 	secretTTLEnv = env.RegisterDurationVar("SECRET_TTL", 24*time.Hour,
+		// istio agent请求的证书生命周期，默认为24小时
 		"The cert lifetime requested by istio agent").Get()
 	secretRotationGracePeriodRatioEnv = env.RegisterFloatVar("SECRET_GRACE_PERIOD_RATIO", 0.5,
 		"The grace period ratio for the cert rotation, by default 0.5.").Get()

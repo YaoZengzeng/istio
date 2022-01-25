@@ -60,10 +60,12 @@ const (
 	retryWaitDuration = 200 * time.Millisecond
 
 	// RootCertReqResourceName is resource name of discovery request for root certificate.
+	// RootCertReqResourceName是根证书的discovery request的资源名
 	RootCertReqResourceName = "ROOTCA"
 
 	// WorkloadKeyCertResourceName is the resource name of the discovery request for workload
 	// identity.
+	// WorkloadKeyCertResourceName是用于workload identity的discovery request的资源名
 	// TODO: change all the pilot one reference definition here instead.
 	WorkloadKeyCertResourceName = "default"
 
@@ -105,6 +107,7 @@ type ConnKey struct {
 }
 
 // SecretCache is the in-memory cache for secrets.
+// SecretCache是一个内存中的cache，用于secrets
 type SecretCache struct {
 	// secrets map is the cache for secrets.
 	// map key is Envoy instance ID, map value is secretItem.
@@ -122,6 +125,7 @@ type SecretCache struct {
 	rootCertChangedCount uint64
 
 	// callback function to invoke when detecting secret change.
+	// 当检测到secret发生变更时调用的回调函数
 	notifyCallback func(connKey ConnKey, secret *security.SecretItem) error
 
 	// close channel.
@@ -138,11 +142,14 @@ type SecretCache struct {
 
 	// The paths for an existing certificate chain, key and root cert files. Istio agent will
 	// use them as the source of secrets if they exist.
+	// 对于一个已经存在的certificate chain的路径，key以及root cert文件，Istio agetn会使用它们
+	// 作为source of secrets，如果它们存在的话
 	existingCertChainFile string
 	existingKeyFile       string
 	existingRootCertFile  string
 
 	// certWatcher watches the certificates for changes and triggers a notification to proxy.
+	// certWatcher监听证书的变更并且触发到proxy的通知
 	certWatcher filewatcher.FileWatcher
 	// unique certs being watched with file watcher.
 	fileCerts map[string]map[ConnKey]struct{}
@@ -169,12 +176,14 @@ func NewSecretCache(fetcher *secretfetcher.SecretFetcher,
 	randSource := rand.NewSource(time.Now().UnixNano())
 	ret.rand = rand.New(randSource)
 
+	// 将K8s事件的变更函数，赋值给fetcher的事件变更函数
 	fetcher.AddCache = ret.UpdateK8sSecret
 	fetcher.DeleteCache = ret.DeleteK8sSecret
 	fetcher.UpdateCache = ret.UpdateK8sSecret
 
 	atomic.StoreUint64(&ret.secretChangedCount, 0)
 	atomic.StoreUint64(&ret.rootCertChangedCount, 0)
+	// 进行证书轮转
 	go ret.keyCertRotationJob()
 	return ret
 }
@@ -199,6 +208,8 @@ func (sc *SecretCache) setRootCert(rootCert []byte, rootCertExpr time.Time) {
 // GenerateSecret generates new secret and cache the secret, this function is called by SDS.StreamSecrets
 // and SDS.FetchSecret. Since credential passing from client may change, regenerate secret every time
 // instead of reading from cache.
+// GenerateSecret生成新的secret并且缓存secret，这个函数被SDS.StreamSecrets以及SDS.FetchSecret调用
+// 因为传入自client的credential可能发生变更，因此每次都重新生成secret而不是从缓存中读取
 func (sc *SecretCache) GenerateSecret(ctx context.Context, connectionID, resourceName, token string) (*security.SecretItem, error) {
 	connKey := ConnKey{
 		ConnectionID: connectionID,
@@ -213,6 +224,7 @@ func (sc *SecretCache) GenerateSecret(ctx context.Context, connectionID, resourc
 	var ns *security.SecretItem
 
 	// First try to generate secret from file.
+	// 首先试着从文件生成secret
 	sdsFromFile, ns, err := sc.generateFileSecret(connKey, token)
 
 	if sdsFromFile {
@@ -224,8 +236,10 @@ func (sc *SecretCache) GenerateSecret(ctx context.Context, connectionID, resourc
 
 	if resourceName != RootCertReqResourceName {
 		// If working as Citadel agent, send request for normal key/cert pair.
+		// 如果作为Citadel agent，发送请求获取正常的key/cert对
 		// If working as ingress gateway agent, fetch key/cert or root cert from SecretFetcher. Resource name for
 		// root cert ends with "-cacert".
+		// 如果作为ingress gateway的agent，从SecretFetcher获取key/cert或者root cert
 		ns, err := sc.generateSecret(ctx, token, connKey, time.Now())
 		if err != nil {
 			cacheLog.Errorf("%s failed to generate secret for proxy: %v",
@@ -240,6 +254,7 @@ func (sc *SecretCache) GenerateSecret(ctx context.Context, connectionID, resourc
 
 	// If request is for root certificate,
 	// retry since rootCert may be empty until there is CSR response returned from CA.
+	// 如果请求的是根证书，因为在CSR response从CA返回之前，rootCert可能为空，这样的话就需要重试
 	rootCert, rootCertExpr := sc.getRootCert()
 	if rootCert == nil {
 		wait := retryWaitDuration
@@ -407,6 +422,7 @@ func (sc *SecretCache) callbackWithTimeout(connKey ConnKey, secret *security.Sec
 			cacheLog.Warnf("%s secret cache notify callback isn't set", logPrefix)
 			return
 		}
+		// 调用notifyCallback
 		if err := sc.notifyCallback(connKey, secret); err != nil {
 			cacheLog.Errorf("%s failed to notify secret change for proxy: %v",
 				logPrefix, err)
@@ -415,6 +431,7 @@ func (sc *SecretCache) callbackWithTimeout(connKey ConnKey, secret *security.Sec
 	select {
 	case <-c:
 		return // completed normally
+	// 确保30秒内，通知完成
 	case <-time.After(notifySecretRetrievalTimeout):
 		cacheLog.Warnf("%s notify secret change for proxy got timeout", logPrefix)
 	}
@@ -520,6 +537,7 @@ func (sc *SecretCache) UpdateK8sSecret(secretName string, ns security.SecretItem
 
 func (sc *SecretCache) rotate(updateRootFlag bool) {
 	// Skip secret rotation for kubernetes secrets.
+	// 对于kubernetes secrets，跳过证书轮转
 	if sc.fetcher.CaClient == nil {
 		return
 	}
@@ -528,12 +546,14 @@ func (sc *SecretCache) rotate(updateRootFlag bool) {
 
 	var secretMap sync.Map
 	wg := sync.WaitGroup{}
+	// 遍历secrets
 	sc.secrets.Range(func(k interface{}, v interface{}) bool {
 		connKey := k.(ConnKey)
 		secret := v.(security.SecretItem)
 		logPrefix := cacheLogPrefix(connKey.ResourceName)
 
 		// only rotate root cert if updateRootFlag is set to true.
+		// 只有在updateRootFlag设置为true的时候才轮转证书
 		if updateRootFlag {
 			if connKey.ResourceName != RootCertReqResourceName {
 				return true
@@ -558,6 +578,7 @@ func (sc *SecretCache) rotate(updateRootFlag bool) {
 		}
 
 		// If updateRootFlag isn't set, return directly if cached item is root cert.
+		// 如果没设置updateRootFlag，直接返回，如果缓存的item是root cert
 		if connKey.ResourceName == RootCertReqResourceName {
 			return true
 		}
@@ -565,6 +586,7 @@ func (sc *SecretCache) rotate(updateRootFlag bool) {
 		now := time.Now()
 
 		// Remove stale secrets from cache, this prevents the cache growing indefinitely.
+		// 从缓存中移除老旧的secrets，这能防止缓存无限增长
 		if sc.configOptions.EvictionDuration != 0 && now.After(secret.CreatedTime.Add(sc.configOptions.EvictionDuration)) {
 			sc.secrets.Delete(connKey)
 			return true
@@ -580,16 +602,19 @@ func (sc *SecretCache) rotate(updateRootFlag bool) {
 		// code is fixed.
 		if sc.configOptions.CredFetcher != nil {
 			// Refresh token through credential fetcher.
+			// 通过credential fetcher来更新token
 			cacheLog.Debugf("%s getting a new token through credential fetcher", logPrefix)
 			t, err := sc.configOptions.CredFetcher.GetPlatformCredential()
 			if err != nil {
 				cacheLog.Warnf("%s credential fetcher failed to get a new token, continue using the original token: %v", logPrefix, err)
 			} else {
+				// 更新secret中的token
 				secret.Token = t
 			}
 		}
 
 		// Re-generate secret if it's expired.
+		// 如果过期的话，重新生成secret
 		if sc.shouldRotate(&secret) {
 			atomic.AddUint64(&sc.secretChangedCount, 1)
 
@@ -600,6 +625,7 @@ func (sc *SecretCache) rotate(updateRootFlag bool) {
 				cacheLog.Debugf("%s use token to generate key/cert", logPrefix)
 				if !sc.useCertToRotate() {
 					if sc.configOptions.CredFetcher == nil {
+						// 从JWTPath获取token
 						tok, err := ioutil.ReadFile(sc.configOptions.JWTPath)
 						if err != nil {
 							cacheLog.Errorf("failed to get credential token: %v", err)
@@ -610,14 +636,18 @@ func (sc *SecretCache) rotate(updateRootFlag bool) {
 				}
 
 				// If token is still valid, re-generated the secret and push change to proxy.
+				// 如果token依然合法，重新生成secret并且推送变更到proxy
 				// Most likely this code path may not necessary, since TTL of cert is much longer than token.
+				// 多数情况下这个code path是不需要的，因为cert的TTL要远远长于token
 				// When cert has expired, we could make it simple by assuming token has already expired.
+				// 当cert过期时，我们可以假设token已经过期了
 				ns, err := sc.generateSecret(context.Background(), secret.Token, connKey, now)
 				if err != nil {
 					cacheLog.Errorf("%s failed to rotate secret: %v", logPrefix, err)
 					return
 				}
 				// Output the key and cert to dir to make sure key and cert are rotated.
+				// 将key和cert输出到目录来确保key和cert已经被轮转了
 				if err = nodeagentutil.OutputKeyCertToDir(sc.configOptions.OutputKeyCertToDir, ns.PrivateKey,
 					ns.CertificateChain, ns.RootCert); err != nil {
 					cacheLog.Errorf("(%v) error when output the key and cert: %v",
@@ -646,12 +676,14 @@ func (sc *SecretCache) rotate(updateRootFlag bool) {
 }
 
 // generateGatewaySecret returns secret for gateway proxy.
+// generateGatewaySecret返回secret用于gateway proxy
 func (sc *SecretCache) generateGatewaySecret(token string, connKey ConnKey, now time.Time) (*security.SecretItem, error) {
 	secretItem, exist := sc.fetcher.FindGatewaySecret(connKey.ResourceName)
 	if !exist {
 		return nil, fmt.Errorf("cannot find secret for gateway SDS request %+v", connKey)
 	}
 
+	// gateway的根证书的资源名都要以"-cacert"结尾
 	if strings.HasSuffix(connKey.ResourceName, secretfetcher.GatewaySdsCaSuffix) {
 		return &security.SecretItem{
 			ResourceName: connKey.ResourceName,
@@ -788,6 +820,7 @@ func (sc *SecretCache) generateFileSecret(connKey ConnKey, token string) (bool, 
 	case connKey.ResourceName == RootCertReqResourceName && sc.rootCertificateExist(sc.existingRootCertFile):
 		sdsFromFile = true
 		if sitem, err = sc.generateRootCertFromExistingFile(sc.existingRootCertFile, token, connKey, true); err == nil {
+			// 而且要添加FileWatcher
 			sc.addFileWatcher(sc.existingRootCertFile, token, connKey)
 		}
 	// Default workload certificate.
@@ -823,6 +856,7 @@ func (sc *SecretCache) generateFileSecret(connKey ConnKey, token string) (bool, 
 			return sdsFromFile, nil, err
 		}
 		cacheLog.Infoa("GenerateSecret from file ", resourceName)
+		// 从文件中创建secret并保存
 		sc.secrets.Store(connKey, *sitem)
 		return sdsFromFile, sitem, nil
 	}
@@ -832,12 +866,14 @@ func (sc *SecretCache) generateFileSecret(connKey ConnKey, token string) (bool, 
 func (sc *SecretCache) generateSecret(ctx context.Context, token string, connKey ConnKey, t time.Time) (*security.SecretItem, error) {
 	// If node agent works as gateway agent, searches for kubernetes secret instead of sending
 	// CSR to CA.
+	// 如果node agent是作为gateway agent，搜索kubernetes secret而不是发送CSR到CA
 	if sc.fetcher.CaClient == nil {
 		return sc.generateGatewaySecret(token, connKey, t)
 	}
 
 	logPrefix := cacheLogPrefix(connKey.ResourceName)
 	// call authentication provider specific plugins to exchange token if necessary.
+	// 调用authentication provider特定的插件来交换token，如果需要的话
 	numOutgoingRequests.With(RequestType.Value(TokenExchange)).Increment()
 	timeBeforeTokenExchange := time.Now()
 	exchangedToken, err := sc.getExchangedToken(ctx, token, connKey)
@@ -847,6 +883,7 @@ func (sc *SecretCache) generateSecret(ctx context.Context, token string, connKey
 		numFailedOutgoingRequests.With(RequestType.Value(TokenExchange)).Increment()
 		return nil, err
 	}
+	// 构建csr host name，即SPIFFE的identity
 	csrHostName := &spiffe.Identity{
 		TrustDomain:    sc.configOptions.TrustDomain,
 		Namespace:      sc.configOptions.WorkloadNamespace,
@@ -862,6 +899,7 @@ func (sc *SecretCache) generateSecret(ctx context.Context, token string, connKey
 	}
 
 	// Generate the cert/key, send CSR to CA.
+	// 生成证书和私钥，发送CSR到CA
 	csrPEM, keyPEM, err := pkiutil.GenCSR(options)
 	if err != nil {
 		cacheLog.Errorf("%s failed to generate key and certificate for CSR: %v", logPrefix, err)
@@ -878,6 +916,7 @@ func (sc *SecretCache) generateSecret(ctx context.Context, token string, connKey
 		return nil, err
 	}
 
+	// 收到CSR response
 	cacheLog.Debugf("%s received CSR response with certificate chain %+v \n",
 		logPrefix, certChainPEM)
 
@@ -885,6 +924,7 @@ func (sc *SecretCache) generateSecret(ctx context.Context, token string, connKey
 
 	var expireTime time.Time
 	// Cert expire time by default is createTime + sc.configOptions.SecretTTL.
+	// 证书的过期时间默认为createTime + sc.configOptions.SecretTTL
 	// Istiod respects SecretTTL that passed to it and use it decide TTL of cert it issued.
 	// Some customer CA may override TTL param that's passed to it.
 	if expireTime, err = nodeagentutil.ParseCertAndGetExpiryTimestamp(certChain); err != nil {
@@ -896,10 +936,12 @@ func (sc *SecretCache) generateSecret(ctx context.Context, token string, connKey
 	length := len(certChainPEM)
 	rootCert, _ := sc.getRootCert()
 	// Leaf cert is element '0'. Root cert is element 'n'.
+	// Leaf cert是第0个元素，Root cert是第n个元素
 	rootCertChanged := !bytes.Equal(rootCert, []byte(certChainPEM[length-1]))
 	if rootCert == nil || rootCertChanged {
 		rootCertExpireTime, err := nodeagentutil.ParseCertAndGetExpiryTimestamp([]byte(certChainPEM[length-1]))
 		if err == nil {
+			// 设置根证书
 			sc.setRootCert([]byte(certChainPEM[length-1]), rootCertExpireTime)
 		} else {
 			cacheLog.Errorf("%s failed to parse root certificate in CSR response: %v", logPrefix, err)
@@ -908,6 +950,7 @@ func (sc *SecretCache) generateSecret(ctx context.Context, token string, connKey
 	}
 
 	if rootCertChanged {
+		// root cert已经发生变更了，开始启动根证书的轮转，用于SDS clients
 		cacheLog.Info("Root cert has changed, start rotating root cert for SDS clients")
 		sc.rotate(true /*updateRootFlag*/)
 	}
@@ -934,7 +977,9 @@ func (sc *SecretCache) shouldRotate(secret *security.SecretItem) bool {
 }
 
 // sendRetriableRequest sends retriable requests for either CSR or ExchangeToken.
+// sendRetriableRequest发送可重试的请求用于CSR或者ExchangeToken
 // Prior to sending the request, it also sleep random millisecond to avoid thundering herd problem.
+// 在发送请求之前，它会随机休眠几毫秒来避免惊群
 func (sc *SecretCache) sendRetriableRequest(ctx context.Context, csrPEM []byte,
 	providedExchangedToken string, connKey ConnKey, isCSR bool) ([]string, error) {
 
@@ -968,6 +1013,7 @@ func (sc *SecretCache) sendRetriableRequest(ctx context.Context, csrPEM []byte,
 				// if CSR request is without token, set the token to empty
 				exchangedToken = ""
 			}
+			// 调用CaClient的CSRSign进行签名
 			certChainPEM, err = sc.fetcher.CaClient.CSRSign(
 				ctx, reqID, csrPEM, exchangedToken, int64(sc.configOptions.SecretTTL.Seconds()))
 		} else {
@@ -1012,6 +1058,8 @@ func (sc *SecretCache) sendRetriableRequest(ctx context.Context, csrPEM []byte,
 
 // getExchangedToken gets the exchanged token for the CSR. The token is either the k8s jwt token of the
 // workload or another token from a plug in provider.
+// getExchangedToken获取交换过的token用于CSR，这个token要么是负载的k8s jwt token，或者是来自plugin provider的
+// 另一个token
 func (sc *SecretCache) getExchangedToken(ctx context.Context, k8sJwtToken string, connKey ConnKey) (string, error) {
 	logPrefix := cacheLogPrefix(connKey.ResourceName)
 	cacheLog.Debugf("Start token exchange process for %s", logPrefix)
@@ -1023,6 +1071,7 @@ func (sc *SecretCache) getExchangedToken(ctx context.Context, k8sJwtToken string
 		cacheLog.Errorf("Found more than one plugin for %s", logPrefix)
 		return "", fmt.Errorf("found more than one plugin")
 	}
+	// 获取交换过的token
 	exchangedTokens, err := sc.sendRetriableRequest(ctx, nil, k8sJwtToken,
 		ConnKey{ConnectionID: "", ResourceName: ""}, false)
 	if err != nil || len(exchangedTokens) == 0 {
@@ -1052,6 +1101,7 @@ func (sc *SecretCache) useCertToRotate() bool {
 }
 
 // concatCerts concatenates PEM certificates, making sure each one starts on a new line
+// concatCerts连接PEM证书，确保每个都新起一行
 func concatCerts(certsPEM []string) []byte {
 	if len(certsPEM) == 0 {
 		return []byte{}
