@@ -176,6 +176,7 @@ func createRealSDSServer(t *testing.T, socket string) *Server {
 		t.Fatalf("failed to create secretFetcher for workload proxy: %v", err)
 	}
 
+	// 构建secretfetcher，里面包装了caClient
 	wSecretFetcher := &secretfetcher.SecretFetcher{
 		CaClient: caClient,
 	}
@@ -186,7 +187,7 @@ func createRealSDSServer(t *testing.T, socket string) *Server {
 	workloadSdsCacheOptions.TokenExchangers = NewPlugins([]string{"GoogleTokenExchange"})
 	workloadSdsCacheOptions.RotationInterval = 10 * time.Minute
 	workloadSdsCacheOptions.InitialBackoffInMilliSec = 10
-	// 构建Secret Cache
+	// 构建workload Secret Cache
 	workloadSecretCache := cache.NewSecretCache(wSecretFetcher, NotifyProxy, workloadSdsCacheOptions)
 
 	server, err := NewServer(&arg, workloadSecretCache, nil)
@@ -202,6 +203,7 @@ func createRealSDSServer(t *testing.T, socket string) *Server {
 
 func runSDSClientBasic(stream sds.SecretDiscoveryService_StreamSecretsClient, proxyID string,
 	notifyChan chan notifyMsg) {
+	// 构建Discovery Request
 	req := &discovery.DiscoveryRequest{
 		TypeUrl:       SecretTypeV3,
 		ResourceNames: []string{testResourceName},
@@ -210,6 +212,8 @@ func runSDSClientBasic(stream sds.SecretDiscoveryService_StreamSecretsClient, pr
 		},
 		// Set a non-empty version info so that StreamSecrets() starts a cache check, and cache miss
 		// metric is updated accordingly.
+		// 设置一个非空的version info，这样StreamSecrets()开始一个缓存检查，并且cache miss metric
+		// 会相应地进行更新
 		VersionInfo: "initial_version",
 	}
 	if err := stream.Send(req); err != nil {
@@ -231,13 +235,16 @@ func runSDSClientBasic(stream sds.SecretDiscoveryService_StreamSecretsClient, pr
 
 func createSDSClient(t *testing.T, socket string) (*grpc.ClientConn, sds.SecretDiscoveryService_StreamSecretsClient) {
 	// Try to call the server
+	// 试着调用server
 	conn, err := setupConnection(socket)
 	if err != nil {
 		t.Errorf("failed to setup connection to socket %q", socket)
 	}
+	// 调用SDS Client
 	sdsClient := sds.NewSecretDiscoveryServiceClient(conn)
 	header := metadata.Pairs(credentialTokenHeaderKey, msts.FakeSubjectToken)
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	// 构建secrets stream
 	stream, err := sdsClient.StreamSecrets(ctx)
 	if err != nil {
 		t.Errorf("StreamSecrets failed: %v", err)
@@ -269,10 +276,12 @@ func validateSDSSResponse(resp *discovery.DiscoveryResponse) error {
 	if resp == nil {
 		return fmt.Errorf("response is nil")
 	}
+	// 对第一个resources进行unmarshal
 	if err := ptypes.UnmarshalAny(resp.Resources[0], &secret); err != nil {
 		return fmt.Errorf("unmarshalAny SDS response failed: %v", err)
 	}
 
+	// 检验response secret的类型
 	tlsCert, ok := secret.Type.(*tls.Secret_TlsCertificate)
 	if !ok {
 		return fmt.Errorf("error validating SDS response: response secret type conversion failed")
@@ -281,10 +290,12 @@ func validateSDSSResponse(resp *discovery.DiscoveryResponse) error {
 	caCerts := strings.Replace(validCerts[0]+validCerts[1]+validCerts[2], "\n", "", -1)
 	sdsCerts := strings.Replace(string(tlsCert.TlsCertificate.CertificateChain.GetInlineBytes()), "\n", "", -1)
 
+	// 确保证书相同
 	if caCerts != sdsCerts {
 		return fmt.Errorf("error validating SDS response: certs do not match:\n%s\nVS:\n%s", caCerts, sdsCerts)
 	}
 
+	// 保证SDS response中的private key不为空
 	if len(tlsCert.TlsCertificate.GetPrivateKey().GetInlineBytes()) == 0 {
 		return fmt.Errorf("error validating SDS response: private key is empty")
 	}

@@ -56,6 +56,7 @@ type Server struct {
 // NewServer创建并且启动Grpc server用于SDS
 func NewServer(options *ca2.Options, workloadSecretCache, gatewaySecretCache ca2.SecretManager) (*Server, error) {
 	s := &Server{
+		// 基于cache构建SDS Service
 		workloadSds: newSDSService(workloadSecretCache,
 			options,
 			options.FileMountedCerts),

@@ -118,11 +118,14 @@ type Config struct {
 
 // ADSC implements a basic client for ADS, for use in stress tests and tools
 // or libraries that need to connect to Istio pilot or other ADS servers.
+// ADSC为ADS实现了一个基本的客户端，用于压力测试以及工具或者库用于和Istio pilot或者其他ADS servers连接
 type ADSC struct {
 	// Stream is the GRPC connection stream, allowing direct GRPC send operations.
 	// Set after Dial is called.
+	// Stream是GRPC connection stream，允许直接的GRPC发送操作，在Dial调用之后被设置
 	stream discovery.AggregatedDiscoveryService_StreamAggregatedResourcesClient
 	// xds client used to create a stream
+	// xds client用于创建一个stream
 	client discovery.AggregatedDiscoveryServiceClient
 	conn   *grpc.ClientConn
 

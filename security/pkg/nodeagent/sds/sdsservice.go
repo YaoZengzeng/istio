@@ -49,6 +49,8 @@ const (
 
 	// credentialTokenHeaderKey is the header key in gPRC header which is used to
 	// pass credential token from envoy's SDS request to SDS service.
+	// credentialTokenHeaderKey是在gRPC header中的键值，用来传输credential token从envoy
+	// 的SDS request到SDS service
 	credentialTokenHeaderKey = "authorization"
 
 	// K8sSAJwtTokenHeaderKey is the request header key for k8s jwt token.
@@ -174,12 +176,14 @@ func newSDSService(st security.SecretManager,
 		credFetcher:          secOpt.CredFetcher,
 	}
 
+	// 清理过期的clients
 	go ret.clearStaledClientsJob()
 
 	return ret
 }
 
 // register adds the SDS handle to the grpc server
+// 注册SDS handle到grpc server
 func (s *sdsservice) register(rpcs *grpc.Server) {
 	sds.RegisterSecretDiscoveryServiceServer(rpcs, s)
 }
@@ -485,6 +489,7 @@ func clearStaledClients() {
 	sdsClientsMutex.Lock()
 	defer sdsClientsMutex.Unlock()
 
+	// 遍历过期的clients并且删除
 	for connKey := range staledClientKeys {
 		sdsServiceLog.Debugf("remove staled clients %+v", connKey)
 		delete(sdsClients, connKey)
@@ -542,6 +547,7 @@ func recycleConnection(conID, resourceName string) {
 	defer sdsClientsMutex.Unlock()
 
 	// Only add connection key to staledClientKeys if it's not there already.
+	// 只增加staledClientKeys到connection key，如果它还不在那
 	// The recycleConnection function may be triggered more than once for each connection key.
 	// https://github.com/istio/istio/issues/15306#issuecomment-509783105
 	if _, found := staledClientKeys[key]; found {
@@ -562,6 +568,7 @@ func getResourceName(discReq *discovery.DiscoveryRequest) (string /*resourceName
 		return discReq.ResourceNames[0], nil
 	}
 
+	// 当SDS请求的资源数大于1会报错
 	return "", fmt.Errorf("discovery request %+v has more than one resourceNames %+v", discReq, discReq.ResourceNames)
 }
 

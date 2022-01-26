@@ -88,7 +88,9 @@ func (m *MeshCertificateRequest) GetValidity() *duration.Duration {
 // Certificate response message.
 type MeshCertificateResponse struct {
 	// PEM-encoded certificate chain.
+	// PEM编码的证书链
 	// Leaf cert is element '0'. Root cert is element 'n'.
+	// Leaf cert是第'0'个元素，根证书是第'n'个元素
 	CertChain            []string `protobuf:"bytes,1,rep,name=cert_chain,json=certChain,proto3" json:"cert_chain,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

@@ -28,11 +28,13 @@ import (
 // CAService is a simple mocked Google CA Service.
 // CAService是一个简单的mocked Google CA服务
 type CAService struct {
+	// 仅仅包含一系列的证书
 	Certs []string
 	Err   error
 }
 
 // CreateCertificate is a mocked function for the Google Mesh CA API.
+// CreateCertificate是Google Mesh CA API的mock函数
 func (ca *CAService) CreateCertificate(ctx context.Context, in *gcapb.MeshCertificateRequest) (
 	*gcapb.MeshCertificateResponse, error) {
 	if ca.Err == nil {
@@ -64,6 +66,7 @@ func CreateServer(addr string, service *CAService) (*CAServer, error) {
 
 	var serveErr error
 	go func() {
+		// 注册Service
 		gcapb.RegisterMeshCertificateServiceServer(s.Server, service)
 		if err := s.Server.Serve(lis); err != nil {
 			serveErr = err

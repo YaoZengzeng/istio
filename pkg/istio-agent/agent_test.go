@@ -63,7 +63,9 @@ func TestNewAgent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		secOpts := &security.Options{
+			// 是否挂载证书
 			FileMountedCerts: tt.fileMountedCerts,
+			// CA的端口
 			CAEndpoint:       tt.caEndpoint,
 		}
 		sa := NewAgent(&proxyConfig,

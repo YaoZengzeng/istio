@@ -67,6 +67,7 @@ func TestStreamSecretsForWorkloadSds(t *testing.T) {
 		GatewayUDSPath:    "",
 		WorkloadUDSPath:   fmt.Sprintf("/tmp/workload_gotest%q.sock", string(uuid.NewUUID())),
 	}
+	// 最后一个参数为false，请求真正的resource
 	testHelper(t, arg, sdsRequestStream, false)
 }
 
@@ -202,6 +203,7 @@ func testHelper(t *testing.T, arg ca2.Options, cb secretCallback, testInvalidRes
 		// Request for root certificate.
 		sendRequestForRootCertAndVerifyResponse(t, cb, arg.WorkloadUDSPath, proxyID)
 
+		// 根据proxyID获取相应的ClientID
 		recycleConnection(getClientConID(proxyID), testResourceName)
 		recycleConnection(getClientConID(proxyID), "ROOTCA")
 	}
@@ -210,12 +212,14 @@ func testHelper(t *testing.T, arg ca2.Options, cb secretCallback, testInvalidRes
 		recycleConnection(getClientConID(proxyID), testResourceName)
 	}
 	// Check to make sure number of staled connections is 0.
+	// 检查来确保过期的连接数为0
 	checkStaledConnCount(t)
 }
 
 func sendRequestForRootCertAndVerifyResponse(t *testing.T, cb secretCallback, socket, proxyID string) {
 	rootCertReq := &discovery.DiscoveryRequest{
 		TypeUrl:       SecretTypeV3,
+		// 请求ROOTCA
 		ResourceNames: []string{"ROOTCA"},
 		Node: &core.Node{
 			Id: proxyID,
@@ -234,6 +238,7 @@ func sendRequestForFileRootCertAndVerifyResponse(t *testing.T, cb secretCallback
 
 	rootCertReq := &discovery.DiscoveryRequest{
 		TypeUrl:       SecretTypeV3,
+		// 请求指定路径的资源
 		ResourceNames: []string{rootResource},
 		Node: &core.Node{
 			Id: proxyID,
@@ -289,6 +294,7 @@ func sendRequestAndVerifyResponse(t *testing.T, cb secretCallback, socket, proxy
 }
 
 func verifyResponseForInvalidResourceNames(err error) bool {
+	// 有多过一个资源名会报错
 	s := fmt.Sprintf("has more than one resourceNames [%s %s]", testResourceName, extraResourceName)
 	return strings.Contains(err.Error(), s)
 }
@@ -323,6 +329,7 @@ func createSDSStream(t *testing.T, socket, token string) (*grpc.ClientConn, sds.
 	if err != nil {
 		t.Errorf("StreamSecrets failed: %v", err)
 	}
+	// 构建连接和stream
 	return conn, stream
 }
 
@@ -382,10 +389,13 @@ func testSDSStreamOne(stream sds.SecretDiscoveryService_StreamSecretsClient, pro
 		},
 		// Set a non-empty version info so that StreamSecrets() starts a cache check, and cache miss
 		// metric is updated accordingly.
+		// 将version info设置为非空，这样StreamSecrets()就会开始检查缓存，并且cache miss metric会相应地
+		// 更新
 		VersionInfo: "initial_version",
 	}
 
 	// Send first request and verify response
+	// 发送第一个请求并且确认response
 	if err := stream.Send(req); err != nil {
 		notifyChan <- notifyMsg{Err: err, Message: fmt.Sprintf("stream one: stream.Send failed: %v", err)}
 	}
@@ -399,7 +409,9 @@ func testSDSStreamOne(stream sds.SecretDiscoveryService_StreamSecretsClient, pro
 	}
 
 	// Send second request as an ACK and wait for notifyPush
+	// 发送第二个请求作为一个ACK并且等待notifyPush
 	// The second and following requests can carry an empty node identifier.
+	// 第二个以及之后的请求可以携带一个空的node identifier
 	req.Node.Id = ""
 	req.VersionInfo = resp.VersionInfo
 	req.ResponseNonce = resp.Nonce
@@ -420,7 +432,9 @@ func testSDSStreamOne(stream sds.SecretDiscoveryService_StreamSecretsClient, pro
 	}
 
 	// Send third request as an ACK and wait for stream close
+	// 发送第三个请求作为ACK并且等待stream关闭
 	req.VersionInfo = resp.VersionInfo
+	// 设置nonce
 	req.ResponseNonce = resp.Nonce
 	if err = stream.Send(req); err != nil {
 		notifyChan <- notifyMsg{Err: err, Message: fmt.Sprintf("stream one: stream.Send failed: %v", err)}
@@ -518,6 +532,7 @@ func TestStreamSecretsPush(t *testing.T) {
 	expectedTotalPush++
 
 	// verify that the first SDS request sent by two streams do not hit cache.
+	// 确保发送给两个streams的第一个SDS请求不会命中缓存
 	waitForSecretCacheCheck(t, setup.secretStore, false, 2)
 	waitForNotificationToProceed(t, notifyChanOne, "notify push secret 1")
 	// verify that the second SDS request hits cache.
@@ -526,13 +541,16 @@ func TestStreamSecretsPush(t *testing.T) {
 	// simulate logic in constructConnectionID() function.
 	conID := getClientConID(proxyID)
 	// Test push new secret to proxy. This SecretItem is for StreamOne.
+	// 检测push新的secret到proxy，这个SecretItem是用于StreamOne
 	if err := NotifyProxy(cache.ConnKey{ConnectionID: conID, ResourceName: testResourceName},
+		// 构建Push Secret
 		setup.generatePushSecret(conID, fakeToken1)); err != nil {
 		t.Fatalf("failed to send push notification to proxy %q: %v", conID, err)
 	}
 	notifyChanOne <- notifyMsg{Err: nil, Message: "receive secret"}
 
 	// Verify that pushed secret is stored in cache.
+	// 确保推送的secret保存在缓存中
 	key := cache.ConnKey{
 		ConnectionID: conID,
 		ResourceName: testResourceName,
@@ -546,6 +564,7 @@ func TestStreamSecretsPush(t *testing.T) {
 	waitForSecretCacheCheck(t, setup.secretStore, true, 2)
 
 	// Test push nil secret(indicates close the streaming connection) to proxy.
+	// 测试推送nil secret（表明关闭streaming的连接）到proxy
 	if err := NotifyProxy(cache.ConnKey{ConnectionID: conID, ResourceName: testResourceName}, nil); err != nil {
 		t.Fatalf("failed to send push notification to proxy %q", conID)
 	}
@@ -597,6 +616,7 @@ func testSDSStreamMultiplePush(stream sds.SecretDiscoveryService_StreamSecretsCl
 	}
 
 	// Don't send a request and force SDS server to push secret, as a duplicate push.
+	// 不要发送一个请求并且强制SDS server推送secret，作为一个duplicate push
 	notifyChan <- notifyMsg{Err: nil, Message: "notify push secret"}
 	if notify := <-notifyChan; notify.Message != "receive secret" {
 		errMisMatch := fmt.Errorf("received error does not match, got %v", err)
@@ -608,6 +628,7 @@ func testSDSStreamMultiplePush(stream sds.SecretDiscoveryService_StreamSecretsCl
 
 // TestStreamSecretsMultiplePush verifies that only one response is pushed per request, and that multiple
 // pushes are detected and skipped.
+// TestStreamSecretsMultiplePush确认对于每个request只有一个response被推送，多次push被检测并且跳过
 func TestStreamSecretsMultiplePush(t *testing.T) {
 	setup := StartTest(t)
 	defer setup.server.Stop()
@@ -624,6 +645,7 @@ func TestStreamSecretsMultiplePush(t *testing.T) {
 	// simulate logic in constructConnectionID() function.
 	conID := getClientConID(proxyID)
 	// Test push new secret to proxy.
+	// 测试推送新的secret到proxy
 	if err := NotifyProxy(cache.ConnKey{ConnectionID: conID, ResourceName: testResourceName},
 		setup.generatePushSecret(conID, fakeToken1)); err != nil {
 		t.Fatalf("failed to send push notification to proxy %q", conID)
@@ -736,6 +758,7 @@ type Setup struct {
 }
 
 // StartTest starts SDS server and checks SDS connectivity.
+// StartTest启动SDS server并且检查SDS的连接性
 func StartTest(t *testing.T) *Setup {
 	s := &Setup{t: t}
 	// reset connectionNumber since since its value is kept in memory for all unit test cases lifetime,
@@ -743,6 +766,7 @@ func StartTest(t *testing.T) *Setup {
 	atomic.StoreInt64(&connectionNumber, 0)
 
 	s.socket = fmt.Sprintf("/tmp/gotest%s.sock", string(uuid.NewUUID()))
+	// 构建SDS Server以及SDS Store
 	s.server, s.secretStore = createSDSServer(t, s.socket)
 
 	if err := s.waitForSDSReady(); err != nil {
@@ -772,6 +796,7 @@ func (s *Setup) waitForSDSReady() error {
 			sdsClient := sds.NewSecretDiscoveryServiceClient(conn)
 			header := metadata.Pairs(credentialTokenHeaderKey, fakeToken1)
 			ctx := metadata.NewOutgoingContext(context.Background(), header)
+			// 构建SDS client并且创建stream，直到成功，返回的第一个参数可以用来发送请求并接收response
 			if _, streamErr = sdsClient.StreamSecrets(ctx); streamErr == nil {
 				return nil
 			}
@@ -825,16 +850,19 @@ func verifySDSSResponse(resp *discovery.DiscoveryResponse, expectedPrivateKey []
 		return fmt.Errorf("unmarshalAny SDS response failed: %v", err)
 	}
 
+	// 期望的secret
 	expectedResponseSecret := &authapi.Secret{
 		Name: testResourceName,
 		Type: &authapi.Secret_TlsCertificate{
 			TlsCertificate: &authapi.TlsCertificate{
 				CertificateChain: &core.DataSource{
+					// 包含证书链
 					Specifier: &core.DataSource_InlineBytes{
 						InlineBytes: expectedCertChain,
 					},
 				},
 				PrivateKey: &core.DataSource{
+					// 包含私钥
 					Specifier: &core.DataSource_InlineBytes{
 						InlineBytes: expectedPrivateKey,
 					},
@@ -861,6 +889,7 @@ func verifySDSSResponseForRootCert(t *testing.T, resp *discovery.DiscoveryRespon
 			ValidationContext: &authapi.CertificateValidationContext{
 				TrustedCa: &core.DataSource{
 					Specifier: &core.DataSource_InlineBytes{
+						// ROOTCA只包含根证书
 						InlineBytes: expectedRootCert,
 					},
 				},
@@ -907,6 +936,7 @@ func sdsRequestFetch(socket string, req *discovery.DiscoveryRequest) (*discovery
 	sdsClient := sds.NewSecretDiscoveryServiceClient(conn)
 	header := metadata.Pairs(credentialTokenHeaderKey, fakeToken1)
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	// sds client调用FetchSecrets
 	resp, err := sdsClient.FetchSecrets(ctx, req)
 	if err != nil {
 		return nil, err

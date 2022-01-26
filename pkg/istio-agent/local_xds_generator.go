@@ -58,10 +58,12 @@ type localXDSGenerator struct {
 	xdsServer  *xds.SimpleServer
 	// ProxyGen is a generator for proxied types - will 'generate' XDS by using
 	// an adsc connection.
+	// ProxyGen是一个用于proxied types的generator - 会通过使用一个adsc连接产生XDS
 	proxyGen *xds.ProxyGen
 }
 
 // initXDSGenerator starts an XDS proxy server, using the adsc connection.
+// initXDSGenerator启动一个XDS proxy server，使用adsc连接
 // Note that using 'xds.NewXDS' will create a generating server - i.e.
 // adsc would be used to get MCP-over-XDS, and the server would generate
 // configs.

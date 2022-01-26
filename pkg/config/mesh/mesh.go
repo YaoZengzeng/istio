@@ -35,6 +35,7 @@ import (
 )
 
 // DefaultProxyConfig for individual proxies
+// 单个proxies的默认配置
 func DefaultProxyConfig() meshconfig.ProxyConfig {
 	// TODO: include revision based on REVISION env
 	// TODO: set default namespace based on POD_NAMESPACE env

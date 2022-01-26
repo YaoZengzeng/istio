@@ -301,6 +301,7 @@ func (c *secretDiscoveryServiceClient) FetchSecrets(ctx context.Context, in *v3.
 }
 
 // SecretDiscoveryServiceServer is the server API for SecretDiscoveryService service.
+// SecretDiscoveryServiceServer是SecretDiscoveryService服务的server API
 type SecretDiscoveryServiceServer interface {
 	DeltaSecrets(SecretDiscoveryService_DeltaSecretsServer) error
 	StreamSecrets(SecretDiscoveryService_StreamSecretsServer) error

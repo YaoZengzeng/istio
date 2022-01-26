@@ -32,6 +32,7 @@ const _ = proto.ProtoPackageIsVersion4
 
 // A DiscoveryRequest requests a set of versioned resources of the same type for
 // a given Envoy node on some API.
+// 一个DiscoveryRequests请求是一系列有版本的同样类型的资源对于一个给定的Envoy node，在给定的API上
 // [#next-free-field: 7]
 type DiscoveryRequest struct {
 	state         protoimpl.MessageState
@@ -45,6 +46,10 @@ type DiscoveryRequest struct {
 	// configuration. ACK/NACK takes place by returning the new API config version
 	// as applied or the previous API config version respectively. Each type_url
 	// (see below) has an independent version associated with it.
+	// 在请求的message中的version_info是最近被成功处理的response中的version_info
+	// 对于第一个请求则是空，假设在收到一个response之后不会有新的请求被发送，直到Envoy实例
+	// 已经准备好ACK/NACK新的配置，ACK/NACK在应用了新的API配置版本或者之前的API配置版本之后
+	// 相应地返回，每个type_url都有独立的版本
 	VersionInfo string `protobuf:"bytes,1,opt,name=version_info,json=versionInfo,proto3" json:"version_info,omitempty"`
 	// The node making the request.
 	Node *v3.Node `protobuf:"bytes,2,opt,name=node,proto3" json:"node,omitempty"`
@@ -54,6 +59,9 @@ type DiscoveryRequest struct {
 	// resources for the Envoy instance to be returned. The LDS and CDS responses
 	// will then imply a number of resources that need to be fetched via EDS/RDS,
 	// which will be explicitly enumerated in resource_names.
+	// 一系列等待订阅的资源，例如一系列的cluster或者route的名字，如果为空，则这个API的所有资源
+	// 都返回，LDS/CDS可能有空的resource_names，只会导致Envoy实例的所有资源都返回，LDS和CDS
+	// response会暗示许多资源需要通过EDS/RDS获取，它会显式地在resource_names中枚举
 	ResourceNames []string `protobuf:"bytes,3,rep,name=resource_names,json=resourceNames,proto3" json:"resource_names,omitempty"`
 	// Type of the resource that is being requested, e.g.
 	// "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment". This is implicit
@@ -65,6 +73,8 @@ type DiscoveryRequest struct {
 	// may be empty only if 1) this is a non-persistent-stream xDS such as HTTP,
 	// or 2) the client has not yet accepted an update in this xDS stream (unlike
 	// delta, where it is populated only for new explicit ACKs).
+	// 被ACK/NACKed的DiscoveryResponse的nonce，它只有在以下两种情况为1）这是一个non-persistent-stream
+	// 的XDS，例如HTTP，2) client还没有在这个xDS stream中收到更新（不同于delta，这时候它只在新的显式的ACKs中被填充）
 	ResponseNonce string `protobuf:"bytes,5,opt,name=response_nonce,json=responseNonce,proto3" json:"response_nonce,omitempty"`
 	// This is populated when the previous :ref:`DiscoveryResponse <envoy_api_msg_service.discovery.v3.DiscoveryResponse>`
 	// failed to update configuration. The *message* field in *error_details* provides the Envoy
@@ -156,6 +166,7 @@ type DiscoveryResponse struct {
 	// The version of the response data.
 	VersionInfo string `protobuf:"bytes,1,opt,name=version_info,json=versionInfo,proto3" json:"version_info,omitempty"`
 	// The response resources. These resources are typed and depend on the API being called.
+	// 返回的resources，这些资源是有类型的并且依赖被调用的API
 	Resources []*any.Any `protobuf:"bytes,2,rep,name=resources,proto3" json:"resources,omitempty"`
 	// [#not-implemented-hide:]
 	// Canary is used to support two Envoy command line flags:
@@ -173,6 +184,7 @@ type DiscoveryResponse struct {
 	//   validated via a dry run.
 	Canary bool `protobuf:"varint,3,opt,name=canary,proto3" json:"canary,omitempty"`
 	// Type URL for resources. Identifies the xDS API when muxing over ADS.
+	// 资源的类型URL，当在ADS中聚合的时候区分xDS API
 	// Must be consistent with the type_url in the 'resources' repeated Any (if non-empty).
 	TypeUrl string `protobuf:"bytes,4,opt,name=type_url,json=typeUrl,proto3" json:"type_url,omitempty"`
 	// For gRPC based subscriptions, the nonce provides a way to explicitly ack a
@@ -183,6 +195,10 @@ type DiscoveryResponse struct {
 	// to ignore any further DiscoveryRequests for the previous version until a
 	// DiscoveryRequest bearing the nonce. The nonce is optional and is not
 	// required for non-stream based xDS implementations.
+	// 对于基于gRPC的订阅，nonce提供了一种方法用于显式地ack一个特定的DiscoveryResponse，在接着
+	// 一个DiscoveryRequest之后，额外的信息可能已经由Envoy发送给管理面，对于之前的版本，在这个
+	// DiscoveryResponse之后，在response发送的时候还没有被处理，nonce允许管理面忽略任何对于之前
+	// 版本的DiscoveryRequests，直到DiscoveryRequest带着nonce
 	Nonce string `protobuf:"bytes,5,opt,name=nonce,proto3" json:"nonce,omitempty"`
 	// [#not-implemented-hide:]
 	// The control plane instance that sent the response.

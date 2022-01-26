@@ -34,6 +34,7 @@ const (
 	// Do not encrypt proxy to control plane traffic.
 	AuthenticationPolicy_NONE AuthenticationPolicy = 0
 	// Proxy to control plane traffic is wrapped into mutual TLS connections.
+	// Proxy到控制面的流量被封装在双向TLS连接中
 	AuthenticationPolicy_MUTUAL_TLS AuthenticationPolicy = 1
 	// Use the policy defined by the parent scope. Should not be used for mesh
 	// policy.

@@ -98,11 +98,14 @@ type SecretManager interface {
 }
 
 // ConnKey is the key of one SDS connection.
+// ConnKey是一个SDS连接的键值
 type ConnKey struct {
 	ConnectionID string
 
 	// ResourceName of SDS request, get from SDS.DiscoveryRequest.ResourceName
 	// Current it's `ROOTCA` for root cert request, and 'default' for normal key/cert request.
+	// SDS请求的ResourceName，从SDS.DiscoveryRequest.ResourceName中获取
+	// 当前"ROOTCA"用于根证书的请求，'default'用于正常的私钥/证书请求
 	ResourceName string
 }
 

@@ -154,6 +154,7 @@ type AgentConfig struct {
 
 // NewAgent wraps the logic for a local SDS. It will check if the JWT token required for local SDS is
 // present, and set additional config options for the in-process SDS agent.
+// NewAgent封装了对于local SDS的逻辑，它会检查local SDS所需的JWT token是否存在，并且设置额外的配置选项用于进程中的SDS agent
 //
 // The JWT token is currently using a pre-defined audience (istio-ca) or it must match the trust domain (WIP).
 // If the JWT token is not present, and cannot be fetched through the credential fetcher - the local SDS agent can't authenticate.
@@ -207,9 +208,11 @@ func NewAgent(proxyConfig *mesh.ProxyConfig, cfg *AgentConfig,
 		sa.secOpts.TLSEnabled = false
 	}
 	// If proxy is using file mounted certs, JWT token is not needed.
+	// 如果proxy使用文件挂载的证书，JWT token是不必要的
 	sa.secOpts.UseLocalJWT = !sa.secOpts.FileMountedCerts
 
 	// Init the XDS proxy part of the agent.
+	// 初始化XDS proxy的部分
 	sa.initXDSGenerator()
 
 	return sa
@@ -430,6 +433,8 @@ func (sa *Agent) newWorkloadSecretCache() (workloadSecretCache *cache.SecretCach
 
 	// This has to be called after pluginNames is set. Otherwise,
 	// TokenExchanger will contain an empty plugin, causing cert provisioning to fail.
+	// 这会在pluginNames被设置之后被调用，否则，TokenExchanger会包含一个空的plugin
+	// 导致cert生成失败
 	if sa.secOpts.TokenExchangers == nil {
 		sa.secOpts.TokenExchangers = sds.NewPlugins(pluginNames)
 	}
