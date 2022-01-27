@@ -73,17 +73,21 @@ func (sc *clientSecrets) DeleteSecret(connectionID, resourceName string) {
 
 // TestAgent will start istiod with TLS enabled, use the istio-agent to connect, and then
 // use the ADSC to connect to the agent proxy.
+// TestAgent会启动TLS使能的istiod，使用istio-agent进行连接，之后再使用ADSC连接agent proxy
 func TestAgent(t *testing.T) {
 	// Start Istiod
+	// 启动Istiod
 	bs, tearDown := initLocalPilotTestEnv(t)
 	defer tearDown()
 
 	// TODO: when authz is implemented, verify labels are checked.
+	// 生成证书和密钥，test命名空间下，名字为sa的service account
 	cert, key, err := bs.CA.GenKeyCert([]string{spiffe.Identity{"cluster.local", "test", "sa"}.String()}, 1*time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	// 构建client secret
 	creds := &clientSecrets{
 		security.SecretItem{
 			PrivateKey:       key,
@@ -94,11 +98,13 @@ func TestAgent(t *testing.T) {
 
 	t.Run("agentProxy", func(t *testing.T) {
 		// Start the istio-agent (proxy and SDS part) - will connect to XDS
+		// 启动istio-agent（proxy以及SDS部分） - 会连接到XDS
 		sa := istioagent.NewAgent(&mesh.ProxyConfig{
 			DiscoveryAddress:       util.MockPilotSGrpcAddr,
 			ControlPlaneAuthPolicy: mesh.AuthenticationPolicy_MUTUAL_TLS,
 		}, &istioagent.AgentConfig{
 			// Enable proxy - off by default, will be XDS_LOCAL env in install.
+			// 使能proxy - 默认关闭，会在安装的时候保存在XDS_LOCAL环境变量中
 			LocalXDSGeneratorListenAddress: "127.0.0.1:15002",
 		}, &security.Options{
 			PilotCertProvider: "custom",
@@ -106,6 +112,7 @@ func TestAgent(t *testing.T) {
 		})
 
 		// Override agent auth - start will use this instead of a gRPC
+		// 覆盖agent的auth - start会使用这个而不是gRPC
 		// TODO: add a test for cert-based config.
 		// TODO: add a test for JWT-based ( using some mock OIDC in Istiod)
 		sa.WorkloadSecrets = creds
@@ -116,12 +123,14 @@ func TestAgent(t *testing.T) {
 		}
 
 		// connect to the local XDS proxy - it's using a transient port.
+		// 连接到本地的XDS proxy - 它使用一个瞬间的端口
 		ldsr, err := adsc.New(sa.GetLocalXDSGeneratorListener().Addr().String(),
 			&adsc.Config{
 				IP:        "10.11.10.1",
 				Namespace: "test",
 				RootCert:  creds.RootCert,
 				InitialDiscoveryRequests: []*discovery.DiscoveryRequest{
+					// 初始的DiscoveryRequests为Cluster和ServiceEntries
 					{TypeUrl: v3.ClusterType},
 					{TypeUrl: collections.IstioNetworkingV1Alpha3Serviceentries.Resource().GroupVersionKind().String()},
 				},
@@ -194,7 +203,9 @@ func TestInternalEvents(t *testing.T) {
 }
 
 func TestAdsReconnectAfterRestart(t *testing.T) {
+	// 构建一个fake discovery server
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
+	// 创建ads连接
 	adscon := s.ConnectADS()
 	err := sendEDSReq([]string{"fake-cluster"}, sidecarID(app3Ip, "app3"), "", "", adscon)
 	if err != nil {
@@ -212,10 +223,12 @@ func TestAdsReconnectAfterRestart(t *testing.T) {
 	}
 
 	// Close the connection and reconnect
+	// 关闭连接并且重连
 	_ = adscon.CloseSend()
 	adscon = s.ConnectADS()
 
 	// Reconnect with the same resources
+	// 用同样的资源名重连
 	err = sendEDSReq([]string{"fake-cluster"}, sidecarID(app3Ip, "app3"), res.VersionInfo, res.Nonce, adscon)
 	if err != nil {
 		t.Fatal(err)
@@ -263,6 +276,7 @@ func TestAdsUnsubscribe(t *testing.T) {
 }
 
 // Regression for envoy restart and overlapping connections
+// envoy重启并且覆盖连接
 func TestAdsReconnectWithNonce(t *testing.T) {
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 	adscon := s.ConnectADS()
@@ -276,6 +290,7 @@ func TestAdsReconnectWithNonce(t *testing.T) {
 	}
 
 	// closes old process and reconnect
+	// 关闭老的进程并且重连
 	_ = adscon.CloseSend()
 	adscon = s.ConnectADS()
 
@@ -365,6 +380,7 @@ func TestAdsClusterUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatal("Invalid EDS response ", err)
 		}
+		// cluster name必须匹配
 		if cla.ClusterName != clusterName {
 			t.Error(fmt.Sprintf("Expecting %s got ", clusterName), cla.ClusterName)
 		}
@@ -911,6 +927,7 @@ func TestAdsUpdate(t *testing.T) {
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 	adscon := s.ConnectADS()
 
+	// 增加名字为adsupdate的service
 	s.Discovery.MemRegistry.AddService("adsupdate.default.svc.cluster.local", &model.Service{
 		Hostname: "adsupdate.default.svc.cluster.local",
 		Address:  "10.11.0.1",
@@ -931,6 +948,7 @@ func TestAdsUpdate(t *testing.T) {
 	s.Discovery.MemRegistry.SetEndpoints("adsupdate.default.svc.cluster.local", "default",
 		newEndpointWithAccount("10.2.0.1", "hello-sa", "v1"))
 
+	// 请求adsupdate这个service的eds
 	err := sendEDSReq([]string{"outbound|2080||adsupdate.default.svc.cluster.local"}, sidecarID("1.1.1.1", "app3"), "", "", adscon)
 	if err != nil {
 		t.Fatal(err)
@@ -964,11 +982,13 @@ func TestAdsUpdate(t *testing.T) {
 		t.Error("Expecting 10.2.0.1 got ", lbe[0].GetEndpoint().Address.GetSocketAddress().Address)
 	}
 
+	// 增加一个新的endpoint
 	_ = s.Discovery.MemRegistry.AddEndpoint("adsupdate.default.svc.cluster.local",
 		"http-main", 2080, "10.1.7.1", 1080)
 
 	// will trigger recompute and push for all clients - including some that may be closing
 	// This reproduced the 'push on closed connection' bug.
+	// 会触发重新计算并且推送到所有的客户端 - 包括那些正在关闭的
 	xds.AdsPushAll(s.Discovery)
 
 	res1, err = adsReceive(adscon, 15*time.Second)

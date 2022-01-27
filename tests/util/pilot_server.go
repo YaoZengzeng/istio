@@ -47,10 +47,13 @@ var (
 )
 
 // TearDownFunc is to be called to tear down a test server.
+// TestDownFunc被调用来关闭一个test server
 type TearDownFunc func()
 
 // EnsureTestServer will ensure a pilot server is running in process and initializes
 // the MockPilotUrl and MockPilotGrpcAddr to allow connections to the test pilot.
+// EnsureTestServer会确保一个pilot server正在进程中运行并且初始化MockPilotUrl和MockPilotGrpcAddr
+// 来允许到test pilot的连接
 func EnsureTestServer(args ...func(*bootstrap.PilotArgs)) (*bootstrap.Server, TearDownFunc) {
 	server, tearDown, err := setup(args...)
 	if err != nil {
@@ -76,6 +79,7 @@ func setup(additionalArgs ...func(*bootstrap.PilotArgs)) (*bootstrap.Server, Tea
 	httpAddr := ":" + pilotHTTP
 
 	// Create tmp mesh config file
+	// 创建临时的mesh配置文件
 	meshFile, err := ioutil.TempFile("", "mesh.yaml")
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating tmp mesh config file failed: %v", err)
@@ -117,6 +121,7 @@ func setup(additionalArgs ...func(*bootstrap.PilotArgs)) (*bootstrap.Server, Tea
 		// TODO: add the plugins, so local tests are closer to reality and test full generation
 		// Plugins:           bootstrap.DefaultPlugins,
 	}}, additionalArgs...)
+	// 构建istiod的启动参数
 	args := bootstrap.NewPilotArgs(additionalArgs...)
 
 	// Create a test Istiod Server.
@@ -132,6 +137,7 @@ func setup(additionalArgs ...func(*bootstrap.PilotArgs)) (*bootstrap.Server, Tea
 	}
 
 	// Extract the port from the network address.
+	// 从网路地址中抽取出端口
 	_, port, err := net.SplitHostPort(s.HTTPListener.Addr().String())
 	if err != nil {
 		return nil, tearFunc, err
@@ -153,6 +159,7 @@ func setup(additionalArgs ...func(*bootstrap.PilotArgs)) (*bootstrap.Server, Tea
 	MockPilotSGrpcAddr = "localhost:" + port
 
 	// Wait a bit for the server to come up.
+	// 等待server运行成功
 	err = wait.Poll(500*time.Millisecond, 5*time.Second, func() (bool, error) {
 		client := &http.Client{Timeout: 1 * time.Second}
 		resp, err := client.Get(httpURL + "/ready")

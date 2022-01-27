@@ -104,6 +104,8 @@ type Config struct {
 
 	// InitialDiscoveryRequests is a list of resources to watch at first, represented as URLs (for new XDS resource naming)
 	// or type URLs.
+	// InitialDiscoveryRequests是一系列一开始监听的资源对象，作为URLs呈现（对于新的XDS资源）
+	// 或者类型URLs
 	InitialDiscoveryRequests []*discovery.DiscoveryRequest
 
 	// BackoffPolicy determines the reconnect policy. Based on MCP client.
@@ -210,12 +212,18 @@ var (
 )
 
 // New creates a new ADSC, maintaining a connection to an XDS server.
+// New会创建一个新的ADSC，维护一个到XDS server的连接
 // Will:
 // - get certificate using the Secret provider, if CertRequired
+// - 使用Secret provider获取证书，如果CertRequired
 // - connect to the XDS server specified in ProxyConfig
+// - 连接到指定在ProxyConfig中的XDS server
 // - send initial request for watched resources
+// - 发送初始请求到监听的资源对象
 // - wait for response from XDS server
+// - 等待来自XDS server的response
 // - on success, start a background thread to maintain the connection, with exp. backoff.
+// - 成功之后，启动一个background thread用于维护连接
 func New(discoveryAddr string, opts *Config) (*ADSC, error) {
 	if opts == nil {
 		opts = &Config{}
@@ -366,6 +374,8 @@ func (a *ADSC) Close() {
 
 // Run will create a new stream using the existing grpc client connection and send the initial xds requests.
 // And then it will run a go routine receiving and handling xds response.
+// Run会创建一个新的stream，使用已有的grpc客户端连接并且发送初始的xds请求，并且之后会运行一个goroutine
+// 接收并且处理xds response
 // Note: it is non blocking
 func (a *ADSC) Run() error {
 	var err error
@@ -377,6 +387,7 @@ func (a *ADSC) Run() error {
 	a.sendNodeMeta = true
 	a.InitialLoad = 0
 	// Send the initial requests
+	// 发送初始请求
 	for _, r := range a.cfg.InitialDiscoveryRequests {
 		if r.TypeUrl == v3.ClusterType {
 			a.watchTime = time.Now()
@@ -441,6 +452,7 @@ func (a *ADSC) handleRecv() {
 		}
 
 		// Group-value-kind - used for high level api generator.
+		// Group-value-kind - 用于高层的api generator
 		gvk := strings.SplitN(msg.TypeUrl, "/", 3)
 
 		adscLog.Infoa("Received ", a.url, " type ", msg.TypeUrl,
@@ -473,6 +485,7 @@ func (a *ADSC) handleRecv() {
 		}
 
 		// Process the resources.
+		// 处理resources
 		listeners := []*listener.Listener{}
 		clusters := []*cluster.Cluster{}
 		routes := []*route.RouteConfiguration{}
@@ -507,6 +520,8 @@ func (a *ADSC) handleRecv() {
 
 		// If we got no resource - still save to the store with empty name/namespace, to notify sync
 		// This scheme also allows us to chunk large responses !
+		// 如果我们没有获取任何资源 - 仍然用空的name/namespace保存，通知sync
+		// 这个方案运行我们对大的response进行分块
 
 		// TODO: add hook to inject nacks
 		switch msg.TypeUrl {
@@ -527,6 +542,7 @@ func (a *ADSC) handleRecv() {
 			a.syncCh <- gt.String()
 		}
 		a.Received[msg.TypeUrl] = msg
+		// 进行ack
 		a.ack(msg)
 		a.mutex.Unlock()
 
@@ -584,6 +600,7 @@ func (a *ADSC) handleLDS(ll []*listener.Listener) {
 		ldsSize += proto.Size(l)
 
 		// The last filter is the actual destination for inbound listener
+		// 对于inbound listener，最后一个filter是真正的destination
 		if l.ApiListener != nil {
 			// This is an API Listener
 			// TODO: extract VIP and RDS or cluster
@@ -602,6 +619,7 @@ func (a *ADSC) handleLDS(ll []*listener.Listener) {
 			c := config.Fields["cluster"].GetStringValue()
 			adscLog.Debugf("TCP: %s -> %s", l.Name, c)
 		} else if filter.Name == wellknown.HTTPConnectionManager {
+			// 如果是http connection manager
 			lh[l.Name] = l
 
 			// Getting from config is too painful..
@@ -631,6 +649,7 @@ func (a *ADSC) handleLDS(ll []*listener.Listener) {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 	if len(routes) > 0 {
+		// 如果路由不为空，发送路由的请求
 		a.sendRsc(v3.RouteType, routes)
 	}
 	a.httpListeners = lh
@@ -709,11 +728,13 @@ func (a *ADSC) handleCDS(ll []*cluster.Cluster) {
 		switch v := c.ClusterDiscoveryType.(type) {
 		case *cluster.Cluster_Type:
 			if v.Type != cluster.Cluster_EDS {
+				// 类型不是eds的clusters
 				cds[c.Name] = c
 				continue
 			}
 		}
 		cn = append(cn, c.Name)
+		// eds类型的cluster
 		edscds[c.Name] = c
 	}
 
@@ -763,6 +784,7 @@ func (a *ADSC) Send(req *discovery.DiscoveryRequest) error {
 		req.Node = a.node()
 		a.sendNodeMeta = false
 	}
+	// 设置ResponseNonce?
 	req.ResponseNonce = time.Now().String()
 	return a.stream.Send(req)
 }
@@ -784,6 +806,8 @@ func (a *ADSC) handleEDS(eds []*endpoint.ClusterLoadAssignment) {
 	}
 	if a.InitialLoad == 0 {
 		// first load - Envoy loads listeners after endpoints
+		// 第一次加载 - Envoy在endpoints之后加载listeners
+		// 发送listener的request
 		_ = a.stream.Send(&discovery.DiscoveryRequest{
 			Node:    a.node(),
 			TypeUrl: v3.ListenerType,
@@ -821,6 +845,7 @@ func (a *ADSC) handleRDS(configurations []*route.RouteConfiguration) {
 		size += proto.Size(r)
 	}
 	if a.InitialLoad == 0 {
+		// 设置InitialLoad
 		a.InitialLoad = time.Since(a.watchTime)
 		adscLog.Infof("RDS: %d size=%d vhosts=%d routes=%d time=%d", len(configurations), size, vh, rcount, a.InitialLoad)
 	} else {
@@ -833,6 +858,7 @@ func (a *ADSC) handleRDS(configurations []*route.RouteConfiguration) {
 	}
 
 	a.mutex.Lock()
+	// 配置rds
 	a.routes = rds
 	a.mutex.Unlock()
 
@@ -909,6 +935,7 @@ func (a *ADSC) Wait(to time.Duration, updates ...string) ([]string, error) {
 }
 
 // WaitVersion waits for a new or updated for a typeURL.
+// WaitVersion等待一个typeURL的新的或者更的response
 func (a *ADSC) WaitVersion(to time.Duration, typeURL, lastVersion string) (*discovery.DiscoveryResponse, error) {
 	t := time.NewTimer(to)
 	a.mutex.Lock()
@@ -1021,6 +1048,7 @@ func (a *ADSC) sendRsc(typeurl string, rsc []string) {
 	version := ""
 	nonce := ""
 	if ex != nil {
+		// 将version和nonce设置为已经接收到的上一个版本的信息
 		version = ex.VersionInfo
 		nonce = ex.Nonce
 	}
@@ -1035,6 +1063,7 @@ func (a *ADSC) sendRsc(typeurl string, rsc []string) {
 
 func (a *ADSC) ack(msg *discovery.DiscoveryResponse) {
 	var resources []string
+	// 对于Endpoint和Route类型，需要找到相应的资源对象
 	if msg.TypeUrl == v3.EndpointType {
 		for c := range a.edsClusters {
 			resources = append(resources, c)
@@ -1047,6 +1076,7 @@ func (a *ADSC) ack(msg *discovery.DiscoveryResponse) {
 	}
 
 	_ = a.stream.Send(&discovery.DiscoveryRequest{
+		// ResponseNonce设置为msg.Nonce
 		ResponseNonce: msg.Nonce,
 		TypeUrl:       msg.TypeUrl,
 		Node:          a.node(),

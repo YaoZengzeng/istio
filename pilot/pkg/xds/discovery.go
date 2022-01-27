@@ -324,6 +324,7 @@ func (s *DiscoveryServer) globalPushContext() *model.PushContext {
 }
 
 // ConfigUpdate implements ConfigUpdater interface, used to request pushes.
+// ConfigUpdate实现了ConfigUpdater接口，用于请求推送
 // It replaces the 'clear cache' from v1.
 func (s *DiscoveryServer) ConfigUpdate(req *model.PushRequest) {
 	inboundConfigUpdates.Increment()

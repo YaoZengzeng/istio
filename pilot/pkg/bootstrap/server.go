@@ -75,6 +75,7 @@ import (
 var (
 	// DefaultPlugins is the default list of plugins to enable, when no plugin(s)
 	// is specified through the command line
+	// DefaultPlugins是默认的一系列使能的插件，当没有在命令行中指定插件时
 	DefaultPlugins = []string{
 		plugin.Authn,
 		plugin.Authz,
@@ -107,6 +108,7 @@ type startFunc func(stop <-chan struct{}) error
 type readinessProbe func() (bool, error)
 
 // Server contains the runtime configuration for the Pilot discovery service.
+// Server是Pilot服务发现的运行时配置
 type Server struct {
 	MonitorListeningAddr net.Addr
 

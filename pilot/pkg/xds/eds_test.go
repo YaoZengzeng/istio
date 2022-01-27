@@ -347,6 +347,7 @@ func fullPush(s *xds.FakeDiscoveryServer) {
 }
 
 func adsConnectAndWait(t *testing.T, ip int) *adsc.ADSC {
+	// 构建一个ads connection
 	adscConn, err := adsc.New(util.MockPilotGrpcAddr, &adsc.Config{
 		IP: testIP(uint32(ip)),
 	})

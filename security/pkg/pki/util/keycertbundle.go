@@ -32,6 +32,7 @@ import (
 )
 
 // KeyCertBundle stores the cert, private key, cert chain and root cert for an entity. It is thread safe.
+// KeyCertBundle为一个实体存储证书、私钥、证书链以及根证书
 // TODO(myidpt): Remove this interface.
 type KeyCertBundle interface {
 	// GetAllPem returns all key/cert PEMs in KeyCertBundle together. Getting all values together avoids inconsistency.
@@ -44,6 +45,7 @@ type KeyCertBundle interface {
 	GetCertChainPem() []byte
 
 	// GetRootCertPem returns the root certificate PEM.
+	// GetRootCertPem返回根证书
 	GetRootCertPem() []byte
 
 	// VerifyAndSetAll verifies the key/certs, and sets all key/certs in KeyCertBundle together.

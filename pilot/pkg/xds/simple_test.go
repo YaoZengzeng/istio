@@ -122,6 +122,7 @@ func gatewayID(ip string) string { //nolint: unparam
 }
 
 // localPilotTestEnv builds a pilot testing environment and it initializes with registry with the passed in init function.
+// localPilotTestEnv构建一个pilot的测试环境，它用传入的init函数初始化registry
 func localPilotTestEnv(
 	t *testing.T,
 	initFunc func(*bootstrap.Server),
@@ -129,6 +130,7 @@ func localPilotTestEnv(
 	initMutex.Lock()
 	defer initMutex.Unlock()
 
+	// 在参数中加入默认的plugins
 	additionalArgs = append(additionalArgs, func(args *bootstrap.PilotArgs) {
 		args.Plugins = bootstrap.DefaultPlugins
 	})
@@ -142,15 +144,19 @@ func localPilotTestEnv(
 	localIP = getLocalIP()
 
 	// Run the initialization function.
+	// 运行初始化函数
 	initFunc(server)
 
 	// Trigger a push, to initiate push context with contents of registry.
+	// 触发一个push，用registry的内容来初始化push context
 	server.XDSServer.Push(&model.PushRequest{Full: true})
 
 	// Wait till a push is propagated.
+	// 等待直到一个push被传播
 	time.Sleep(200 * time.Millisecond)
 
 	// Add a dummy client connection to validate that push is triggered.
+	// 增加一个dummy的客户端连接来确保push被触发
 	dummyClient := adsConnectAndWait(t, 0x0a0a0a0a)
 	defer dummyClient.Close()
 
@@ -159,9 +165,12 @@ func localPilotTestEnv(
 
 // initLocalPilotTestEnv creates a local, in process Pilot with XDSv2 support and a set
 // of common test configs. This is a singleton server, reused for all tests in this package.
+// initLocalPilotTestEnv创建一个本地的，在进程中的，支持XDSv2的Pilot以及一系列通用的测试配置
+// 这是单个的server，在这个包里的所有测试中重用
 //
 // The server will have a set of pre-defined instances and services, and read CRDs from the
 // common tests/testdata directory.
+// 这个server会有一系列预先定义的实例以及services，并且从通用的tests/testdata目录读取CRDs
 func initLocalPilotTestEnv(t *testing.T) (*bootstrap.Server, util.TearDownFunc) {
 	return localPilotTestEnv(t, func(s *bootstrap.Server) {
 		// Service and endpoints for hello.default - used in v1 pilot tests
@@ -238,6 +247,7 @@ func initLocalPilotTestEnv(t *testing.T) (*bootstrap.Server, util.TearDownFunc) 
 		s.XDSServer.MemRegistry.SetEndpoints(string(hostname), "default", svc3Endpoints)
 
 		// Mock ingress service
+		// 模拟ingress service
 		s.XDSServer.MemRegistry.AddService("istio-ingress.istio-system.svc.cluster.local", &model.Service{
 			Hostname: "istio-ingress.istio-system.svc.cluster.local",
 			Address:  "10.10.0.2",
@@ -286,6 +296,7 @@ func initLocalPilotTestEnv(t *testing.T) (*bootstrap.Server, util.TearDownFunc) 
 
 		// RouteConf Service4 is using port 80, to test that we generate multiple clusters (regression)
 		// service4 has no endpoints
+		// RouteConf service4使用端口80，为了测试多集群的创建（回归），service4没有endpoints
 		s.XDSServer.MemRegistry.AddHTTPService("service4.default.svc.cluster.local", "10.1.0.4", 80)
 	})
 }

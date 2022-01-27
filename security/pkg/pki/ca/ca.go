@@ -348,6 +348,7 @@ func (ca *IstioCA) GetCAKeyCertBundle() util.KeyCertBundle {
 
 // GenKeyCert() generates a certificate signed by the CA and
 // returns the certificate chain and the private key.
+// GenKeyCert()生成由CA签发的证书并且返回证书链以及私钥
 func (ca *IstioCA) GenKeyCert(hostnames []string, certTTL time.Duration) ([]byte, []byte, error) {
 	opts := util.CertOptions{
 		RSAKeySize: rsaKeySize,

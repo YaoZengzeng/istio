@@ -31,6 +31,7 @@ import (
 // RegistryOptions为configuration controller提供了配置选项
 type RegistryOptions struct {
 	// If FileDir is set, the below kubernetes options are ignored
+	// 如果设置了FileDir，下面的kubernetes options会被忽略
 	FileDir string
 
 	Registries []string
@@ -67,6 +68,7 @@ type PilotArgs struct {
 }
 
 // DiscoveryServerOptions contains options for create a new discovery server instance.
+// DiscoveryServerOptions包含选项用于创建一个新的discovery server实例
 type DiscoveryServerOptions struct {
 	// The listening address for HTTP (debug). If the port in the address is empty or "0" (as in "127.0.0.1:" or "[::1]:0")
 	// a port number is automatically chosen.
@@ -123,6 +125,7 @@ var podNameVar = env.RegisterStringVar("POD_NAME", "", "")
 var RevisionVar = env.RegisterStringVar("REVISION", "", "")
 
 // NewPilotArgs constructs pilotArgs with default values.
+// NewPilotArgs用默认值构造pilotArgs
 func NewPilotArgs(initFuncs ...func(*PilotArgs)) *PilotArgs {
 	p := &PilotArgs{}
 

@@ -109,6 +109,7 @@ func sendEDSNack(_ []string, node string, client AdsClient) error {
 // If pilot is reset, envoy will connect with a nonce/version info set on the previous
 // connection to pilot. In HA case this may be a different pilot. This is a regression test for
 // reconnect problems.
+// 如果pilot被重置了，envoy会用之前的nonce/version信息进行连接，在HA模式下，这可能是一个不同的pilot
 func sendEDSReqReconnect(clusters []string, client AdsClient, res *discovery.DiscoveryResponse) error {
 	err := client.Send(&discovery.DiscoveryRequest{
 		Node: &corev3.Node{

@@ -42,6 +42,9 @@ const (
 
 /*
 	Validate that secrets are cleaned after connection is closed in such two cases:
+	检测在连接关闭之后secrets被清除，包含如下两种场景：
+	1. workflow运行完成并且连接被关闭
+	2. workflow被终止并且连接关闭，在secret生成之后
 	1. workflow are run completely and connection is closed
 	2. workflow are terminated and connection is closed  after secret are generated
 */
@@ -54,6 +57,7 @@ func TestSDSAgentStreamWithCacheAndConnectionCleaned(t *testing.T) {
 
 	go testSDSSuccessIngressStreamCache(stream, ValidProxyID, notifyChan)
 	// verify that the first SDS request sent by two streams do not hit cache.
+	// 确认two streams发送的第一个SDS请求不会命中缓存
 	waitForStreamSecretCacheCheck(t, setup.secretStore, false, 1)
 	waitForStreamNotificationToProceed(t, notifyChan, "notify push secret 1")
 	secretKeyMap := make(map[interface{}]bool)
@@ -63,10 +67,12 @@ func TestSDSAgentStreamWithCacheAndConnectionCleaned(t *testing.T) {
 	})
 	conn.Close()
 	// verify the cache is cleaned when connection is closed
+	// 当连接关闭的时候，确认缓存被清空
 	waitForSecretCacheCleanUp(t, setup.secretStore, secretKeyMap)
 
 	conn, stream = createSDSStream(t, setup.socket, fakeToken1)
 	// When proxy ID has "invalid", SDS server closes the connection and returns an error
+	// 当proxy ID有错误，SDS server会关闭连接并且返回错误
 	go testSDSTerminatedIngressStreamCache(stream, InValidProxyID, notifyChan)
 	waitForStreamSecretCacheCheck(t, setup.secretStore, false, 1)
 	waitForStreamNotificationToProceed(t, notifyChan, "notify push secret 2")
@@ -78,6 +84,7 @@ func TestSDSAgentStreamWithCacheAndConnectionCleaned(t *testing.T) {
 	})
 	conn.Close()
 	// verify the cache is cleaned when connection is closed
+	// 确保缓存被清空，当连接被关闭时
 	waitForSecretCacheCleanUp(t, setup.secretStore, secretKeyMap)
 }
 
@@ -137,6 +144,7 @@ func waitForStreamSecretCacheCheck(t *testing.T, mss *mockIngressGatewaySecretSt
 }
 
 // workflow are run completely
+// workflow运行完成
 func testSDSSuccessIngressStreamCache(stream sds.SecretDiscoveryService_StreamSecretsClient, proxyID string,
 	notifyChan chan notifyMsg) {
 	req := &discovery.DiscoveryRequest{
@@ -370,6 +378,7 @@ func waitForStreamNotificationToProceed(t *testing.T, notifyChan chan notifyMsg,
 			}
 			t.Fatalf("get error from stream: %v", notify.Message)
 		} else {
+			// 确保通知的信息是符合预期的
 			if notify.Message != proceedNotice {
 				t.Fatalf("push signal does not match, expected %s but got %s", proceedNotice,
 					notify.Message)

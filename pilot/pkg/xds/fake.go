@@ -257,6 +257,7 @@ func (f *FakeDiscoveryServer) PushContext() *model.PushContext {
 }
 
 // ConnectADS starts an ADS connection to the server. It will automatically be cleaned up when the test ends
+// ConnectADS启动一个ADS连接到server
 func (f *FakeDiscoveryServer) ConnectADS() discovery.AggregatedDiscoveryService_StreamAggregatedResourcesClient {
 	conn, err := grpc.Dial("buffcon", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 		return f.Listener.Dial()

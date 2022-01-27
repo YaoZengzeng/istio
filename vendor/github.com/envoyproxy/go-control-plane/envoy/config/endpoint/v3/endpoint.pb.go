@@ -52,11 +52,13 @@ type ClusterLoadAssignment struct {
 	// <envoy_api_msg_config.cluster.v3.Cluster.EdsClusterConfig>`.
 	ClusterName string `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	// List of endpoints to load balance to.
+	// 一系列用来负载均衡的endpoints
 	Endpoints []*LocalityLbEndpoints `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`
 	// Map of named endpoints that can be referenced in LocalityLbEndpoints.
 	// [#not-implemented-hide:]
 	NamedEndpoints map[string]*Endpoint `protobuf:"bytes,5,rep,name=named_endpoints,json=namedEndpoints,proto3" json:"named_endpoints,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Load balancing policy settings.
+	// 负载均衡策略的配置
 	Policy *ClusterLoadAssignment_Policy `protobuf:"bytes,4,opt,name=policy,proto3" json:"policy,omitempty"`
 }
 
