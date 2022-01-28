@@ -871,6 +871,7 @@ func (a *ADSC) handleRDS(configurations []*route.RouteConfiguration) {
 
 // WaitClear will clear the waiting events, so next call to Wait will get
 // the next push type.
+// WaitClear会清空所有等待的事件，这样下一次调用Wait会触发下一次的push类型
 func (a *ADSC) WaitClear() {
 	for {
 		select {

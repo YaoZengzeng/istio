@@ -71,6 +71,7 @@ func DefaultProxyConfig() meshconfig.ProxyConfig {
 
 // DefaultMeshConfig returns the default mesh config.
 // This is merged with values from the mesh config map.
+// DefaultMeshConfig返回默认的mesh配置，这会和来自mesh config map的值合并
 func DefaultMeshConfig() meshconfig.MeshConfig {
 	proxyConfig := DefaultProxyConfig()
 

@@ -102,6 +102,7 @@ func TestVirtualListenerBuilder(t *testing.T) {
 		getListeners()
 
 	// virtual outbound listener
+	// 只会有一个listener
 	if len(listeners) != 1 {
 		t.Fatalf("expected %d listeners, found %d", 1, len(listeners))
 	}
@@ -161,16 +162,19 @@ func TestVirtualInboundListenerBuilder(t *testing.T) {
 	t.Helper()
 	listeners := prepareListeners(t, testServices, model.InterceptionRedirect)
 	// virtual inbound and outbound listener
+	// 包含两个listener，virtual inbound和virtual outbound
 	if len(listeners) != 2 {
 		t.Fatalf("expected %d listeners, found %d", 2, len(listeners))
 	}
 
+	// 第一个是virtual outbound
 	if !strings.HasPrefix(listeners[0].Name, VirtualOutboundListenerName) {
 		t.Fatalf("expect virtual listener, found %s", listeners[0].Name)
 	} else {
 		t.Logf("found virtual listener: %s", listeners[0].Name)
 	}
 
+	// 第二个是virtual inbound
 	if !strings.HasPrefix(listeners[1].Name, VirtualInboundListenerName) {
 		t.Fatalf("expect virtual listener, found %s", listeners[1].Name)
 	} else {

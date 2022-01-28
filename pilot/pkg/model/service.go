@@ -109,14 +109,18 @@ type Service struct {
 
 // Resolution indicates how the service instances need to be resolved before routing
 // traffic.
+// Resolution表示service实例如何解析，在路由之前
 type Resolution int
 
 const (
 	// ClientSideLB implies that the proxy will decide the endpoint from its local lb pool
+	// ClientSideLB表明proxy会从它本地的local lb pool中决定endpoint
 	ClientSideLB Resolution = iota
 	// DNSLB implies that the proxy will resolve a DNS address and forward to the resolved address
+	// DNSLB表明proxy会解析一个DNS地址并且转发到解析的地址
 	DNSLB
 	// Passthrough implies that the proxy should forward traffic to the destination IP requested by the caller
+	// Passthrough表明Proxy应该转发流量到调用者请求的目标IP
 	Passthrough
 )
 
@@ -369,6 +373,8 @@ type Locality struct {
 // service port). Note that the port associated with an instance does not
 // have to be the same as the port associated with the service. Depending
 // on the network setup (NAT, overlays), this could vary.
+// IstioEndpoint定义了和一个服务的实例相关的网络地址（IP:port），需要注意的是
+// 和一个实例相关的端口不一定需要和service相关的端口一致
 //
 // For e.g., if catalog.mystore.com is accessible through port 80 and 8080,
 // and it maps to an instance with IP 172.16.0.1, such that connections to
@@ -465,6 +471,7 @@ type ServiceAttributes struct {
 }
 
 // ServiceDiscovery enumerates Istio service instances.
+// ServiceDiscovery枚举Istio service实例
 // nolint: lll
 type ServiceDiscovery interface {
 	// Services list declarations of all services in the system
@@ -475,6 +482,7 @@ type ServiceDiscovery interface {
 
 	// InstancesByPort retrieves instances for a service on the given ports with labels that match
 	// any of the supplied labels. All instances match an empty tag list.
+	// InstancesByPort获取一个service的实例，匹配给定端口并且label匹配提供的labels
 	//
 	// For example, consider an example of catalog.mystore.com:
 	// Instances(catalog.myservice.com, 80) ->
@@ -493,11 +501,14 @@ type ServiceDiscovery interface {
 	//
 	// Introduced in Istio 0.8. It is only called with 1 port.
 	// CDS (clusters.go) calls it for building 'dnslb' type clusters.
+	// CDS调用它来构建'dnslb'类型的clusters
 	// EDS calls it for building the endpoints result.
+	// EDS调用它来构建endpoints
 	// Consult istio-dev before using this for anything else (except debugging/tools)
 	InstancesByPort(svc *Service, servicePort int, labels labels.Collection) []*ServiceInstance
 
 	// GetProxyServiceInstances returns the service instances that co-located with a given Proxy
+	// GetProxyServiceInstances返回和给定的Proxy co-located的service实例
 	//
 	// Co-located generally means running in the same network namespace and security context.
 	//
@@ -505,15 +516,22 @@ type ServiceDiscovery interface {
 	// will return an empty slice.
 	//
 	// There are two reasons why this returns multiple ServiceInstances instead of one:
+	// 有以下两个原因会返回多个ServiceInstances而不是一个：
 	// - A ServiceInstance has a single IstioEndpoint which has a single Port.  But a Service
 	//   may have many ports.  So a workload implementing such a Service would need
 	//   multiple ServiceInstances, one for each port.
+	// - 一个ServiceInstance有单个IstioEndpoint，有单个Port，但是一个Service可能有很多ports
+	// 因此一个实现了这个Service的workload可能有多个ServiceInstances，每个一个端口
 	// - A single workload may implement multiple logical Services.
+	// - 单个的workload可能实现多个逻辑service
 	//
 	// In the second case, multiple services may be implemented by the same physical port number,
 	// though with a different ServicePort and IstioEndpoint for each.  If any of these overlapping
 	// services are not HTTP or H2-based, behavior is undefined, since the listener may not be able to
 	// determine the intended destination of a connection without a Host header on the request.
+	// 第二种情况，多个service可能由同一个物理端口实现，尽管每个都有不同的ServicePort和IstioEndpoint
+	// 如果任何重合的services不是HTTP或者基于H2的，那么行为是未定义的，因为listener不能决定一个连接的intended
+	// destination，如果没有请求中的Host的话
 	GetProxyServiceInstances(*Proxy) []*ServiceInstance
 
 	GetProxyWorkloadLabels(*Proxy) labels.Collection
@@ -524,6 +542,7 @@ type ServiceDiscovery interface {
 	GetIstioServiceAccounts(svc *Service, ports []int) []string
 
 	// NetworkGateways returns a map of network name to Gateways that can be used to access that network.
+	// NetworkGateways返回一系列network name到Gateways的映射，可以用来访问network
 	NetworkGateways() map[string][]*Gateway
 }
 

@@ -25,6 +25,7 @@ const (
 	// GRPCWeb declares that the port carries gRPC traffic.
 	GRPCWeb Instance = "GRPC-Web"
 	// HTTP declares that the port carries HTTP/1.1 traffic.
+	// HTTP表明端口携带HTTP/1.1的流量
 	// Note that HTTP/1.0 or earlier may not be supported by the proxy.
 	HTTP Instance = "HTTP"
 	// HTTP_PROXY declares that the port is a generic outbound proxy port.

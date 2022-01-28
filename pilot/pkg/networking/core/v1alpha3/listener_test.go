@@ -149,6 +149,7 @@ var (
 func TestInboundListenerConfig(t *testing.T) {
 	for _, p := range []*model.Proxy{getProxy(), &proxyHTTP10} {
 		testInboundListenerConfig(t, p,
+			// 2个http service，一个unknown protocol的service
 			buildService("test1.com", wildcardIP, protocol.HTTP, tnow.Add(1*time.Second)),
 			buildService("test2.com", wildcardIP, "unknown", tnow),
 			buildService("test3.com", wildcardIP, protocol.HTTP, tnow.Add(2*time.Second)))
@@ -169,6 +170,8 @@ func TestOutboundListenerConflict_HTTPWithCurrentUnknown(t *testing.T) {
 
 	// The oldest service port is unknown.  We should encounter conflicts when attempting to add the HTTP ports. Purposely
 	// storing the services out of time order to test that it's being sorted properly.
+	// 最早的service端口是unknown，我们应该遇到冲突，当试着增加HTTP端口时，
+	// 故意不按时间顺序天际services来测试能被正确排序
 	testOutboundListenerConflict(t,
 		buildService("test1.com", wildcardIP, protocol.HTTP, tnow.Add(1*time.Second)),
 		buildService("test2.com", wildcardIP, "unknown", tnow),
@@ -916,6 +919,7 @@ func testOutboundListenerConflict(t *testing.T, services ...*model.Service) {
 			t.Fatalf("expect routes %s, found %s", expect, rds)
 		}
 	} else {
+		// 期望只有一个filter chain
 		if len(listeners[0].FilterChains) != 1 {
 			t.Fatalf("expectd %d filter chains, found %d", 1, len(listeners[0].FilterChains))
 		}
@@ -923,6 +927,7 @@ func testOutboundListenerConflict(t *testing.T, services ...*model.Service) {
 			t.Fatalf("expected default filter chains, found none")
 		}
 
+		// 分别获取tcp和http filterchain
 		_ = getTCPFilterChain(t, listeners[0])
 		http := getHTTPFilterChain(t, listeners[0])
 
@@ -974,6 +979,7 @@ func getHTTPFilterChain(t *testing.T, l *listener.Listener) *listener.FilterChai
 func testInboundListenerConfig(t *testing.T, proxy *model.Proxy, services ...*model.Service) {
 	t.Helper()
 	p := registry.NewPlugins([]string{plugin.Authn})[0]
+	// 构建inbound listeners
 	listeners := buildInboundListeners(t, p, proxy, nil, services...)
 	if len(listeners) != 1 {
 		t.Fatalf("expected %d listeners, found %d", 1, len(listeners))
@@ -1060,6 +1066,7 @@ func testInboundListenerConfigWithoutService(t *testing.T, proxy *model.Proxy) {
 	t.Helper()
 	p := &fakePlugin{}
 	listeners := buildInboundListeners(t, p, proxy, nil)
+	// 如果没有service，则其中没有listeners
 	if expected := 0; len(listeners) != expected {
 		t.Fatalf("expected %d listeners, found %d", expected, len(listeners))
 	}
@@ -1079,7 +1086,9 @@ func verifyListenerFilters(t *testing.T, lfilters []*listener.ListenerFilter) {
 func verifyHTTPFilterChainMatch(t *testing.T, fc *listener.FilterChain, direction model.TrafficDirection, isTLS bool) {
 	t.Helper()
 	if isTLS {
+		// 如果是tls
 		if direction == model.TrafficDirectionInbound &&
+			// mtlsHTTPALPNs的值为{"istio-http/1.0", "istio-http/1.1", "istio-h2"}
 			!reflect.DeepEqual(mtlsHTTPALPNs, fc.FilterChainMatch.ApplicationProtocols) {
 			t.Fatalf("expected %d application protocols, %v", len(mtlsHTTPALPNs), mtlsHTTPALPNs)
 		}
@@ -1088,7 +1097,9 @@ func verifyHTTPFilterChainMatch(t *testing.T, fc *listener.FilterChain, directio
 			t.Fatalf("exepct %q transport protocol, found %q", "tls", fc.FilterChainMatch.TransportProtocol)
 		}
 	} else {
+		// 非tls
 		if direction == model.TrafficDirectionInbound &&
+			// plaintextHTTPALPNs的值为{"http/1.0", "http/1.1", "h2c"}
 			!reflect.DeepEqual(plaintextHTTPALPNs, fc.FilterChainMatch.ApplicationProtocols) {
 			t.Fatalf("expected %d application protocols, %v got %v",
 				len(plaintextHTTPALPNs), plaintextHTTPALPNs, fc.FilterChainMatch.ApplicationProtocols)
@@ -1140,6 +1151,7 @@ func hasGrpcStatusFilter(filters []*hcm.HttpFilter) bool {
 }
 
 func isHTTPFilterChain(fc *listener.FilterChain) bool {
+	// filters不为空且第一个filter的名字为"envoy.filters.network.http_connection_manager"
 	return len(fc.Filters) > 0 && fc.Filters[0].Name == wellknown.HTTPConnectionManager
 }
 
@@ -2165,6 +2177,7 @@ func verifyInboundHTTP10(t *testing.T, http10Expected bool, l *listener.Listener
 }
 
 func verifyFilterChainMatch(t *testing.T, listener *listener.Listener) {
+	// 总共五个filter chain，前两个http filter chain，后三个是tcp filter chain
 	if len(listener.FilterChains) != 5 ||
 		!isHTTPFilterChain(listener.FilterChains[0]) ||
 		!isHTTPFilterChain(listener.FilterChains[1]) ||
@@ -2174,6 +2187,7 @@ func verifyFilterChainMatch(t *testing.T, listener *listener.Listener) {
 		t.Fatalf("expectd %d filter chains, %d http filter chains and %d tcp filter chain", 5, 2, 3)
 	}
 
+	// 最后一个参数表明是否为tls
 	verifyHTTPFilterChainMatch(t, listener.FilterChains[0], model.TrafficDirectionInbound, true)
 	verifyHTTPFilterChainMatch(t, listener.FilterChains[1], model.TrafficDirectionInbound, false)
 }
@@ -2236,10 +2250,12 @@ func buildInboundListeners(t *testing.T, p plugin.Plugin, proxy *model.Proxy, si
 
 	proxy.IstioVersion = model.ParseIstioVersion(proxy.Metadata.IstioVersion)
 	if sidecarConfig == nil {
+		// 设置proxy的sidecar scope
 		proxy.SidecarScope = model.DefaultSidecarScopeForNamespace(env.PushContext, "not-default")
 	} else {
 		proxy.SidecarScope = model.ConvertToSidecarScope(env.PushContext, sidecarConfig, sidecarConfig.Namespace)
 	}
+	// 构建sidecar的inbound listener
 	listeners := configgen.buildSidecarInboundListeners(proxy, env.PushContext)
 	xdstest.ValidateListeners(t, listeners)
 	return listeners
@@ -2411,6 +2427,7 @@ func buildListenerEnv(services []*model.Service) model.Environment {
 }
 
 func buildListenerEnvWithVirtualServices(services []*model.Service, virtualServices []*config.Config) model.Environment {
+	// 构建memory service discovery
 	serviceDiscovery := memregistry.NewServiceDiscovery(services)
 
 	instances := make([]*model.ServiceInstance, 0, len(services))

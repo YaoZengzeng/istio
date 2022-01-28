@@ -470,6 +470,7 @@ func (OutboundTrafficPolicy_Mode) EnumDescriptor() ([]byte, []int) {
 // `Sidecar` describes the configuration of the sidecar proxy that mediates
 // inbound and outbound communication of the workload instance to which it is
 // attached.
+// `Sidecar`描述了sidecar proxy的配置，调节proxy关联的workload实例的inbound和outbound交互
 //
 // <!-- crd generation tags
 // +cue-gen:Sidecar:groupName:networking.istio.io

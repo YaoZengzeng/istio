@@ -436,6 +436,7 @@ func (lb *ListenerBuilder) patchListeners() {
 
 func (lb *ListenerBuilder) getListeners() []*listener.Listener {
 	if lb.node.Type == model.SidecarProxy {
+		// 处理sidecar proxy
 		nInbound, nOutbound := len(lb.inboundListeners), len(lb.outboundListeners)
 		nHTTPProxy, nVirtual, nVirtualInbound := 0, 0, 0
 		if lb.httpProxyListener != nil {

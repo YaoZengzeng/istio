@@ -155,6 +155,8 @@ type IstioEgressListenerWrapper struct {
 // DefaultSidecarScopeForNamespace is a sidecar scope object with a default catch all egress listener
 // that matches the default Istio behavior: a sidecar has listeners for all services in the mesh
 // We use this scope when the user has not set any sidecar Config for a given config namespace.
+// DefaultSidecarScopeForNamespace是一个sidecar scope，有着默认的catch all egress listener
+// 匹配默认的Istio行为：一个sidecar有着网格中所有services的listener
 func DefaultSidecarScopeForNamespace(ps *PushContext, configNamespace string) *SidecarScope {
 	dummyNode := Proxy{
 		ConfigNamespace: configNamespace,

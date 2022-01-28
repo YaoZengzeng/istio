@@ -244,6 +244,11 @@ type processedDestRules struct {
 // to avoid passing around large objects - like full list of endpoints for a registry,
 // or the full list of endpoints for a service across registries, since it limits
 // scalability.
+// XDSUpdater用于xDS模型的直接更新以及增量推送 - Pilot使用多个registries - 例如每个K8S cluster
+// 是一个registry实例，每个registry负责追踪和mesh services相关的一系列实例，并且调用EDSUpdate，在
+// 发生变更的时候，一个registry可能将一个service的一系列endpoints打包成更小的子集 - 例如，基于deployment
+// 或者处理一个service非常多的endpoints，我们希望避免传输达到的对象 - 例如推送一个registry的完整的endpoits
+// 或者一个service的跨registries的完整endpoints，因为这限制了扩展性
 //
 // Future optimizations will include grouping the endpoints by labels, gateway or region to
 // reduce the time when subsetting or split-horizon is used. This design assumes pilot
@@ -252,9 +257,12 @@ type processedDestRules struct {
 type XDSUpdater interface {
 
 	// EDSUpdate is called when the list of endpoints or labels in a Service is changed.
+	// EDSUpdate在一个Service的endpoints或者labels发生变更的时候被调用
 	// For each cluster and hostname, the full list of active endpoints (including empty list)
 	// must be sent. The shard name is used as a key - current implementation is using the
 	// registry name.
+	// 对于每个cluster以及hostname，完整的active endpoints列表必须发送，shard name作为key被使用
+	// 当前的实现使用registry name
 	EDSUpdate(shard, hostname string, namespace string, entry []*IstioEndpoint)
 
 	// EDSCacheUpdate is called when the list of endpoints or labels in a Service is changed.
@@ -262,9 +270,11 @@ type XDSUpdater interface {
 	// must be sent. The shard name is used as a key - current implementation is using the
 	// registry name.
 	// Note: the difference with `EDSUpdate` is that it only update the cache rather than requesting a push
+	// EDSCacheUpdate和EDSUpdate的不同之处在于它只更新缓存，而不是请求一个push操作
 	EDSCacheUpdate(shard, hostname string, namespace string, entry []*IstioEndpoint)
 
 	// SvcUpdate is called when a service definition is updated/deleted.
+	// SvcUpdate是service定义在更新/删除的时候被调用
 	SvcUpdate(shard, hostname string, namespace string, event Event)
 
 	// ConfigUpdate is called to notify the XDS server of config updates and request a push.
@@ -273,6 +283,7 @@ type XDSUpdater interface {
 
 	// ProxyUpdate is called to notify the XDS server to send a push to the specified proxy.
 	// The requests may be collapsed and throttled.
+	// ProxyUpdate用于通知xDS server发送一个push到特定的proxy
 	ProxyUpdate(clusterID, ip string)
 }
 

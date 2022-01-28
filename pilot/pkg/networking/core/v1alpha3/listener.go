@@ -85,6 +85,7 @@ const (
 	RDSHttpProxy = "http_proxy"
 
 	// VirtualOutboundListenerName is the name for traffic capture listener
+	// VirtualOutboundListenerName是流量捕获的listener
 	VirtualOutboundListenerName = "virtualOutbound"
 
 	// VirtualOutboundCatchAllTCPFilterChainName is the name of the catch all tcp filter chain

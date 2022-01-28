@@ -78,6 +78,7 @@ type ServiceDiscovery struct {
 	ip2workloadLabels map[string]*labels.Instance
 
 	// XDSUpdater will push EDS changes to the ADS model.
+	// XDSUpdater会推送EDS的变更到ADS模型
 	EDSUpdater model.XDSUpdater
 
 	// Single mutex for now - it's for debug only.
@@ -234,6 +235,7 @@ func (sd *ServiceDiscovery) SetEndpoints(service string, namespace string, endpo
 	}
 	sd.mutex.Unlock()
 
+	// 调用EDSUpdate
 	sd.EDSUpdater.EDSUpdate(sd.ClusterID, service, namespace, endpoints)
 }
 

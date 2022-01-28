@@ -165,13 +165,18 @@ func TestLDSWithDefaultSidecar(t *testing.T) {
 	}
 
 	// Expect 6 listeners : 2 orig_dst, 4 outbound (http, tcp1, istio-policy and istio-telemetry)
+	// 期望有6个listeners：2个orig_dst, 4个outbound（http, tcp1, istio-policy以及istio-telemetry）
 	if (len(adsc.GetHTTPListeners()) + len(adsc.GetTCPListeners())) != 6 {
 		t.Fatalf("Expected 7 listeners, got %d\n", len(adsc.GetHTTPListeners())+len(adsc.GetTCPListeners()))
 	}
 
 	// Expect 11 CDS clusters:
+	// 期望有11个CDS clusters：
 	// 2 inbound(http, inbound passthroughipv4) notes: no passthroughipv6
+	// 2个inbound cluster（http以及inbound passthroughipv4），注意：没有passthroughipv6
 	// 9 outbound (2 http services, 1 tcp service, 2 istio-system services,
+	// 9个outbounc cluster（2个http services，1个tcp service以及两个istio-system services，
+	// 以及2个http1的subsets，1个blackhole以及一个passthrough)
 	//   and 2 subsets of http1, 1 blackhole, 1 passthrough)
 	if (len(adsc.GetClusters()) + len(adsc.GetEdsClusters())) != 11 {
 		t.Fatalf("Expected 12 clusters in CDS output. Got %d", len(adsc.GetClusters())+len(adsc.GetEdsClusters()))
@@ -179,6 +184,7 @@ func TestLDSWithDefaultSidecar(t *testing.T) {
 
 	// Expect two vhost blocks in RDS output for 8080 (one for http1, another for http2)
 	// plus one extra due to mem registry
+	// 对于8080期望有两个vhost blocks（一个用于http1，另一个用于http2）
 	if len(adsc.GetRoutes()["8080"].VirtualHosts) != 3 {
 		t.Fatalf("Expected 3 VirtualHosts in RDS output. Got %d", len(adsc.GetRoutes()["8080"].VirtualHosts))
 	}

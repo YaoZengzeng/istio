@@ -219,6 +219,7 @@ type MeshConfig struct {
 	// other services. Default port is 15001.
 	ProxyListenPort int32 `protobuf:"varint,4,opt,name=proxy_listen_port,json=proxyListenPort,proto3" json:"proxyListenPort,omitempty"`
 	// Port on which Envoy should listen for HTTP PROXY requests if set.
+	// Envoy用来监听HTTP PROXY请求的端口
 	ProxyHttpPort int32 `protobuf:"varint,5,opt,name=proxy_http_port,json=proxyHttpPort,proto3" json:"proxyHttpPort,omitempty"`
 	// Connection timeout used by Envoy. (MUST BE >=1ms)
 	// Default timeout is 10s.
