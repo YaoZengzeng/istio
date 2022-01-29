@@ -20,6 +20,7 @@ import (
 
 // Instance of a service registry. A single service registry combines the capabilities of service discovery
 // and the controller for managing asynchronous events.
+// 一个service registry的实例，单个的service registry组合了服务发现以及管理异步事件的controller的能力
 type Instance interface {
 	model.Controller
 	model.ServiceDiscovery
@@ -28,6 +29,7 @@ type Instance interface {
 	Provider() ProviderID
 
 	// Cluster for which the service registry applies. Only needed for multicluster systems.
+	// 这个service registry应用的Cluster，只有在多集群系统的时候需要
 	Cluster() string
 }
 

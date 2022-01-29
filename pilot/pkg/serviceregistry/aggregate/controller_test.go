@@ -58,6 +58,7 @@ func buildMockController() *Controller {
 		map[host.Name]*model.Service{
 			mock.ReplicatedFooServiceName: mock.ReplicatedFooServiceV2,
 			mock.WorldService.Hostname:    mock.WorldService,
+			// 外部的https服务
 			mock.ExtHTTPSService.Hostname: mock.ExtHTTPSService,
 		}, 2)
 
@@ -81,6 +82,7 @@ func buildMockController() *Controller {
 }
 
 func buildMockControllerForMultiCluster() *Controller {
+	// 构建Discovery
 	discovery1 = mock.NewDiscovery(
 		map[host.Name]*model.Service{
 			mock.HelloService.Hostname: mock.MakeService("hello.default.svc.cluster.local", "10.1.1.0", []string{}),
@@ -92,6 +94,7 @@ func buildMockControllerForMultiCluster() *Controller {
 			mock.WorldService.Hostname: mock.WorldService,
 		}, 2)
 
+	// 构建两个registries
 	registry1 := serviceregistry.Simple{
 		ProviderID:       serviceregistry.ProviderID("mockAdapter1"),
 		ClusterID:        "cluster-1",
@@ -127,6 +130,7 @@ func TestServicesError(t *testing.T) {
 func TestServicesForMultiCluster(t *testing.T) {
 	aggregateCtl := buildMockControllerForMultiCluster()
 	// List Services from aggregate controller
+	// 从aggregate controller对Services进行list
 	services, err := aggregateCtl.Services()
 	if err != nil {
 		t.Fatalf("Services() encountered unexpected error: %v", err)
@@ -152,8 +156,10 @@ func TestServicesForMultiCluster(t *testing.T) {
 	}
 
 	//Now verify ClusterVIPs for each service
+	// 确认每个service的ClusterVIPs
 	ClusterVIPs := map[host.Name]map[string]string{
 		mock.HelloService.Hostname: {
+			// cluster1和cluster2各一个
 			"cluster-1": "10.1.1.0",
 			"cluster-2": "10.1.2.0",
 		},

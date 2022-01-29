@@ -151,6 +151,7 @@ func MakeIP(service *model.Service, version int) string {
 }
 
 // ServiceDiscovery is a memory discovery interface
+// ServiceDiscovery是一个内存中的discovery接口
 type ServiceDiscovery struct {
 	services                      map[host.Name]*model.Service
 	versions                      int

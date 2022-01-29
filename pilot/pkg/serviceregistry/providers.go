@@ -15,15 +15,20 @@
 package serviceregistry
 
 // ProviderID defines underlying platform supporting service registry
+// ProviderID定义了支持service registry的底层平台
 type ProviderID string
 
 const (
 	// Mock is a service registry that contains 2 hard-coded test services
+	// Mock是一个service registry，包含2个硬编码的test services
 	Mock ProviderID = "Mock"
 	// Kubernetes is a service registry backed by k8s API server
+	// Kubernetes是一个service registry，后端是K8S API server
 	Kubernetes ProviderID = "Kubernetes"
 	// MCP is a service registry backed by MCP ServiceEntries
+	// MCP是一个service registry，后端是MCP ServiceEntries
 	MCP ProviderID = "MCP"
 	// External is a service registry for externally provided ServiceEntries
+	// External是一个service registry用于外部提供的ServiceEntries
 	External = "External"
 )

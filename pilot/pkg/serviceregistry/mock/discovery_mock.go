@@ -25,6 +25,7 @@ var (
 	HelloService = MakeService("hello.default.svc.cluster.local", "10.1.0.0", []string{})
 
 	// ReplicatedFooServiceName is a service replicated in all clusters.
+	// ReplicatedFooServiceName是一个在所有集群都有复制的service
 	ReplicatedFooServiceName = host.Name("foo.default.svc.cluster.local")
 	ReplicatedFooServiceV1   = MakeService(ReplicatedFooServiceName, "10.3.0.0", []string{
 		"spiffe://cluster.local/ns/default/sa/foo1",
@@ -43,6 +44,7 @@ var (
 	})
 
 	// ExtHTTPService is a mock external HTTP service
+	// ExtHTTPService是一个mock的外部HTTP service
 	ExtHTTPService = MakeExternalHTTPService("httpbin.default.svc.cluster.local",
 		true, "")
 

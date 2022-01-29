@@ -40,6 +40,7 @@ var _ model.ServiceDiscovery = &Controller{}
 var _ model.Controller = &Controller{}
 
 // Controller aggregates data across different registries and monitors for changes
+// Controller聚合来自不同registries的数据并且监听变更
 type Controller struct {
 	registries []serviceregistry.Instance
 	storeLock  sync.RWMutex
@@ -59,6 +60,7 @@ func NewController(opt Options) *Controller {
 }
 
 // AddRegistry adds registries into the aggregated controller
+// AddRegistry将registries添加到aggregated controller中
 func (c *Controller) AddRegistry(registry serviceregistry.Instance) {
 	c.storeLock.Lock()
 	defer c.storeLock.Unlock()
@@ -107,6 +109,7 @@ func (c *Controller) GetRegistryIndex(clusterID string) (int, bool) {
 }
 
 // Services lists services from all platforms
+// Services lists来自所有平台的services
 func (c *Controller) Services() ([]*model.Service, error) {
 	// smap is a map of hostname (string) to service, used to identify services that
 	// are installed in multiple clusters.
@@ -115,6 +118,7 @@ func (c *Controller) Services() ([]*model.Service, error) {
 	services := make([]*model.Service, 0)
 	var errs error
 	// Locking Registries list while walking it to prevent inconsistent results
+	// 先上锁再遍历services
 	for _, r := range c.GetRegistries() {
 		svcs, err := r.Services()
 		if err != nil {
@@ -132,6 +136,7 @@ func (c *Controller) Services() ([]*model.Service, error) {
 			services = append(services, svcs...)
 		} else {
 			// This is K8S typically
+			// 有cluster id，一般是k8s集群
 			for _, s := range svcs {
 				sp, ok := smap[s.Hostname]
 				if !ok {
@@ -139,6 +144,9 @@ func (c *Controller) Services() ([]*model.Service, error) {
 					// The first cluster will be listed first, so the services in the primary cluster
 					// will be used for default settings. If a service appears in multiple clusters,
 					// the order is less clear.
+					// 第一次我们看到一个service，结果是每个hostname有单个的service
+					// 第一个cluster会先被list，因此primary集群中的services会作为默认设置，如果一个service出现
+					// 在多个clusters，顺序将是不清晰的
 					sp = s
 					smap[s.Hostname] = sp
 					services = append(services, sp)
@@ -181,6 +189,7 @@ func mergeService(dst, src *model.Service, srcCluster string) {
 	dst.Mutex.Lock()
 	// If the registry has a cluster ID, keep track of the cluster and the
 	// local address inside the cluster.
+	// 如果registry有一个cluster ID，追踪cluster以及cluster中的local address
 	if dst.ClusterVIPs == nil {
 		dst.ClusterVIPs = make(map[string]string)
 	}
@@ -221,11 +230,14 @@ func nodeClusterID(node *model.Proxy) string {
 }
 
 // Skip the service registry when there won't be a match
+// 跳过不能匹配的service registry，因此proxy在另一个集群
 // because the proxy is in a different cluster.
 func skipSearchingRegistryForProxy(nodeClusterID, registryClusterID, selfClusterID string) bool {
 	// We can't trust the default service registry because its always
 	// named `Kubernetes`. Use the `CLUSTER_ID` envvar to find the
 	// local cluster name in these cases.
+	// 我们不能信任默认的service registry，因为它总是命名为`Kubernetes`，
+	// 在这种情况下，使用`CLUSTER_ID`环境变量来获取local cluster name
 	// TODO(https://github.com/istio/istio/issues/22093)
 	if registryClusterID == string(serviceregistry.Kubernetes) {
 		registryClusterID = selfClusterID
@@ -240,9 +252,11 @@ func skipSearchingRegistryForProxy(nodeClusterID, registryClusterID, selfCluster
 }
 
 // GetProxyServiceInstances lists service instances co-located with a given proxy
+// GetProxyServiceInstances lists所有和给定的proxy co-located的service instances
 func (c *Controller) GetProxyServiceInstances(node *model.Proxy) []*model.ServiceInstance {
 	out := make([]*model.ServiceInstance, 0)
 	for _, r := range c.GetRegistries() {
+		// 获取节点所在的cluster
 		nodeClusterID := nodeClusterID(node)
 		if skipSearchingRegistryForProxy(nodeClusterID, r.Cluster(), features.ClusterName) {
 			log.Debugf("GetProxyServiceInstances(): not searching registry %v: proxy %v CLUSTER_ID is %v",
