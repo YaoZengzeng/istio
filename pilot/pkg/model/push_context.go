@@ -219,10 +219,13 @@ type PushContext struct {
 }
 
 // Gateway is the gateway of a network
+// Gateway是一个network的gateway
 type Gateway struct {
 	// gateway ip address
+	// gateway的ip地址
 	Addr string
 	// gateway port
+	// gateway的端口
 	Port uint32
 }
 
@@ -279,6 +282,7 @@ type XDSUpdater interface {
 
 	// ConfigUpdate is called to notify the XDS server of config updates and request a push.
 	// The requests may be collapsed and throttled.
+	// ConfigUpdate被调用用于通知XDS server配置的更新并且请求一次推送，请求可能被折叠和限制
 	ConfigUpdate(req *PushRequest)
 
 	// ProxyUpdate is called to notify the XDS server to send a push to the specified proxy.
@@ -339,6 +343,7 @@ type TriggerReason string
 
 const (
 	// Describes a push triggered by an Endpoint change
+	// 描述一个由Endpoint变化触发的变更
 	EndpointUpdate TriggerReason = "endpoint"
 	// Describes a push triggered by a config (generally and Istio CRD) change.
 	ConfigUpdate TriggerReason = "config"
@@ -1654,10 +1659,12 @@ func (ps *PushContext) mergeGateways(proxy *Proxy) *MergedGateway {
 }
 
 // pre computes gateways for each network
+// 为每个network提前计算gateways
 func (ps *PushContext) initMeshNetworks() {
 	ps.networkGateways = map[string][]*Gateway{}
 
 	// First, use addresses directly specified in meshNetworks
+	// 首先，使用直接在meshNetworks中指定的gateways
 	if ps.MeshNetworks != nil {
 		for network, networkConf := range ps.MeshNetworks.Networks {
 			gws := networkConf.Gateways
@@ -1671,6 +1678,7 @@ func (ps *PushContext) initMeshNetworks() {
 	}
 
 	// Second, load registry specific gateways.
+	// 接着，加载registry指定的gateways
 	for network, gateways := range ps.ServiceDiscovery.NetworkGateways() {
 		// - the internal map of label gateways - these get deleted if the service is deleted, updated if the ip changes etc.
 		// - the computed map from meshNetworks (triggered by reloadNetworkLookup, the ported logic from getGatewayAddresses)

@@ -123,6 +123,7 @@ type Server struct {
 	// kubeRegistry is the service registry handling the primary cluster.
 	// kubeRegistry是用来处理primary cluster的service registry
 	kubeRegistry *kubecontroller.Controller
+	// multicluster结构
 	multicluster *kubecontroller.Multicluster
 
 	configController  model.ConfigStoreCache
@@ -220,6 +221,7 @@ func NewServer(args *PilotArgs) (*Server, error) {
 	}
 
 	// used for both initKubeRegistry and initClusterRegistreis
+	// 在initKubeRegistry和initClusterRegistries使用
 	if features.EnableEndpointSliceController {
 		args.RegistryOptions.KubeOptions.EndpointMode = kubecontroller.EndpointSliceOnly
 	} else {

@@ -83,7 +83,9 @@ func (s *DiscoveryServer) SvcUpdate(cluster, hostname string, namespace string, 
 }
 
 // EDSUpdate computes destination address membership across all clusters and networks.
+// EDSUpdate跨越所有的clusters以及networks计算destination address membership
 // This is the main method implementing EDS.
+// 这是实现EDS的主要方法
 // It replaces InstancesByPort in model - instead of iterating over all endpoints it uses
 // the hostname-keyed map. And it avoids the conversion from Endpoint to ServiceEntry to envoy
 // on each step: instead the conversion happens once, when an endpoint is first discovered.
@@ -91,8 +93,10 @@ func (s *DiscoveryServer) EDSUpdate(clusterID, serviceName string, namespace str
 	istioEndpoints []*model.IstioEndpoint) {
 	inboundEDSUpdates.Increment()
 	// Update the endpoint shards
+	// 更新endpoint shards
 	fp := s.edsCacheUpdate(clusterID, serviceName, namespace, istioEndpoints)
 	// Trigger a push
+	// 触发一个push
 	s.ConfigUpdate(&model.PushRequest{
 		Full: fp,
 		ConfigsUpdated: map[model.ConfigKey]struct{}{{
@@ -121,6 +125,8 @@ func (s *DiscoveryServer) EDSCacheUpdate(clusterID, serviceName string, namespac
 // edsCacheUpdate updates EndpointShards data by clusterID, hostname, IstioEndpoints.
 // It also tracks the changes to ServiceAccounts. It returns whether a full push
 // is needed or incremental push is sufficient.
+// edsCacheUpdate更新EndpointShards数据，通过clusterID，hostname，IstioEndpoints
+// 它同时追踪ServiceAccounts的变更，它返回是进行一个full push还是incremental push就足够了
 func (s *DiscoveryServer) edsCacheUpdate(clusterID, hostname string, namespace string,
 	istioEndpoints []*model.IstioEndpoint) bool {
 	if len(istioEndpoints) == 0 {
@@ -128,6 +134,9 @@ func (s *DiscoveryServer) edsCacheUpdate(clusterID, hostname string, namespace s
 		// but we should not do not delete the keys from EndpointShardsByService map - that will trigger
 		// unnecessary full push which can become a real problem if a pod is in crashloop and thus endpoints
 		// flip flopping between 1 and 0.
+		// 应该删除service EndpointShards，当endpoints变为0，来防止memory leak
+		// 但是我们不应该从EndpointShardsByService map中删除keys，这会触发一次不必要的full push，这会变成一个真正的问题
+		// 如果pod是crashloop，因此endpoints在1和0之间跳变
 		s.deleteEndpointShards(clusterID, hostname, namespace)
 		adsLog.Infof("Incremental push, service %s has no endpoints", hostname)
 		return false
@@ -136,14 +145,17 @@ func (s *DiscoveryServer) edsCacheUpdate(clusterID, hostname string, namespace s
 	fullPush := false
 
 	// Find endpoint shard for this service, if it is available - otherwise create a new one.
+	// 找到这个service的endpoint shard，如果它可用的话，否则创建一个新的
 	ep, created := s.getOrCreateEndpointShard(hostname, namespace)
 	// If we create a new endpoint shard, that means we have not seen the service earlier. We should do a full push.
+	// 如果我们新建了一个endpoint shard，这意味着我们之前没看到过这个service，我们应该做一个full push
 	if created {
 		adsLog.Infof("Full push, new service %s", hostname)
 		fullPush = true
 	}
 
 	// Check if ServiceAccounts have changed. We should do a full push if they have changed.
+	// 检查ServiceAccounts是否发生了改变，我们应该做一次full push，如果他们发生了变更
 	serviceAccounts := sets.Set{}
 	for _, e := range istioEndpoints {
 		if e.ServiceAccount != "" {
@@ -153,12 +165,14 @@ func (s *DiscoveryServer) edsCacheUpdate(clusterID, hostname string, namespace s
 
 	ep.mutex.Lock()
 	// For existing endpoints, we need to do full push if service accounts change.
+	// 对于已经存在的endpoints，我们应该做full push，如果service accounts变更
 	if !fullPush && !serviceAccounts.Equals(ep.ServiceAccounts) {
 		adsLog.Debugf("Updating service accounts now, svc %v, before service account %v, after %v",
 			hostname, ep.ServiceAccounts, serviceAccounts)
 		adsLog.Infof("Full push, service accounts changed, %v", hostname)
 		fullPush = true
 	}
+	// cluster id到istio endpoints之间的映射
 	ep.Shards[clusterID] = istioEndpoints
 	ep.ServiceAccounts = serviceAccounts
 	ep.mutex.Unlock()
@@ -171,12 +185,14 @@ func (s *DiscoveryServer) getOrCreateEndpointShard(serviceName, namespace string
 	defer s.mutex.Unlock()
 
 	if _, exists := s.EndpointShardsByService[serviceName]; !exists {
+		// 创建endpoint shard
 		s.EndpointShardsByService[serviceName] = map[string]*EndpointShards{}
 	}
 	if ep, exists := s.EndpointShardsByService[serviceName][namespace]; exists {
 		return ep, false
 	}
 	// This endpoint is for a service that was not previously loaded.
+	// 这是一个之前未加载过的service的endpoint
 	ep := &EndpointShards{
 		Shards:          map[string][]*model.IstioEndpoint{},
 		ServiceAccounts: sets.Set{},
@@ -223,8 +239,10 @@ func (s *DiscoveryServer) deleteService(cluster, serviceName, namespace string) 
 }
 
 // loadAssignmentsForCluster return the endpoints for a cluster
+// loadAssignmentsForCluster返回一个cluster的endpoints
 // Initial implementation is computing the endpoints on the flight - caching will be added as needed, based on
 // perf tests.
+// 初始的实现是直接计算endpoints - 缓存会按需添加，基于perf tests
 func (s *DiscoveryServer) loadAssignmentsForCluster(b EndpointBuilder) *endpoint.ClusterLoadAssignment {
 	if b.service == nil {
 		// Shouldn't happen here
@@ -252,6 +270,7 @@ func (s *DiscoveryServer) loadAssignmentsForCluster(b EndpointBuilder) *endpoint
 	}
 
 	s.mutex.RLock()
+	// 获取endpoints shard
 	epShards, f := s.EndpointShardsByService[string(b.hostname)][b.service.Attributes.Namespace]
 	s.mutex.RUnlock()
 	if !f {
@@ -276,6 +295,7 @@ func (s *DiscoveryServer) generateEndpoints(b EndpointBuilder) *endpoint.Cluster
 
 	// If networks are set (by default they aren't) apply the Split Horizon
 	// EDS filter on the endpoints
+	// 如果设置了networks（默认不设置），在endpoints中设置Split Horizon EDS filter
 	if b.MultiNetworkConfigured() {
 		l.Endpoints = b.EndpointsByNetworkFilter(l.Endpoints)
 	}
@@ -344,6 +364,8 @@ func (eds *EdsGenerator) Generate(proxy *model.Proxy, push *model.PushContext, w
 			if _, ok := edsUpdatedServices[string(hostname)]; !ok {
 				// Cluster was not updated, skip recomputing. This happens when we get an incremental update for a
 				// specific Hostname. On connect or for full push edsUpdatedServices will be empty.
+				// Cluster没有更新，跳过recomputing，这会在我们获取一个incremental update用于一个特定的Hostname
+				// 刚连接，或者full push，edsUpdatedServices会为空
 				continue
 			}
 		}
@@ -363,6 +385,7 @@ func (eds *EdsGenerator) Generate(proxy *model.Proxy, push *model.PushContext, w
 			}
 			resource := util.MessageToAny(l)
 			resources = append(resources, resource)
+			// 加入到cache中
 			eds.Server.Cache.Add(builder, resource)
 		}
 	}

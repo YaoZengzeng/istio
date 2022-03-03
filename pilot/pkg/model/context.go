@@ -794,6 +794,7 @@ const UnnamedNetwork = ""
 // When sending EDS/CDS-with-dns-endpoints, Pilot will only send
 // endpoints corresponding to the networks that the proxy wants to see.
 // If not set, we assume that the proxy wants to see endpoints in any network.
+// 如果没有设置，我们假设proxy想要看到所有network中的endpoints
 func GetNetworkView(node *Proxy) map[string]bool {
 	if node == nil || len(node.Metadata.RequestedNetworkView) == 0 {
 		return nil

@@ -129,6 +129,8 @@ func (c *Controller) NetworkGateways() map[string][]*model.Gateway {
 
 // extractGatewaysFromService checks if the service is a cross-network gateway
 // and if it is, updates the controller's gateways.
+// extractGatewaysFromService检查service是否是一个cross-network gateway
+// 如果是的话，更新controller的gateways
 func (c *Controller) extractGatewaysFromService(svc *model.Service) {
 	c.Lock()
 	defer c.Unlock()
@@ -136,6 +138,7 @@ func (c *Controller) extractGatewaysFromService(svc *model.Service) {
 }
 
 // reloadNetworkGateways performs extractGatewaysFromService for all services registered with the controller.
+// reloadNetworkGateways执行extractGatewaysFromService，从所有注册到controller的services
 func (c *Controller) reloadNetworkGateways() {
 	c.Lock()
 	defer c.Unlock()
@@ -152,6 +155,7 @@ func (c *Controller) extractGatewaysInner(svc *model.Service) {
 	gwPort, network := c.getGatewayDetails(svc)
 	if gwPort == 0 || network == "" {
 		// not a gateway
+		// 这不是一个gateway
 		return
 	}
 
@@ -159,6 +163,7 @@ func (c *Controller) extractGatewaysInner(svc *model.Service) {
 		c.networkGateways[svc.Hostname] = map[string][]*model.Gateway{}
 	}
 
+	// 构建ClusterExternalAddress数目的gateways
 	gws := make([]*model.Gateway, 0, len(svc.Attributes.ClusterExternalAddresses))
 
 	// TODO(landow) ClusterExternalAddresses doesn't need to get used outside of the kube controller, and spreads
@@ -174,16 +179,20 @@ func (c *Controller) extractGatewaysInner(svc *model.Service) {
 				}
 			}
 		}
+		// 获取这个集群从ClusterExternalAddress
 		ips := svc.Attributes.ClusterExternalAddresses[c.clusterID]
 		for _, ip := range ips {
 			gws = append(gws, &model.Gateway{Addr: ip, Port: gwPort})
 		}
 	}
+	// service对应的network的gateways
 	c.networkGateways[svc.Hostname][network] = gws
 }
 
 // getGatewayDetails finds the port and network to use for cross-network traffic on the given service.
 // Zero values are returned if the service is not a cross-network gateway.
+// getGatewayDetails找到port和network用于跨网络的流量，在给定的service上
+// 返回Zero，如果service不是一个cross-network gateway
 func (c *Controller) getGatewayDetails(svc *model.Service) (uint32, string) {
 	// label based gateways
 	if nw := svc.Attributes.Labels[label.IstioNetwork]; nw != "" {
@@ -206,8 +215,10 @@ func (c *Controller) getGatewayDetails(svc *model.Service) (uint32, string) {
 }
 
 // updateServiceNodePortAddresses updates ClusterExternalAddresses for Services of nodePort type
+// updateServiceNodePortAddresses为nodePort类型的Services更新ClusterExternalAddresses
 func (c *Controller) updateServiceNodePortAddresses(svcs ...*model.Service) bool {
 	// node event, update all nodePort gateway services
+	// 节点事件，更新所有nodePort的gateway services
 	if len(svcs) == 0 {
 		svcs = c.getNodePortGatewayServices()
 	}

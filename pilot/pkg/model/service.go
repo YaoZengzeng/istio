@@ -54,6 +54,7 @@ import (
 type Service struct {
 	// Attributes contains additional attributes associated with the service
 	// used mostly by RBAC for policy enforcement purposes.
+	// Attributes包含了和这个service相关的额外的特性，主要用于RBAC，用于策略实施
 	Attributes ServiceAttributes
 
 	// Ports is the set of network ports where the service is listening for

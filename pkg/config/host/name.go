@@ -19,6 +19,7 @@ import (
 )
 
 // Name describes a (possibly wildcarded) hostname
+// Name描述一个（可能是通配的）hostname
 type Name string
 
 // Matches returns true if this hostname overlaps with the other hostname. Names overlap if:

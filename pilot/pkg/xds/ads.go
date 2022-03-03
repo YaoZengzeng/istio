@@ -603,6 +603,7 @@ func (s *DiscoveryServer) DeltaAggregatedResources(stream discovery.AggregatedDi
 
 // Compute and send the new configuration for a connection. This is blocking and may be slow
 // for large configs. The method will hold a lock on con.pushMutex.
+// 计算并且发送新的配置，对于一个连接，这是阻塞是的并且对于大的配置可能很慢
 func (s *DiscoveryServer) pushConnection(con *Connection, pushEv *Event) error {
 	pushRequest := pushEv.pushRequest
 
@@ -624,6 +625,7 @@ func (s *DiscoveryServer) pushConnection(con *Connection, pushEv *Event) error {
 
 	// Send pushes to all generators
 	// Each Generator is responsible for determining if the push event requires a push
+	// 发送所有的pushes到所有的generators，每个Generator都负责决定是否push event需要一个push
 	for _, w := range getPushResources(con.proxy.WatchedResources) {
 		err := s.pushXds(con, pushRequest.Push, currentVersion, w, pushRequest)
 		if err != nil {

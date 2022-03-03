@@ -66,6 +66,7 @@ func ConfigsOfKind(configs map[ConfigKey]struct{}, kind config.GroupVersionKind)
 }
 
 // ConfigNamesOfKind extracts config names of the specified kind.
+// ConfigNamesOfKind抽取出特定类型的config names
 func ConfigNamesOfKind(configs map[ConfigKey]struct{}, kind config.GroupVersionKind) map[string]struct{} {
 	ret := make(map[string]struct{})
 

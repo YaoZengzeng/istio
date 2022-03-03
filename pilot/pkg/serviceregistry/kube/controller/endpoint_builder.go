@@ -29,6 +29,7 @@ import (
 )
 
 // A stateful IstioEndpoint builder with metadata used to build IstioEndpoint
+// 一个有状态，有元数据的IstioEndpoint builder用于构建IstioEndpoint
 type EndpointBuilder struct {
 	controller controllerInterface
 
@@ -63,6 +64,7 @@ func NewEndpointBuilder(c controllerInterface, pod *v1.Pod) *EndpointBuilder {
 			Label:     locality,
 			ClusterID: c.Cluster(),
 		},
+		// 获取pod的tls mode
 		tlsMode:      kube.PodTLSMode(pod),
 		workloadName: wn,
 		namespace:    namespace,

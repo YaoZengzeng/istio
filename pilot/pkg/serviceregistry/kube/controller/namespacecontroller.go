@@ -44,6 +44,7 @@ var (
 )
 
 // NamespaceController manages reconciles a configmap in each namespace with a desired set of data.
+// NamespaceController管理每个namespace中的一个configmap和一系列data之间的调谐
 type NamespaceController struct {
 	// getData is the function to fetch the data we will insert into the config map
 	getData func() map[string]string

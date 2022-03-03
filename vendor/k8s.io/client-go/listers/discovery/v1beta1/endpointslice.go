@@ -26,6 +26,7 @@ import (
 )
 
 // EndpointSliceLister helps list EndpointSlices.
+// EndpointSliceLister用于帮助对EndpointSlices进行list
 // All objects returned here must be treated as read-only.
 type EndpointSliceLister interface {
 	// List lists all EndpointSlices in the indexer.

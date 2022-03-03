@@ -46,6 +46,9 @@ const (
 	// When endpoints in different networks cannot reach each other directly, an Istio Gateway can
 	// be used to establish connectivity (usually using the AUTO_PASSTHROUGH mode in a  Gateway Server).
 	// This is an advanced configuration used typically for spanning an Istio mesh over multiple clusters.
+	// IstioNetwork让Istio能够聚合在同一个L3 domain/network之内的endpoints，所有在同一个network之内的endpoint
+	// 都假设能够互相访问，当endpoints处于不同的networks，它们不能互相访问，需要一个Istio Gateway来建立连接
+	// （通常在Gateway Server中使用AUTO_PASSTHROUGH模式），这是一个高级的配置，通过用于将Istio跨越多个clusters
 	IstioNetwork = "topology.istio.io/network"
 
 	// IstioCluster is a workload label that indicates the name of the cluster that contains the

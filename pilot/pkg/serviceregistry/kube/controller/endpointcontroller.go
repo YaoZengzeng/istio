@@ -31,6 +31,8 @@ import (
 // Pilot can get EDS information from Kubernetes from two mutually exclusive sources, Endpoints and
 // EndpointSlices. The kubeEndpointsController abstracts these details and provides a common interface
 // that both sources implement.
+// Pilot可以从Kubernetes中获取EDS信息，从两个互斥的渠道，Endpoints和EndpointSlices，kubeEndpointsController
+// 抽象了这些细节并且提供了一个公共的接口
 type kubeEndpointsController interface {
 	HasSynced() bool
 	Run(stopCh <-chan struct{})
@@ -41,6 +43,7 @@ type kubeEndpointsController interface {
 	buildIstioEndpoints(ep interface{}, host host.Name) []*model.IstioEndpoint
 	buildIstioEndpointsWithService(name, namespace string, host host.Name) []*model.IstioEndpoint
 	// forgetEndpoint does internal bookkeeping on a deleted endpoint
+	// forgetEndpoint对于一个已经删除的endpoint，做一个internal bookkeeping
 	forgetEndpoint(endpoint interface{})
 	getServiceInfo(ep interface{}) (host.Name, string, string)
 }
@@ -60,15 +63,19 @@ func (e *kubeEndpoints) Run(stopCh <-chan struct{}) {
 }
 
 // processEndpointEvent triggers the config update.
+// processEndpointEvent触发配置更新
 func processEndpointEvent(c *Controller, epc kubeEndpointsController, name string, namespace string, event model.Event, ep interface{}) error {
 	// Update internal endpoint cache no matter what kind of service, even headless service.
 	// As for gateways, the cluster discovery type is `EDS` for headless service.
+	// 更新内部的endpoint cache，不管是什么类型的service，即使是headless service
+	// 至于gateways，cluster discovery的类型为`EDS`，对于headless service
 	updateEDS(c, epc, ep, event)
 	if features.EnableHeadlessService {
 		if svc, _ := c.serviceLister.Services(namespace).Get(name); svc != nil {
 			// if the service is headless service, trigger a full push.
 			if svc.Spec.ClusterIP == v1.ClusterIPNone {
 				hostname := kube.ServiceHostname(svc.Name, svc.Namespace, c.domainSuffix)
+				// 调用xds updater
 				c.xdsUpdater.ConfigUpdate(&model.PushRequest{
 					Full: true,
 					// TODO: extend and set service instance type, so no need to re-init push context
@@ -88,6 +95,7 @@ func processEndpointEvent(c *Controller, epc kubeEndpointsController, name strin
 }
 
 func updateEDS(c *Controller, epc kubeEndpointsController, ep interface{}, event model.Event) {
+	// 根据endpoint获取service信息
 	host, svcName, ns := epc.getServiceInfo(ep)
 	log.Debugf("Handle EDS endpoint %s in namespace %s", svcName, ns)
 	var endpoints []*model.IstioEndpoint
@@ -114,31 +122,42 @@ func updateEDS(c *Controller, epc kubeEndpointsController, ep interface{}, event
 }
 
 // getPod fetches a pod by IP address.
+// getPod通过IP地址获取一个pod
 // A pod may be missing (nil) for two reasons:
+// 一个pod可能missing（nil），出于以下两个原因：
 // * It is an endpoint without an associated Pod. In this case, expectPod will be false.
+// * 这是一个没有相关的Pod的endpoint，这种情况下expectPod为false
 // * It is an endpoint with an associate Pod, but its not found. In this case, expectPod will be true.
 //   this may happen due to eventually consistency issues, out of order events, etc. In this case, the caller
 //   should not precede with the endpoint, or inaccurate information would be sent which may have impacts on
 //   correctness and security.
+// * 这是一个有相关Pod的endpoint，但是没有找到，这种情况下expectPod返回true
+//   这可能是最终一致性导致的，事件的乱序，这个情况下，调用者不会在endpoint之前，否则不正确的信息会被发送，这对于正确性和
+//   安全性都有影响
 func getPod(c *Controller, ip string, ep *metav1.ObjectMeta, targetRef *v1.ObjectReference, host host.Name) (rpod *v1.Pod, expectPod bool) {
 	pod := c.pods.getPodByIP(ip)
 	if pod != nil {
 		return pod, false
 	}
 	// This means, the endpoint event has arrived before pod event.
+	// 这意味着endpoint事件在pod事件之前到来
 	// This might happen because PodCache is eventually consistent.
+	// 这是可能发生的，因为PodCache是最终一致的
 	if targetRef != nil && targetRef.Kind == "Pod" {
 		key := kube.KeyFunc(targetRef.Name, targetRef.Namespace)
 		// There is a small chance getInformer may have the pod, but it hasn't
 		// made its way to the PodCache yet as it a shared queue.
+		// 有很小的可能，getInformer是有这个pod的，但是没有放到PodCache中，因为这是一个共享的队列
 		podFromInformer, f, err := c.pods.informer.GetStore().GetByKey(key)
 		if err != nil || !f {
+			// Endpoint没有pod
 			log.Debugf("Endpoint without pod %s %s.%s error: %v", ip, ep.Name, ep.Namespace, err)
 			endpointsWithNoPods.Increment()
 			if c.metrics != nil {
 				c.metrics.AddMetric(model.EndpointNoPod, string(host), "", ip)
 			}
 			// Tell pod cache we want to queue the endpoint event when this pod arrives.
+			// 告诉pod cache，我们想要将endpoint event入队，当这个pod到来时
 			epkey := kube.KeyFunc(ep.Name, ep.Namespace)
 			c.pods.queueEndpointEventOnPodArrival(epkey, ip)
 			return nil, true

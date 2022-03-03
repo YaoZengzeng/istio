@@ -30,6 +30,9 @@ import (
 // of the connected sidecar. The filter will filter out all endpoints which are not present within the
 // sidecar network and add a gateway endpoint to remote networks that have endpoints
 // (if gateway exists and its IP is an IP and not a dns name).
+// EndpointsByNetworkFilter是一个network filter函数，用来支持Split Horizion EDS - 基于连接的sidecar所在的网络对endpoints进行过滤
+// filter会过滤掉所有不在sidecar network的endpoints，并且增加一个gateway endpoint到有endpoints的remote networks
+// （如果gateways存在并且它的IP是一个IP而不是一个dns name）
 // Information for the mesh networks is provided as a MeshNetwork config map.
 func (b *EndpointBuilder) EndpointsByNetworkFilter(endpoints []*endpoint.LocalityLbEndpoints) []*endpoint.LocalityLbEndpoints {
 	// calculate the multiples of weight.
@@ -43,6 +46,7 @@ func (b *EndpointBuilder) EndpointsByNetworkFilter(endpoints []*endpoint.Localit
 
 	// A new array of endpoints to be returned that will have both local and
 	// remote gateways (if any)
+	// 一个新的endpoints的array，既有local的，也有remote gateways的，如果有的话
 	filtered := make([]*endpoint.LocalityLbEndpoints, 0)
 
 	// Go through all cluster endpoints and add those with the same network as the sidecar
@@ -61,6 +65,7 @@ func (b *EndpointBuilder) EndpointsByNetworkFilter(endpoints []*endpoint.Localit
 			if epNetwork == b.network || len(b.push.NetworkGatewaysByNetwork(epNetwork)) == 0 {
 				// Clone the endpoint so subsequent updates to the shared cache of
 				// service endpoints doesn't overwrite endpoints already in-flight.
+				// 这是一个本地的endpoint
 				clonedLbEp := proto.Clone(lbEp).(*endpoint.LbEndpoint)
 				clonedLbEp.LoadBalancingWeight = &wrappers.UInt32Value{
 					Value: uint32(multiples),
@@ -77,12 +82,15 @@ func (b *EndpointBuilder) EndpointsByNetworkFilter(endpoints []*endpoint.Localit
 
 				// Remote network endpoint which can not be accessed directly from local network.
 				// Increase the weight counter
+				// Remote network endpoint，不能直接从local network访问
 				remoteEps[epNetwork]++
 			}
 		}
 
 		// Add remote networks' gateways to endpoints if the gateway is a valid IP
+		// 添加remote networks的gateways到endpoints，如果gateway是一个合法的IP
 		// If its a dns name (like AWS ELB), skip adding all endpoints from this network.
+		// 如果它是一个dns name（就像AWS ELB），跳过这个network中所有的endpoints
 
 		// Iterate over all networks that have the cluster endpoint (weight>0) and
 		// for each one of those add a new endpoint that points to the network's
@@ -90,17 +98,20 @@ func (b *EndpointBuilder) EndpointsByNetworkFilter(endpoints []*endpoint.Localit
 		// we initiate mTLS automatically to this remote gateway. Split horizon to remote gateway cannot
 		// work with plaintext
 		for network, w := range remoteEps {
+			// 获取network的gateways
 			gateways := b.push.NetworkGatewaysByNetwork(network)
 
 			gatewayNum := len(gateways)
 			weight := w * uint32(multiples/gatewayNum)
 
 			// There may be multiples gateways for one network. Add each gateway as an endpoint.
+			// 一个network有多个gateways，添加每个gateway作为一个endpoint
 			for _, gw := range gateways {
 				if net.ParseIP(gw.Addr) == nil {
 					// this is a gateway with hostname in it. skip this gateway as EDS can't take hostnames
 					continue
 				}
+				// 构建基于gateway的LbEndpoint
 				epAddr := util.BuildAddress(gw.Addr, gw.Port)
 				gwEp := &endpoint.LbEndpoint{
 					HostIdentifier: &endpoint.LbEndpoint_Endpoint{
@@ -120,6 +131,8 @@ func (b *EndpointBuilder) EndpointsByNetworkFilter(endpoints []*endpoint.Localit
 
 		// Found endpoint(s) that can be accessed from local network
 		// and then build a new LocalityLbEndpoints with them.
+		// 找到可以直接从local network访问的endpoint(s)，之后再用他们构建一个
+		// 新的LocalityLbEndpoints
 		newEp := createLocalityLbEndpoints(ep, lbEndpoints)
 		filtered = append(filtered, newEp)
 	}

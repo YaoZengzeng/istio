@@ -32,6 +32,7 @@ import (
 
 type EndpointBuilder struct {
 	// These fields define the primary key for an endpoint, and can be used as a cache key
+	// 这些字段定义了一个endpoint的primary key，可以用于作为一个cache key
 	clusterName     string
 	network         string
 	networkView     map[string]bool
@@ -53,10 +54,12 @@ func NewEndpointBuilder(clusterName string, proxy *model.Proxy, push *model.Push
 	return EndpointBuilder{
 		clusterName:     clusterName,
 		network:         proxy.Metadata.Network,
+		// 获取network view
 		networkView:     model.GetNetworkView(proxy),
 		clusterID:       proxy.Metadata.ClusterID,
 		locality:        proxy.Locality,
 		service:         svc,
+		// 获取destination rules
 		destinationRule: push.DestinationRule(proxy, svc),
 
 		push:       push,
@@ -94,6 +97,7 @@ func (b EndpointBuilder) Key() string {
 }
 
 // MultiNetworkConfigured determines if we have gateways to use for building cross-network endpoints.
+// MultiNetworkConfigured决定我们是否有gateways用于构建cross-network的endpoints
 func (b *EndpointBuilder) MultiNetworkConfigured() bool {
 	return b.push.NetworkGateways() != nil && len(b.push.NetworkGateways()) > 0
 }
@@ -124,6 +128,7 @@ func (b *EndpointBuilder) canViewNetwork(network string) bool {
 }
 
 // build LocalityLbEndpoints for a cluster from existing EndpointShards.
+// 从已经存在的EndpointsShards中，为一个cluster构建LocalityLbEndpoints
 func (b *EndpointBuilder) buildLocalityLbEndpointsFromShards(
 	shards *EndpointShards,
 	svcPort *model.Port,
@@ -131,15 +136,18 @@ func (b *EndpointBuilder) buildLocalityLbEndpointsFromShards(
 	localityEpMap := make(map[string]*endpoint.LocalityLbEndpoints)
 
 	// get the subset labels
+	// 获取subset labels
 	epLabels := getSubSetLabels(b.DestinationRule(), b.subsetName)
 
 	// Determine whether or not the target service is considered local to the cluster
 	// and should, therefore, not be accessed from outside the cluster.
+	// 确定target service是否对于cluster是本地的，因此，不能被cluster以外访问
 	isClusterLocal := b.push.IsClusterLocal(b.service)
 
 	shards.mutex.Lock()
 	// The shards are updated independently, now need to filter and merge
 	// for this cluster
+	// shards都独立更新，现在需要为这个cluster过滤并且合并
 	for clusterID, endpoints := range shards.Shards {
 		// If the downstream service is configured as cluster-local, only include endpoints that
 		// reside in the same cluster.
@@ -192,6 +200,7 @@ func (b *EndpointBuilder) buildLocalityLbEndpointsFromShards(
 }
 
 // buildEnvoyLbEndpoint packs the endpoint based on istio info.
+// buildEnvoyLbEndpoint基于istio的信息打包endpoint
 func buildEnvoyLbEndpoint(e *model.IstioEndpoint) *endpoint.LbEndpoint {
 	addr := util.BuildAddress(e.Address, e.EndpointPort)
 

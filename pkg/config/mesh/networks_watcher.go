@@ -28,12 +28,14 @@ import (
 )
 
 // NetworksHolder is a holder of a mesh networks configuration.
+// NetworksHolder是一个维护mesh networks配置的地方
 type NetworksHolder interface {
 	SetNetworks(*meshconfig.MeshNetworks)
 	Networks() *meshconfig.MeshNetworks
 }
 
 // NetworkWatcher watches changes to the mesh networks config.
+// NetworkWatcher监听mesh networks配置的变更
 type NetworksWatcher interface {
 	NetworksHolder
 
@@ -72,6 +74,7 @@ func NewNetworksWatcher(fileWatcher filewatcher.FileWatcher, filename string) (N
 	}
 
 	// Watch the networks config file for changes and reload if it got modified
+	// 监听networks的配置文件并且重载，如果发生了变更的话
 	addFileWatcher(fileWatcher, filename, func() {
 		// Reload the config file
 		meshNetworks, err := ReadMeshNetworks(filename)
@@ -90,6 +93,7 @@ func (w *networksWatcher) Networks() *meshconfig.MeshNetworks {
 }
 
 // SetNetworks will use the given value for mesh networks and notify all handlers of the change
+// SetNetworks会使用mesh networks中的给定值，并且通知所有的handlers
 func (w *networksWatcher) SetNetworks(meshNetworks *meshconfig.MeshNetworks) {
 	var handlers []func()
 
@@ -106,6 +110,7 @@ func (w *networksWatcher) SetNetworks(meshNetworks *meshconfig.MeshNetworks) {
 	w.mutex.Unlock()
 
 	// Notify the handlers of the change.
+	// 通知handlers发生的变更
 	for _, h := range handlers {
 		h()
 	}

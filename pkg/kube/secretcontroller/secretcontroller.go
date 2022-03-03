@@ -72,6 +72,7 @@ type Controller struct {
 }
 
 // RemoteCluster defines cluster struct
+// RemoteCluster定义了cluster结构
 type RemoteCluster struct {
 	secretName    string
 	clients       kube.Client
@@ -79,6 +80,7 @@ type RemoteCluster struct {
 }
 
 // ClusterStore is a collection of clusters
+// ClusterStore是一系列的clusters
 type ClusterStore struct {
 	remoteClusters map[string]*RemoteCluster
 }
@@ -273,6 +275,7 @@ var BuildClientsFromConfig = func(kubeConfig []byte) (kube.Client, error) {
 }
 
 func createRemoteCluster(kubeConfig []byte, secretName string) (*RemoteCluster, error) {
+	// 构建远端集群的k8s
 	clients, err := BuildClientsFromConfig(kubeConfig)
 	if err != nil {
 		return nil, err
@@ -287,9 +290,11 @@ func createRemoteCluster(kubeConfig []byte, secretName string) (*RemoteCluster, 
 func (c *Controller) addMemberCluster(secretName string, s *corev1.Secret) {
 	for clusterID, kubeConfig := range s.Data {
 		// clusterID must be unique even across multiple secrets
+		// clusterID必须是唯一的，即使跨越了多个secrets
 		if prev, ok := c.cs.remoteClusters[clusterID]; !ok {
 			log.Infof("Adding cluster_id=%v from secret=%v", clusterID, secretName)
 
+			// 构建remote cluster
 			remoteCluster, err := createRemoteCluster(kubeConfig, secretName)
 			if err != nil {
 				log.Errorf("Failed to add remote cluster from secret=%v for cluster_id=%v: %v",
@@ -298,6 +303,7 @@ func (c *Controller) addMemberCluster(secretName string, s *corev1.Secret) {
 			}
 
 			c.cs.remoteClusters[clusterID] = remoteCluster
+			// 最终调用addCallback
 			if err := c.addCallback(remoteCluster.clients, clusterID); err != nil {
 				log.Errorf("Error creating cluster_id=%s from secret %v: %v",
 					clusterID, secretName, err)

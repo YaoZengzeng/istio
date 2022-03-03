@@ -42,6 +42,7 @@ func newEndpointsController(c *Controller, informer coreinformers.EndpointsInfor
 			informer: informer.Informer(),
 		},
 	}
+	// 在informer中注册handler
 	registerHandlers(informer.Informer(), c.queue, "Endpoints", out.onEvent, endpointsEqual)
 	return out
 }
@@ -160,6 +161,7 @@ func (e *endpointsController) getInformer() cache.SharedIndexInformer {
 }
 
 func (e *endpointsController) onEvent(curr interface{}, event model.Event) error {
+	// curr为当前要处理的endpoint
 	ep, ok := curr.(*v1.Endpoints)
 	if !ok {
 		tombstone, ok := curr.(cache.DeletedFinalStateUnknown)
@@ -192,14 +194,18 @@ func (e *endpointsController) buildIstioEndpoints(endpoint interface{}, host hos
 	ep := endpoint.(*v1.Endpoints)
 	for _, ss := range ep.Subsets {
 		for _, ea := range ss.Addresses {
+			// 获取对应的pod
 			pod, expectedPod := getPod(e.c, ea.IP, &metav1.ObjectMeta{Name: ep.Name, Namespace: ep.Namespace}, ea.TargetRef, host)
 			if pod == nil && expectedPod {
 				continue
 			}
+			// 构建endpoint builder
 			builder := NewEndpointBuilder(e.c, pod)
 
 			// EDS and ServiceEntry use name for service port - ADS will need to map to numbers.
+			// EDS和ServiceEntry使用名字作为service端口 - ADS需要映射到numbers
 			for _, port := range ss.Ports {
+				// 构建istioEndpoint
 				istioEndpoint := builder.buildIstioEndpoint(ea.IP, port.Port, port.Name)
 				endpoints = append(endpoints, istioEndpoint)
 			}
@@ -209,6 +215,7 @@ func (e *endpointsController) buildIstioEndpoints(endpoint interface{}, host hos
 }
 
 func (e *endpointsController) buildIstioEndpointsWithService(name, namespace string, host host.Name) []*model.IstioEndpoint {
+	// 获取一个endpoint
 	ep, err := listerv1.NewEndpointsLister(e.informer.GetIndexer()).Endpoints(namespace).Get(name)
 	if err != nil || ep == nil {
 		log.Debugf("endpoints(%s, %s) not found => error %v", name, namespace, err)
@@ -220,6 +227,7 @@ func (e *endpointsController) buildIstioEndpointsWithService(name, namespace str
 
 func (e *endpointsController) getServiceInfo(ep interface{}) (host.Name, string, string) {
 	endpoint := ep.(*v1.Endpoints)
+	// 从endpoint的name和namespace构建出service host name
 	return kube.ServiceHostname(endpoint.Name, endpoint.Namespace, e.c.domainSuffix), endpoint.Name, endpoint.Namespace
 }
 

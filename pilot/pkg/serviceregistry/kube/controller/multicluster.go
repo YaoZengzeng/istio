@@ -61,10 +61,12 @@ type Multicluster struct {
 	endpointMode      EndpointMode
 
 	m                     sync.Mutex // protects remoteKubeControllers
+	// 维护远端集群的kube controller
 	remoteKubeControllers map[string]*kubeController
 	networksWatcher       mesh.NetworksWatcher
 
 	// fetchCaRoot maps the certificate name to the certificate
+	// fetchCaRoot映射证书名到证书
 	fetchCaRoot      func() map[string]string
 	caBundlePath     string
 	systemNamespace  string
@@ -119,6 +121,7 @@ func (m *Multicluster) AddMemberCluster(clients kubelib.Client, clusterID string
 	remoteKubeController.stopCh = stopCh
 	m.m.Lock()
 	options := Options{
+		// 从m中获取各种元素
 		SystemNamespace:   m.systemNamespace,
 		WatchedNamespaces: m.WatchedNamespaces,
 		ResyncPeriod:      m.ResyncPeriod,
@@ -131,6 +134,7 @@ func (m *Multicluster) AddMemberCluster(clients kubelib.Client, clusterID string
 		SyncInterval:      m.syncInterval,
 	}
 	log.Infof("Initializing Kubernetes service registry %q", options.ClusterID)
+	// 构建远程集群的controller
 	kubectl := NewController(clients, options)
 
 	remoteKubeController.Controller = kubectl
@@ -145,6 +149,7 @@ func (m *Multicluster) AddMemberCluster(clients kubelib.Client, clusterID string
 	// 为kubernetes registry添加service handler
 	_ = kubectl.AppendServiceHandler(func(svc *model.Service, ev model.Event) { m.updateHandler(svc) })
 
+	// 运行kube controller
 	go kubectl.Run(stopCh)
 	webhookConfigName := strings.ReplaceAll(validationWebhookConfigNameTemplate, validationWebhookConfigNameTemplateVar, m.secretNamespace)
 	if m.fetchCaRoot != nil {
@@ -223,6 +228,7 @@ func (m *Multicluster) GetRemoteKubeClient(clusterID string) kubernetes.Interfac
 }
 
 func (m *Multicluster) initSecretController(kc kubernetes.Interface) {
+	// 启动secrete controller
 	m.secretController = secretcontroller.StartSecretController(kc,
 		m.AddMemberCluster,
 		m.UpdateMemberCluster,

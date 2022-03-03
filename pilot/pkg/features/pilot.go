@@ -221,6 +221,8 @@ var (
 	EnableEndpointSliceController = env.RegisterBoolVar(
 		"PILOT_USE_ENDPOINT_SLICE",
 		false,
+		// 如果使能的话，Pilot会使用EndpointSlices，作为Kubernetes的services的endpoints来源，默认为false
+		// 即使用Endpoints，这需要使能Kubernetes EndpointSlice controller，这两个选项是互斥的，只能使用Endpoints或者EndpointSlices
 		"If enabled, Pilot will use EndpointSlices as the source of endpoints for Kubernetes services. "+
 			"By default, this is false, and Endpoints will be used. This requires the Kubernetes EndpointSlice controller to be enabled. "+
 			"Currently this is mutual exclusive - either Endpoints or EndpointSlices will be used",

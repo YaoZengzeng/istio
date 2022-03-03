@@ -37,8 +37,10 @@ type RegistryOptions struct {
 	Registries []string
 
 	// Kubernetes controller options
+	// Kubernetes controller的选项
 	KubeOptions kubecontroller.Options
 	// ClusterRegistriesNamespace specifies where the multi-cluster secret resides
+	// ClusterRegistriesNamespace指定了multi-cluster的secret在哪
 	ClusterRegistriesNamespace string
 	KubeConfig                 string
 

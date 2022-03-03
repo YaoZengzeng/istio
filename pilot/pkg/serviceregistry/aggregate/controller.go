@@ -198,6 +198,7 @@ func mergeService(dst, src *model.Service, srcCluster string) {
 }
 
 // NetworkGateways merges the service-based cross-network gateways from each registry.
+// NetworkGateways从每个registry聚合基于service的cross-network gateways
 func (c *Controller) NetworkGateways() map[string][]*model.Gateway {
 	gws := map[string][]*model.Gateway{}
 	for _, r := range c.GetRegistries() {

@@ -130,6 +130,7 @@ func ConvertService(svc coreV1.Service, domainSuffix string, clusterID string) *
 		istioService.Attributes.ClusterExternalPorts = map[string]map[uint32]uint32{clusterID: portMap}
 		// address mappings will be done elsewhere
 	case coreV1.ServiceTypeLoadBalancer:
+		// 如果是类型为LB的service
 		if len(svc.Status.LoadBalancer.Ingress) > 0 {
 			var lbAddrs []string
 			for _, ingress := range svc.Status.LoadBalancer.Ingress {
@@ -145,6 +146,7 @@ func ConvertService(svc coreV1.Service, domainSuffix string, clusterID string) *
 				}
 			}
 			if len(lbAddrs) > 0 {
+				// 在ClusterExternalAddress中加上lbAddrs
 				istioService.Attributes.ClusterExternalAddresses = map[string][]string{clusterID: lbAddrs}
 			}
 		}

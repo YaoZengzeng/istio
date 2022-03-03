@@ -27,6 +27,7 @@ import (
 
 // EndpointsLister helps list Endpoints.
 // All objects returned here must be treated as read-only.
+// EndpointsLister帮助list Endpoints，返回的所有对象都应该是只读的
 type EndpointsLister interface {
 	// List lists all Endpoints in the indexer.
 	// Objects returned here must be treated as read-only.

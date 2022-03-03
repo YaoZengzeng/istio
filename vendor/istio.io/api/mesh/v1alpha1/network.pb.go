@@ -28,12 +28,15 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // registries. Note that the network has no relation to the locality of the
 // endpoint. The endpoint locality will be obtained from the service
 // registry.
+// Network提供一个L3可路由的网络的信息，单个可路由的L network可以有一个或者多个service registries
+// 注意network和endpoint的locality没有关系，endpoint locality可以从service registry中获取
 type Network struct {
 	// The list of endpoints in the network (obtained through the
 	// constituent service registries or from CIDR ranges). All endpoints in
 	// the network are directly accessible to one another.
 	Endpoints []*Network_NetworkEndpoints `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`
 	// Set of gateways associated with the network.
+	// 和network相关的一系列gateways
 	Gateways             []*Network_IstioNetworkGateway `protobuf:"bytes,3,rep,name=gateways,proto3" json:"gateways,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
 	XXX_unrecognized     []byte                         `json:"-"`
@@ -306,6 +309,7 @@ func (*Network_IstioNetworkGateway) XXX_OneofWrappers() []interface{} {
 
 // MeshNetworks (config map) provides information about the set of networks
 // inside a mesh and how to route to endpoints in each network. For example
+// MeshNetworks提供信息关于mesh中的一系列的networks，以及如何路由到每个network的endpoints
 //
 // MeshNetworks(file/config map):
 //
@@ -313,6 +317,7 @@ func (*Network_IstioNetworkGateway) XXX_OneofWrappers() []interface{} {
 // networks:
 //   network1:
 //   - endpoints:
+//	   # 必须配置Kubernetes secret中的kubeconfig名字
 //     - fromRegistry: registry1 #must match kubeconfig name in Kubernetes secret
 //     - fromCidr: 192.168.100.0/22 #a VM network for example
 //     gateways:
@@ -328,6 +333,8 @@ type MeshNetworks struct {
 	// The set of networks inside this mesh. Each network should
 	// have a unique name and information about how to infer the endpoints in
 	// the network as well as the gateways associated with the network.
+	// 每个network都应该有一个独特的名字以及信息关于如何推断network中的endpoint
+	// 以及和这个network相关的gateways
 	Networks             map[string]*Network `protobuf:"bytes,1,rep,name=networks,proto3" json:"networks,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`

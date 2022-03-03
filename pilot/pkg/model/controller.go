@@ -33,6 +33,7 @@ package model
 // 所有的handlers都必须在启动controller之前被添加
 type Controller interface {
 	// AppendServiceHandler notifies about changes to the service catalog.
+	// AppendServiceHandler当service catalog发生变更的时候进行通知
 	AppendServiceHandler(f func(*Service, Event)) error
 
 	// AppendWorkloadHandler notifies about changes to workloads. This differs from InstanceHandler,

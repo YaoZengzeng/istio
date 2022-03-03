@@ -42,6 +42,7 @@ type EndpointSlice struct {
 	AddressType AddressType `json:"addressType" protobuf:"bytes,4,rep,name=addressType"`
 	// endpoints is a list of unique endpoints in this slice. Each slice may
 	// include a maximum of 1000 endpoints.
+	// endpoints是在这个slice中一系列唯一的endpoints，每个slice可能包括最多1000个endpoints
 	// +listType=atomic
 	Endpoints []Endpoint `json:"endpoints" protobuf:"bytes,2,rep,name=endpoints"`
 	// ports specifies the list of network ports exposed by each endpoint in

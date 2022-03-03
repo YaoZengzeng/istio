@@ -4288,6 +4288,7 @@ type ServiceAccountList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// Endpoints是一系列的endpoints，真正实现了service
 // Endpoints is a collection of endpoints that implement the actual service. Example:
 //   Name: "mysvc",
 //   Subsets: [
@@ -4314,12 +4315,17 @@ type Endpoints struct {
 	// subsets for the different ports. No address will appear in both Addresses and
 	// NotReadyAddresses in the same subset.
 	// Sets of addresses and ports that comprise a service.
+	// 所有endpoints的集合是所有subsets的组合，Addresses根据他们共享的IP地址放进subsets
+	// 单个的地址，有着多个的ports，其中一些ready，其中一些没有（因为他们来自不同的容器）
+	// 这会导致地址在不同的subsets，对于不同的端口，在同一个subset中，没有地址会同时出现在
+	// Addresses和NotReadyAddresses
 	// +optional
 	Subsets []EndpointSubset `json:"subsets,omitempty" protobuf:"bytes,2,rep,name=subsets"`
 }
 
 // EndpointSubset is a group of addresses with a common set of ports. The
 // expanded set of endpoints is the Cartesian product of Addresses x Ports.
+// EndpointSubset是一组有着公共端口的一系列地址
 // For example, given:
 //   {
 //     Addresses: [{"ip": "10.10.1.1"}, {"ip": "10.10.2.2"}],

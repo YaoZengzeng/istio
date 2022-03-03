@@ -65,6 +65,8 @@ const (
 	IstioGatewayPortLabel = "networking.istio.io/gatewayPort"
 	// DefaultNetworkGatewayPort is the port used by default for cross-network traffic if not otherwise specified
 	// by meshNetworks or "networking.istio.io/gatewayPort"
+	// DefaultNetworkGatewayPort是默认用于跨网络流量的端口，如果没有通过meshNetworks或者"networking.istio.io/gatewayPort"
+	// 指定
 	DefaultNetworkGatewayPort = 15443
 )
 
@@ -153,6 +155,7 @@ func (o Options) GetSyncInterval() time.Duration {
 }
 
 // EndpointMode decides what source to use to get endpoint information
+// EndpointMode指定使用哪种source来获取endpoint信息
 type EndpointMode int
 
 const (
@@ -231,6 +234,7 @@ type Controller struct {
 
 	sync.RWMutex
 	// servicesMap stores hostname ==> service, it is used to reduce convertService calls.
+	// servicesMap保存了hostname到service之间的映射，它用于减小convertService的调用
 	servicesMap map[host.Name]*model.Service
 	// nodeSelectorsForServices stores hostname => label selectors that can be used to
 	// refine the set of node port IPs for a service.
@@ -270,12 +274,14 @@ type Controller struct {
 
 // NewController creates a new Kubernetes controller
 // Created by bootstrap and multicluster (see secretcontroler).
+// NewController创建一个新的Kubernetes controller，由bootstrap以及multicluster创建
 func NewController(kubeClient kubelib.Client, options Options) *Controller {
 	// The queue requires a time duration for a retry delay after a handler error
 	c := &Controller{
 		domainSuffix:                options.DomainSuffix,
 		client:                      kubeClient.Kube(),
 		queue:                       queue.NewQueue(1 * time.Second),
+		// 在options中包含了ClusterID
 		clusterID:                   options.ClusterID,
 		xdsUpdater:                  options.XDSUpdater,
 		servicesMap:                 make(map[host.Name]*model.Service),
@@ -306,6 +312,7 @@ func NewController(kubeClient kubelib.Client, options Options) *Controller {
 
 	switch options.EndpointMode {
 	case EndpointsOnly:
+		// 根据endpoint mode，指定是endpointsController还是EndpointSliceController
 		c.endpoints = newEndpointsController(c, kubeClient.KubeInformer().Core().V1().Endpoints())
 	case EndpointSliceOnly:
 		c.endpoints = newEndpointSliceController(c, kubeClient.KubeInformer().Discovery().V1beta1().EndpointSlices())
@@ -389,6 +396,7 @@ func (c *Controller) onServiceEvent(curr interface{}, event model.Event) error {
 
 	log.Debugf("Handle event %s for service %s in namespace %s", event, svc.Name, svc.Namespace)
 
+	// 将k8s service转换为model.Service
 	svcConv := kube.ConvertService(*svc, c.domainSuffix, c.clusterID)
 	switch event {
 	case model.EventDelete:
@@ -399,6 +407,7 @@ func (c *Controller) onServiceEvent(curr interface{}, event model.Event) error {
 		delete(c.networkGateways, svcConv.Hostname)
 		c.Unlock()
 	default:
+		// 删除以外的Service事件
 		if isNodePortGatewayService(svc) {
 			// We need to know which services are using node selectors because during node events,
 			// we have to update all the node port services accordingly.
@@ -409,6 +418,7 @@ func (c *Controller) onServiceEvent(curr interface{}, event model.Event) error {
 			c.Unlock()
 			c.updateServiceNodePortAddresses(svcConv)
 		} else {
+			// 从service抽取出gateways
 			c.extractGatewaysFromService(svcConv)
 		}
 		// instance conversion is only required when service is added/updated.
@@ -439,6 +449,7 @@ func (c *Controller) onServiceEvent(curr interface{}, event model.Event) error {
 	c.xdsUpdater.SvcUpdate(c.clusterID, string(svcConv.Hostname), svc.Namespace, event)
 	// Notify service handlers.
 	for _, f := range c.serviceHandlers {
+		// 当事件发生时，通知各个service handlers
 		f(svcConv, event)
 	}
 
@@ -684,6 +695,7 @@ func (c *Controller) GetService(hostname host.Name) (*model.Service, error) {
 }
 
 // getPodLocality retrieves the locality for a pod.
+// getPodLocality获取pod的位置信息，包括region/zone/subzone
 func (c *Controller) getPodLocality(pod *v1.Pod) string {
 	// if pod has `istio-locality` label, skip below ops
 	if len(pod.Labels[model.LocalityLabel]) > 0 {
@@ -1180,6 +1192,7 @@ func (c *Controller) GetIstioServiceAccounts(svc *model.Service, ports []int) []
 }
 
 // AppendServiceHandler implements a service catalog operation
+// AppendServiceHandler实现了一个service catalog operation
 func (c *Controller) AppendServiceHandler(f func(*model.Service, model.Event)) error {
 	c.serviceHandlers = append(c.serviceHandlers, f)
 	return nil
