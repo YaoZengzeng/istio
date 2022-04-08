@@ -28,6 +28,7 @@ import (
 )
 
 // EndpointBuilder is a stateful IstioEndpoint builder with metadata used to build IstioEndpoint
+// EndpointBuilder是一个有状态的IstioEndpoint builder，包含metadata用于构建IstioEndpoint
 type EndpointBuilder struct {
 	controller controllerInterface
 
@@ -124,6 +125,7 @@ func (b *EndpointBuilder) buildIstioEndpoint(
 		Locality:              b.locality,
 		TLSMode:               b.tlsMode,
 		Address:               endpointAddress,
+		// 目标容器的端口
 		EndpointPort:          uint32(endpointPort),
 		ServicePortName:       svcPortName,
 		Network:               networkID,

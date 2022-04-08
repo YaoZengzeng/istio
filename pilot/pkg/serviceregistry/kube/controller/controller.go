@@ -220,6 +220,7 @@ var (
 )
 
 // Controller is a collection of synchronized resource watchers
+// Controller是一系列已经同步的resource watchers
 // Caches are thread-safe
 type Controller struct {
 	opts Options
@@ -1061,6 +1062,7 @@ func (c *Controller) GetProxyServiceInstances(proxy *model.Proxy) []*model.Servi
 		if f {
 			return c.hydrateWorkloadInstance(workload)
 		}
+		// 根据proxy的信息找到对应的pod
 		pod := c.pods.getPodByProxy(proxy)
 		if pod != nil && !proxy.IsVM() {
 			// we don't want to use this block for our test "VM" which is actually a Pod.
@@ -1072,9 +1074,11 @@ func (c *Controller) GetProxyServiceInstances(proxy *model.Proxy) []*model.Servi
 
 			// 1. find proxy service by label selector, if not any, there may exist headless service without selector
 			// failover to 2
+			// 1. 通过label selector找到proxy service，如果没有的话，可能存在没有selector的headless service，转而执行2
 			if services, err := getPodServices(c.serviceLister, pod); err == nil && len(services) > 0 {
 				out := make([]*model.ServiceInstance, 0)
 				for _, svc := range services {
+					// 基于service构建service instance
 					out = append(out, c.getProxyServiceInstancesByPod(pod, svc, proxy)...)
 				}
 				return out
@@ -1336,6 +1340,7 @@ func (c *Controller) getProxyServiceInstancesByPod(pod *v1.Pod,
 				continue
 			}
 			// find target port
+			// 找到target port
 			portNum, err := FindPort(pod, &port)
 			if err != nil {
 				log.Warnf("Failed to find port for service %s/%s: %v", service.Namespace, service.Name, err)
@@ -1344,11 +1349,16 @@ func (c *Controller) getProxyServiceInstancesByPod(pod *v1.Pod,
 			// Dedupe the target ports here - Service might have configured multiple ports to the same target port,
 			// we will have to create only one ingress listener per port and protocol so that we do not endup
 			// complaining about listener conflicts.
+			// 对target ports进行去重 - Service可能配置了多个端口指向同一个target port，我们只对于每个port以及protocol
+			// 只创建一个ingress listener，这样我们就不会在最后发生listener conflicts
 			targetPort := model.Port{
+				// 真正容器监听的端口
 				Port:     portNum,
+				// service port监听的协议
 				Protocol: svcPort.Protocol,
 			}
 			if _, exists := tps[targetPort]; !exists {
+				// 如果target port相同，只选择第一个service port?
 				tps[targetPort] = svcPort
 				tpsList = append(tpsList, targetPort)
 			}
@@ -1357,9 +1367,11 @@ func (c *Controller) getProxyServiceInstancesByPod(pod *v1.Pod,
 		builder := NewEndpointBuilder(c, pod)
 		// Iterate over target ports in the same order as defined in service spec, in case of
 		// protocol conflict for a port causes unstable protocol selection for a port.
+		// 遍历targets ports，按照在service spec中定义的顺序，以防端口的协议冲突导致对于一个端口的不稳定的协议选择
 		for _, tp := range tpsList {
 			svcPort := tps[tp]
 			// consider multiple IP scenarios
+			// 考虑多个IP的场景
 			for _, ip := range proxy.IPAddresses {
 				istioEndpoint := builder.buildIstioEndpoint(ip, int32(tp.Port), svcPort.Name, discoverabilityPolicy)
 				out = append(out, &model.ServiceInstance{

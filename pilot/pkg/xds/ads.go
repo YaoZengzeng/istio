@@ -340,6 +340,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 
 // shouldRespond determines whether this request needs to be responded back. It applies the ack/nack rules as per xds protocol
 // using WatchedResource for previous state and discovery request for the current state.
+// shouldRespond决定这个request是否需要responed back
 func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.DiscoveryRequest) bool {
 	stype := v3.GetShortType(request.TypeUrl)
 
@@ -646,6 +647,7 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 		proxy.SetSidecarScope(push)
 	}
 	// only compute gateways for "router" type proxy.
+	// 只对"router"类型的proxy计算gateways
 	if gateway && proxy.Type == model.Router {
 		proxy.SetGatewaysForProxy(push)
 	}

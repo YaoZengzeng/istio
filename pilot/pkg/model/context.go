@@ -298,6 +298,7 @@ type Proxy struct {
 	XdsResourceGenerator XdsResourceGenerator
 
 	// WatchedResources contains the list of watched resources for the proxy, keyed by the DiscoveryRequest TypeUrl.
+	// WatchedResources包含了proxy监听的一系列资源，用DiscoveryRequest TypeUrl作为键值
 	WatchedResources map[string]*WatchedResource
 
 	// XdsNode is the xDS node identifier
@@ -315,14 +316,18 @@ type WatchedResource struct {
 	// ResourceNames tracks the list of resources that are actively watched. If empty, all resources of the
 	// TypeUrl type are watched.
 	// For endpoints the resource names will have list of clusters and for clusters it is empty.
+	// 对于endpoints，resource names会包含一系列的clusters，对于clusters，它为empty
+	// For Delta Xds, all resources of the TypeUrl that a client has subscribed to.
 	ResourceNames []string
 
 	// VersionSent is the version of the resource included in the last sent response.
 	// It corresponds to the [Cluster/Route/Listener]VersionSent in the XDS package.
+	// VersionSent是包含在上一个sent response中的resource
 	VersionSent string
 
 	// NonceSent is the nonce sent in the last sent response. If it is equal with NonceAcked, the
 	// last message has been processed. If empty: we never sent a message of this type.
+	// NonceSent是上一个sent response中的nonce，如果它和NoncedAcked相等，说明最后的message已经被处理了
 	NonceSent string
 
 	// NonceAcked is the last acked message.
@@ -821,6 +826,8 @@ func (node *Proxy) BuildCatchAllVirtualHost() {
 // callers can simply call push.MergedGateways(node) instead of having to
 // fetch all the gateways and invoke the merge call in multiple places (lds/rds).
 // Must be called after ServiceInstances are set
+// SetGatewaysForProxy聚合和这个proxy相关的Gateway对象并且缓存合并的对象再proxy Node中
+// 这个函数必须在ServiceInstances被设置之后调用
 func (node *Proxy) SetGatewaysForProxy(ps *PushContext) {
 	if node.Type != Router {
 		return

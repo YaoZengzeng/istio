@@ -60,6 +60,9 @@ func getLabelValue(metadata metav1.Object, label string, fallBackLabel string) s
 // targetPort is a number, use that.  If the targetPort is a string, look that
 // string up in all named ports in all containers in the target pod.  If no
 // match is found, fail.
+// FindPort定位给定pod和portName的container port，如果targetPort是一个数字，直接使用它
+// 如果targetPort是一个字符串，在target pod的所有容器的所有named ports中寻找它
+// 如果没找到，则返回错误
 func FindPort(pod *v1.Pod, svcPort *v1.ServicePort) (int, error) {
 	portName := svcPort.TargetPort
 	switch portName.Type {
@@ -67,6 +70,7 @@ func FindPort(pod *v1.Pod, svcPort *v1.ServicePort) (int, error) {
 		name := portName.StrVal
 		for _, container := range pod.Spec.Containers {
 			for _, port := range container.Ports {
+				// 根据端口的名字和协议进行匹配
 				if port.Name == name && port.Protocol == svcPort.Protocol {
 					return int(port.ContainerPort), nil
 				}
