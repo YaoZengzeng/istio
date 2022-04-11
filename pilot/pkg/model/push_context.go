@@ -330,21 +330,33 @@ func (sk ShardKey) Cluster() cluster.ID {
 }
 
 // PushRequest defines a request to push to proxies
+// PushRequest定义了一个推送到proxies的请求
 // It is used to send updates to the config update debouncer and pass to the PushQueue.
+// 它用于发送updates到config update debouncer并且传递给PushQueue
 type PushRequest struct {
 	// Full determines whether a full push is required or not. If false, an incremental update will be sent.
 	// Incremental pushes:
+	// Full决定是否需要一个全量推送，如果为false，则会发送一个incremental update
+	// 对于Incremental pushes：
+	// * 不重新计算push context
 	// * Do not recompute the push context
 	// * Do not recompute proxy state (such as ServiceInstances)
+	// * 不重新计算proxy state（例如ServiceInstances）
 	// * Are not reported in standard metrics such as push time
+	// * 不上报到standard metrics，例如push time
 	// As a result, configuration updates should never be incremental. Generally, only EDS will set this, but
 	// in the future SDS will as well.
+	// 作为结果，configuration updates从不应该为incremental，一般来说，只有EDS会设置它，但是在以后，SDS也会
 	Full bool
 
 	// ConfigsUpdated keeps track of configs that have changed.
+	// ConfigsUpdated追踪发生变更的configs
 	// This is used as an optimization to avoid unnecessary pushes to proxies that are scoped with a Sidecar.
 	// If this is empty, then all proxies will get an update.
+	// 这是一个优化用来避免非必要的推送，对于那些已经用Sidecar进行限制的proxies
+	// 如果为空，则所有的proxies都会获得一个更新
 	// Otherwise only proxies depend on these configs will get an update.
+	// 否则，至于依赖这些配置的proxies才会获取一个更新
 	// The kind of resources are defined in pkg/config/schemas.
 	ConfigsUpdated map[ConfigKey]struct{}
 

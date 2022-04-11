@@ -44,6 +44,7 @@ var (
 	log = istiolog.RegisterScope("ads", "ads debugging", 0)
 
 	// Tracks connections, increment on each new connection.
+	// 追踪连接，每有一个新的连接就增加
 	connectionNumber = int64(0)
 )
 
@@ -163,6 +164,7 @@ func (s *DiscoveryServer) receive(con *Connection, identities []string) {
 		// This should be only set for the first request. The node id may not be set - for example malicious clients.
 		if firstRequest {
 			// probe happens before envoy sends first xDS request
+			// 在envoy发送第一个xDS请求之前，首先发生probe
 			if req.TypeUrl == v3.HealthInfoType {
 				log.Warnf("ADS: %q %s send health check probe before normal xDS request", con.PeerAddr, con.ConID)
 				continue
@@ -172,15 +174,18 @@ func (s *DiscoveryServer) receive(con *Connection, identities []string) {
 				con.errorChan <- status.New(codes.InvalidArgument, "missing node information").Err()
 				return
 			}
+			// 初始化连接
 			if err := s.initConnection(req.Node, con, identities); err != nil {
 				con.errorChan <- err
 				return
 			}
 			defer s.closeConnection(con)
+			// 对于node，接收到一个新的连接
 			log.Infof("ADS: new connection for node:%s", con.ConID)
 		}
 
 		select {
+		// 请求发送到request channel
 		case con.reqChan <- req:
 		case <-con.stream.Context().Done():
 			log.Infof("ADS: %q %s terminated with stream closed", con.PeerAddr, con.ConID)
@@ -244,6 +249,7 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 }
 
 // StreamAggregatedResources implements the ADS interface.
+// StreamAggregatedResources实现了ADS接口
 func (s *DiscoveryServer) StreamAggregatedResources(stream discovery.AggregatedDiscoveryService_StreamAggregatedResourcesServer) error {
 	return s.Stream(stream)
 }
@@ -258,12 +264,15 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 		return status.Error(codes.Unavailable, "server warmup not complete; try again")
 	}
 	// Check if server is ready to accept clients and process new requests.
+	// 检查server是否准备好接收clients并且处理新的requests
+	// 当前ready意味着caches已经同步了并且因此可以正确构建clusters
 	// Currently ready means caches have been synced and hence can build
 	// clusters correctly. Without this check, InitContext() call below would
 	// initialize with empty config, leading to reconnected Envoys loosing
 	// configuration. This is an additional safety check inaddition to adding
 	// cachesSynced logic to readiness probe to handle cases where kube-proxy
 	// ip tables update latencies.
+	// 没有这个检查，下面的InitContext()调用会初始化空的config，导致重连的Envoys失去配置
 	// See https://github.com/istio/istio/issues/25495.
 	if !s.IsServerReady() {
 		return status.Error(codes.Unavailable, "server is not ready to serve discovery information")
@@ -280,6 +289,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 		return status.Errorf(codes.ResourceExhausted, "request rate limit exceeded: %v", err)
 	}
 
+	// 对连接进行认证
 	ids, err := s.authenticate(ctx)
 	if err != nil {
 		return status.Error(codes.Unauthenticated, err.Error())
@@ -291,12 +301,14 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 	}
 
 	// InitContext returns immediately if the context was already initialized.
+	// InitContext立即返回，如果context已经被初始化了
 	if err = s.globalPushContext().InitContext(s.Env, nil, nil); err != nil {
 		// Error accessing the data - log and close, maybe a different pilot replica
 		// has more luck
 		log.Warnf("Error reading config %v", err)
 		return status.Error(codes.Unavailable, "error reading config")
 	}
+	// 构建新的connection
 	con := newConnection(peerAddr, stream)
 
 	// Do not call: defer close(con.pushChannel). The push channel will be garbage collected
@@ -306,6 +318,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 
 	// Block until either a request is received or a push is triggered.
 	// We need 2 go routines because 'read' blocks in Recv().
+	// 阻塞直到接收到一个request或者触发了一个push，我们需要两个goroutines，因为'read'在Recv()阻塞
 	go s.receive(con, ids)
 
 	// Wait for the proxy to be fully initialized before we start serving traffic. Because
@@ -318,6 +331,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 	for {
 		select {
 		case req, ok := <-con.reqChan:
+			// 接收到请求并处理
 			if ok {
 				if err := s.processRequest(req, con); err != nil {
 					return err
@@ -327,6 +341,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 				return <-con.errorChan
 			}
 		case pushEv := <-con.pushChannel:
+			// 接收到push request
 			err := s.pushConnection(con, pushEv)
 			pushEv.done()
 			if err != nil {
@@ -471,8 +486,10 @@ func listEqualUnordered(a []string, b []string) bool {
 
 // update the node associated with the connection, after receiving a packet from envoy, also adds the connection
 // to the tracking map.
+// 更新和connection相关的node，在从envoy接收到一个packet之后，同时将连接添加到tracking map
 func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection, identities []string) error {
 	// Setup the initial proxy metadata
+	// 设置初始化的proxy metadata
 	proxy, err := s.initProxyMetadata(node)
 	if err != nil {
 		return err
@@ -482,11 +499,13 @@ func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection, ident
 		proxy.Metadata.ClusterID = alias
 	}
 	// First request so initialize connection id and start tracking it.
+	// 第一个请求，因此初始化connection id并且开始追踪它
 	con.ConID = connectionID(proxy.ID)
 	con.node = node
 	con.proxy = proxy
 
 	// Authorize xds clients
+	// 对xds clients进行鉴权
 	if err := s.authorize(con, identities); err != nil {
 		return err
 	}
@@ -496,12 +515,14 @@ func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection, ident
 	// a better choice, it introduces a race condition; If we complete initialization of a new push
 	// context between initializeProxy and addCon, we would not get any pushes triggered for the new
 	// push context, leading the proxy to have a stale state until the next full push.
+	// 注册connection，这允许触发对于proxy的推送
 	s.addCon(con.ConID, con)
 	// Register that initialization is complete. This triggers to calls that it is safe to access the
 	// proxy
 	defer close(con.initialized)
 
 	// Complete full initialization of the proxy
+	// 完成proxy的完全初始化
 	if err := s.initializeProxy(node, con); err != nil {
 		s.closeConnection(con)
 		return err
@@ -552,6 +573,7 @@ func (s *DiscoveryServer) initProxyMetadata(node *core.Node) (*model.Proxy, erro
 
 // initializeProxy completes the initialization of a proxy. It is expected to be called only after
 // initProxyMetadata.
+// initializeProxy完成一个proxy的初始化，它期望在initProxyMetadata之后被调用
 func (s *DiscoveryServer) initializeProxy(node *core.Node, con *Connection) error {
 	proxy := con.proxy
 	// this should be done before we look for service instances, but after we load metadata
@@ -587,6 +609,7 @@ func (s *DiscoveryServer) initializeProxy(node *core.Node, con *Connection) erro
 
 	proxy.WatchedResources = map[string]*model.WatchedResource{}
 	// Based on node metadata and version, we can associate a different generator.
+	// 基于node metadata以及版本，我们可以关联一个不同的generator
 	if proxy.Metadata.Generator != "" {
 		proxy.XdsResourceGenerator = s.Generators[proxy.Metadata.Generator]
 	}
@@ -623,6 +646,7 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 		gateway = true
 	} else {
 		push = request.Push
+		// 没有指定ConfigsUpdated，则全都推送
 		if len(request.ConfigsUpdated) == 0 {
 			sidecar = true
 			gateway = true
@@ -643,6 +667,7 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 		}
 	}
 	// compute the sidecarscope for both proxy types whenever it changes.
+	// 对两种类型的proxy类型计算sidecarscope，在它发生改变的时候
 	if sidecar {
 		proxy.SetSidecarScope(push)
 	}
@@ -873,6 +898,7 @@ func (s *DiscoveryServer) startPush(req *model.PushRequest) {
 func (s *DiscoveryServer) addCon(conID string, con *Connection) {
 	s.adsClientsMutex.Lock()
 	defer s.adsClientsMutex.Unlock()
+	// 添加ads clients
 	s.adsClients[conID] = con
 	recordXDSClients(con.proxy.Metadata.IstioVersion, 1)
 }

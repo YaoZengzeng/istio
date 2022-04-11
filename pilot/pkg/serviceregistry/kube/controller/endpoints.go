@@ -51,6 +51,7 @@ func newEndpointsController(c *Controller) *endpointsController {
 }
 
 func (e *endpointsController) GetProxyServiceInstances(c *Controller, proxy *model.Proxy) []*model.ServiceInstance {
+	// 获取Proxy所在namespace下的所有endpoints
 	eps, err := listerv1.NewEndpointsLister(e.informer.GetIndexer()).Endpoints(proxy.Metadata.Namespace).List(klabels.Everything())
 	if err != nil {
 		log.Errorf("Get endpoints by index failed: %v", err)

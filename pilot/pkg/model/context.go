@@ -225,6 +225,8 @@ type XdsDeltaResourceGenerator interface {
 // Proxy contains information about an specific instance of a proxy (envoy sidecar, gateway,
 // etc). The Proxy is initialized when a sidecar connects to Pilot, and populated from
 // 'node' info in the protocol as well as data extracted from registries.
+// Proxy包含一个特定的proxy实例的信息（envoy sidecar, gateway等等），这个Proxy在sidecar连接Pilot的时候
+// 初始化，并且用协议中'node'的信息，以及从registries中抽取的数据初始化
 //
 // In current Istio implementation nodes use a 4-parts '~' delimited ID.
 // Type~IPAddress~ID~Domain
@@ -836,6 +838,7 @@ func (node *Proxy) SetGatewaysForProxy(ps *PushContext) {
 }
 
 func (node *Proxy) SetServiceInstances(serviceDiscovery ServiceDiscovery) {
+	// 获取Service Instances
 	instances := serviceDiscovery.GetProxyServiceInstances(node)
 
 	// Keep service instances in order of creation/hostname.
@@ -850,16 +853,19 @@ func (node *Proxy) SetServiceInstances(serviceDiscovery ServiceDiscovery) {
 		return true
 	})
 
+	// 配置proxy的ServiceInstances
 	node.ServiceInstances = instances
 }
 
 // SetWorkloadLabels will set the node.Metadata.Labels only when it is nil.
 func (node *Proxy) SetWorkloadLabels(env *Environment) {
 	// First get the workload labels from node meta
+	// 首先从node meta获取workload labels
 	if len(node.Metadata.Labels) > 0 {
 		return
 	}
 	// Fallback to calling GetProxyWorkloadLabels
+	// 转而去调用GetProxyWorkloadLabels
 	l := env.GetProxyWorkloadLabels(node)
 	if len(l) > 0 {
 		node.Metadata.Labels = l[0]

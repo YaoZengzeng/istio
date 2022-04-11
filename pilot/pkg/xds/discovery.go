@@ -73,6 +73,7 @@ type debounceOptions struct {
 }
 
 // DiscoveryServer is Pilot's gRPC implementation for Envoy's xds APIs
+// DiscoveryServer是Pilot的gRPC实现，对于Envoy的xds APIs
 type DiscoveryServer struct {
 	// Env is the model environment.
 	Env *model.Environment
@@ -82,9 +83,11 @@ type DiscoveryServer struct {
 
 	// ConfigGenerator is responsible for generating data plane configuration using Istio networking
 	// APIs and service registry info
+	// ConfigGenerator负责基于Istio的networking APIs以及service registry info来创建数据面配置
 	ConfigGenerator core.ConfigGenerator
 
 	// Generators allow customizing the generated config, based on the client metadata.
+	// Generators允许定制产生的config，基于client的元数据
 	// Key is the generator type - will match the Generator metadata to set the per-connection
 	// default generator, or the combination of Generator metadata and TypeUrl to select a
 	// different generator for a type.
@@ -116,6 +119,7 @@ type DiscoveryServer struct {
 	EndpointShardsByService map[string]map[string]*EndpointShards
 
 	// pushChannel is the buffer used for debouncing.
+	// pushChannel是一个buffer用于debouncing，在debouncing之后，pushRequest会被发送给pushQueue
 	// after debouncing the pushRequest will be sent to pushQueue
 	pushChannel chan *model.PushRequest
 
@@ -123,6 +127,7 @@ type DiscoveryServer struct {
 	updateMutex sync.RWMutex
 
 	// pushQueue is the buffer that used after debounce and before the real xds push.
+	// pushQueue是在去抖之后，真正进行xds push之前使用的缓存
 	pushQueue *PushQueue
 
 	// debugHandlers is the list of all the supported debug handlers.
@@ -255,6 +260,7 @@ func (s *DiscoveryServer) Register(rpcs *grpc.Server) {
 var processStartTime = time.Now()
 
 // CachesSynced is called when caches have been synced so that server can accept connections.
+// CachesSynced会在缓存已经同步的时候被调用，这样server能接收连接
 func (s *DiscoveryServer) CachesSynced() {
 	log.Infof("All caches have been synced up in %v, marking server ready", time.Since(processStartTime))
 	s.serverReady.Store(true)

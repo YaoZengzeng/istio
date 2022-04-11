@@ -184,6 +184,7 @@ const (
 type Port struct {
 	// Name ascribes a human readable name for the port object. When a
 	// service has multiple ports, the name field is mandatory
+	// 当一个service有多个端口时，name字段是必须的
 	Name string `json:"name,omitempty"`
 
 	// Port number where the service can be reached. Does not necessarily
@@ -192,6 +193,7 @@ type Port struct {
 	Port int `json:"port"`
 
 	// Protocol to be used for the port.
+	// 用于端口的协议
 	Protocol protocol.Instance `json:"protocol,omitempty"`
 }
 
@@ -217,10 +219,13 @@ const (
 // of a service. It binds a network endpoint (ip:port), the service
 // description (which is oblivious to various versions) and a set of labels
 // that describe the service version associated with this instance.
+// 一系列的labels用于描述这个instance
 //
 // Since a ServiceInstance has a single IstioEndpoint, which has a single port,
 // multiple ServiceInstances are required to represent a workload that listens
 // on multiple ports.
+// 因为一个ServiceInstance有单个的IstioEndpoint，它有单个端口，因此多个ServiceInstances
+// 是需要的，如果一个workload监听多个端口
 //
 // The labels associated with a service instance are unique per a network endpoint.
 // There is one well defined set of labels for each service instance network endpoint.
@@ -418,6 +423,7 @@ type IstioEndpoint struct {
 
 	// EnvoyEndpoint is a cached LbEndpoint, converted from the data, to
 	// avoid recomputation
+	// EnvoyEndpoint是一个缓存的LbEndpoint，从data转换而来，来避免重复计算
 	EnvoyEndpoint *endpoint.LbEndpoint
 
 	// ServiceAccount holds the associated service account.
@@ -454,6 +460,8 @@ type IstioEndpoint struct {
 	// The ingress tunnel supportability of this endpoint.
 	// If this endpoint sidecar proxy does not support h2 tunnel, this endpoint will not show up in the EDS clusters
 	// which are generated for h2 tunnel.
+	// 这个endpoint的ingress tunnel的支持，如果这个endpoint的sidecar proxy不支持h2 tunnel
+	// 这个endpoint不会出现在EDS clusters中，它用于h2 tunnel
 	TunnelAbility networking.TunnelAbility
 
 	// Determines the discoverability of this endpoint throughout the mesh.
@@ -481,6 +489,7 @@ func (ep *IstioEndpoint) IsDiscoverableFromProxy(p *Proxy) bool {
 // EndpointDiscoverabilityPolicy determines the discoverability of an endpoint throughout the mesh.
 type EndpointDiscoverabilityPolicy interface {
 	// IsDiscoverableFromProxy indicates whether an endpoint is discoverable from the given Proxy.
+	// IsDiscoverableFromProxy表明一个endpoint是不是能被给定的Proxy发现
 	IsDiscoverableFromProxy(*IstioEndpoint, *Proxy) bool
 
 	// String returns name of this policy.
@@ -613,6 +622,9 @@ type ServiceDiscovery interface {
 	// though with a different ServicePort and IstioEndpoint for each.  If any of these overlapping
 	// services are not HTTP or H2-based, behavior is undefined, since the listener may not be able to
 	// determine the intended destination of a connection without a Host header on the request.
+	// 在第二种情况下，多个services可能由同一个物理端口实现，虽然每个有着不同的ServicePort和IstioEndpoint
+	// 如果有任何重叠的services不是基于HTTP或者HTTP2，行为是未定义的，因为listener不能确定一个连接的目标destination
+	// 在一个请求没有Host header的情况下
 	GetProxyServiceInstances(*Proxy) []*ServiceInstance
 
 	GetProxyWorkloadLabels(*Proxy) labels.Collection

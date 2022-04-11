@@ -235,6 +235,7 @@ type Controller struct {
 	serviceInformer filter.FilteredSharedIndexInformer
 	serviceLister   listerv1.ServiceLister
 
+	// 对于headless service，从endpoints controller中获取
 	endpoints kubeEndpointsController
 
 	// Used to watch node accessible from remote cluster.
@@ -1076,6 +1077,7 @@ func (c *Controller) GetProxyServiceInstances(proxy *model.Proxy) []*model.Servi
 			// failover to 2
 			// 1. 通过label selector找到proxy service，如果没有的话，可能存在没有selector的headless service，转而执行2
 			if services, err := getPodServices(c.serviceLister, pod); err == nil && len(services) > 0 {
+				// 如果能通过labels反向找出匹配的services
 				out := make([]*model.ServiceInstance, 0)
 				for _, svc := range services {
 					// 基于service构建service instance
@@ -1084,6 +1086,7 @@ func (c *Controller) GetProxyServiceInstances(proxy *model.Proxy) []*model.Servi
 				return out
 			}
 			// 2. Headless service without selector
+			// 2. 没有selector的Headless service
 			return c.endpoints.GetProxyServiceInstances(c, proxy)
 		}
 
