@@ -54,7 +54,9 @@ var _ model.XdsResourceGenerator = &sdsservice{}
 
 func NewXdsServer(stop chan struct{}, gen model.XdsResourceGenerator) *xds.DiscoveryServer {
 	s := xds.NewXDS(stop)
+	// 构建Generator
 	s.DiscoveryServer.Generators = map[string]model.XdsResourceGenerator{
+		// 只包含了Secret的Provider
 		v3.SecretType: gen,
 	}
 	s.DiscoveryServer.ProxyNeedsPush = func(proxy *model.Proxy, req *model.PushRequest) bool {
@@ -73,6 +75,7 @@ func NewXdsServer(stop chan struct{}, gen model.XdsResourceGenerator) *xds.Disco
 		names := sets.NewSet(wr.ResourceNames...)
 		found := false
 		for name := range model.ConfigsOfKind(req.ConfigsUpdated, gvk.Secret) {
+			// 如果更新的secrets中是否包含envoy请求的secrets，包含则需要进行push
 			if names.Contains(name.Name) {
 				found = true
 				break
@@ -80,6 +83,7 @@ func NewXdsServer(stop chan struct{}, gen model.XdsResourceGenerator) *xds.Disco
 		}
 		return found
 	}
+	// 启动DiscoveryServer
 	s.DiscoveryServer.Start(stop)
 	return s.DiscoveryServer
 }
@@ -102,10 +106,14 @@ func newSDSService(st security.SecretManager, options *security.Options) *sdsser
 	// case we always write a certificate. A workload can technically run without any mTLS/CA
 	// configured, in which case this will fail; if it becomes noisy we should disable the entire SDS
 	// server in these cases.
+	// 提前生成workload certificates来提升启动速度并且确保对于OUTPUT_CERTS，我们总是写一个证书
+	// 从技术角度来说，一个workload可以在没有配置任何mTLS/CA的情况下运行，这种情况下，它会fail，如果它太过noisy
+	// 我们应该在这些情况下屏蔽整个SDS
 	go func() {
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = 0
 		for {
+			// 并没有拿返回值
 			_, err := st.GenerateSecret(security.WorkloadKeyCertResourceName)
 			if err == nil {
 				break
@@ -137,6 +145,7 @@ func newSDSService(st security.SecretManager, options *security.Options) *sdsser
 func (s *sdsservice) generate(resourceNames []string) (model.Resources, error) {
 	resources := model.Resources{}
 	for _, resourceName := range resourceNames {
+		// 为对应的resource创建secret
 		secret, err := s.st.GenerateSecret(resourceName)
 		if err != nil {
 			// Typically, in Istiod, we do not return an error for a failure to generate a resource
@@ -159,11 +168,15 @@ func (s *sdsservice) generate(resourceNames []string) (model.Resources, error) {
 
 // Generate implements the XDS Generator interface. This allows the XDS server to dispatch requests
 // for SecretTypeV3 to our server to generate the Envoy response.
+// Generate实现了XDS的Generator接口，这允许XDS server分发SecretTypeV3的requests到我们的server来生成Envoy
+// response
 func (s *sdsservice) Generate(_ *model.Proxy, _ *model.PushContext, w *model.WatchedResource,
 	updates *model.PushRequest) (model.Resources, model.XdsLogDetails, error) {
 	// updates.Full indicates we should do a complete push of all updated resources
+	// updates.Full表明我们应该做一个对于所有的updated resources的完整的push
 	// In practice, all pushes should be incremental (ie, if the `default` cert changes we won't push
 	// all file certs).
+	// 事实上，所有的pushes都应该是增量式的（例如，如果`default`证书改变，我们不会推送所有的file certs）
 	if updates.Full {
 		resp, err := s.generate(w.ResourceNames)
 		return resp, pushLog(w.ResourceNames), err
@@ -185,6 +198,7 @@ func (s *sdsservice) register(rpcs *grpc.Server) {
 }
 
 // StreamSecrets serves SDS discovery requests and SDS push requests
+// StreamSecrets服务SDS discovery requests并且推送SDS push requests
 func (s *sdsservice) StreamSecrets(stream sds.SecretDiscoveryService_StreamSecretsServer) error {
 	return s.XdsServer.Stream(stream)
 }

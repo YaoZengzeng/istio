@@ -114,6 +114,7 @@ var (
 			// listen on STS port for STS requests. For STS, see
 			// https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
 			// STS is used for stackdriver or other Envoy services using google gRPC.
+			// STS用于stackdriver或者其他使用google gRPC的Envoy services
 			if stsPort > 0 {
 				stsServer, err := initStsServer(proxy, secOpts.TokenManager)
 				if err != nil {
@@ -127,6 +128,7 @@ var (
 				proxyConfig.ProxyBootstrapTemplatePath = templateFile
 			}
 
+			// 构建envoy options
 			envoyOptions := envoy.ProxyConfig{
 				LogLevel:          proxyLogLevel,
 				ComponentLogLevel: proxyComponentLogLevel,
@@ -136,6 +138,7 @@ var (
 				OutlierLogPath:    outlierLogPath,
 			}
 			agentOptions := options.NewAgentOptions(proxy, proxyConfig)
+			// 构建istio agent
 			agent := istio_agent.NewAgent(proxyConfig, agentOptions, secOpts, envoyOptions)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -153,6 +156,7 @@ var (
 			go cmd.WaitSignalFunc(cancel)
 
 			// Start in process SDS, dns server, xds proxy, and Envoy.
+			// 在进程中启动SDS, dns server, xds proxy以及Envoy
 			wait, err := agent.Run(ctx)
 			if err != nil {
 				return err
@@ -265,6 +269,7 @@ func initProxy(args []string) (*model.Proxy, error) {
 	}
 
 	// Obtain all the IPs from the node
+	// 从节点获取所有的IPs
 	if ipAddrs, ok := network.GetPrivateIPs(context.Background()); ok {
 		if len(proxy.IPAddresses) == 1 {
 			for _, ip := range ipAddrs {
@@ -285,12 +290,14 @@ func initProxy(args []string) (*model.Proxy, error) {
 	}
 
 	// Extract pod variables.
+	// 抽取出pod的参数
 	podName := options.PodNameVar.Get()
 	podNamespace := options.PodNamespaceVar.Get()
 	proxy.ID = podName + "." + podNamespace
 
 	// If not set, set a default based on platform - podNamespace.svc.cluster.local for
 	// K8S
+	// 如果没有设置，根据platform设置一个默认值 - 对于k8s为podNamespace.svc.cluster.local
 	proxy.DNSDomain = getDNSDomain(podNamespace, dnsDomain)
 	log.WithLabels("ips", proxy.IPAddresses, "type", proxy.Type, "id", proxy.ID, "domain", proxy.DNSDomain).Info("Proxy role")
 

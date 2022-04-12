@@ -123,6 +123,7 @@ func (s *SecretGen) Generate(proxy *model.Proxy, push *model.PushContext, w *mod
 	results := model.Resources{}
 	cached, regenerated := 0, 0
 	for _, sr := range resources {
+		// 遍历resources
 		if updatedSecrets != nil {
 			if !containsAny(updatedSecrets, relatedConfigs(model.ConfigKey{Kind: gvk.Secret, Name: sr.Name, Namespace: sr.Namespace})) {
 				// This is an incremental update, filter out credscontroller that are not updated.
@@ -131,6 +132,7 @@ func (s *SecretGen) Generate(proxy *model.Proxy, push *model.PushContext, w *mod
 		}
 
 		// Fetch the appropriate cluster's credscontroller, based on the credential type
+		// 获取合适的cluster的credscontroller，基于credential类型
 		var secretController credscontroller.Controller
 		switch sr.Type {
 		case credentials.KubernetesGatewaySecretType:
@@ -142,6 +144,7 @@ func (s *SecretGen) Generate(proxy *model.Proxy, push *model.PushContext, w *mod
 		cachedItem, f := s.cache.Get(sr)
 		if f && !features.EnableUnsafeAssertions {
 			// If it is in the Cache, add it and continue
+			// 如果在缓存中，添加它并且继续
 			// We skip cache if assertions are enabled, so that the cache will assert our eviction logic is correct
 			results = append(results, cachedItem)
 			cached++
@@ -334,6 +337,7 @@ func relatedConfigs(k model.ConfigKey) []model.ConfigKey {
 type SecretGen struct {
 	secrets credscontroller.MulticlusterController
 	// Cache for XDS resources
+	// XDS资源的缓存
 	cache         model.XdsCache
 	configCluster cluster.ID
 }

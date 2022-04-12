@@ -56,6 +56,7 @@ type TestServer struct {
 }
 
 func (s *TestServer) Connect() *xds.AdsTest {
+	// 构建到udsPath的连接
 	conn, err := setupConnection(s.udsPath)
 	if err != nil {
 		s.t.Fatal(err)
@@ -98,6 +99,7 @@ func (s *TestServer) Verify(resp *discovery.DiscoveryResponse, expectations ...E
 }
 
 func setupSDS(t *testing.T) *TestServer {
+	// 构建mock secret manager
 	st := ca2.NewDirectSecretManager()
 	st.Set(testResourceName, &ca2.SecretItem{
 		CertificateChain: fakeCertificateChain,
@@ -112,6 +114,7 @@ func setupSDS(t *testing.T) *TestServer {
 	opts := &ca2.Options{
 		WorkloadUDSPath: fmt.Sprintf("/tmp/workload_gotest%s.sock", string(uuid.NewUUID())),
 	}
+	// 构建SDS Server
 	server := NewServer(opts, st)
 	t.Cleanup(func() {
 		server.Stop()

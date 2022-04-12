@@ -111,13 +111,16 @@ const (
 
 // Options provides all of the configuration parameters for secret discovery service
 // and CA configuration. Used in both Istiod and Agent.
+// Options提供了所有的配置参数用于SDS以及CA配置，同时在Istiod和Agent中使用
 // TODO: ProxyConfig should have most of those, and be passed to all components
 // (as source of truth)
 type Options struct {
 	// WorkloadUDSPath is the unix domain socket through which SDS server communicates with workload proxies.
+	// WorkloadUDSPath是unix domain socket，由SDS server用来和workload proxies进行交互
 	WorkloadUDSPath string
 
 	// CAEndpoint is the CA endpoint to which node agent sends CSR request.
+	// CAEndpoint是node agent发送CSR请求的CA endpoint
 	CAEndpoint string
 
 	// CAEndpointSAN overrides the ServerName extracted from CAEndpoint.
@@ -141,6 +144,7 @@ type Options struct {
 
 	// ProvCert is the directory for client to provide the key and certificate to CA server when authenticating
 	// with mTLS. This is not used for workload mTLS communication, and is
+	// ProvCert是目录，由client用来提供key和证书到CA server，当进行mTLS的认证的时候
 	ProvCert string
 
 	// ClusterID is the cluster where the agent resides.
@@ -222,9 +226,11 @@ type Options struct {
 }
 
 // TokenManager contains methods for generating token.
+// TokenManager包含了用于生成token的方法
 type TokenManager interface {
 	// GenerateToken takes STS request parameters and generates token. Returns
 	// StsResponseParameters in JSON.
+	// GenerateToken根据STS request parameters生成token，返回StsResponseParameters，以JSON格式
 	GenerateToken(parameters StsRequestParameters) ([]byte, error)
 	// DumpTokenStatus dumps status of all generated tokens and returns status in JSON.
 	DumpTokenStatus() ([]byte, error)
@@ -275,13 +281,17 @@ type Client interface {
 }
 
 // SecretManager defines secrets management interface which is used by SDS.
+// SecretManager定义了SDS使用的secrets management接口
 type SecretManager interface {
 	// GenerateSecret generates new secret for the given resource.
+	// GenerateSecret为给定资源创建新的secret
 	//
 	// The current implementation also watched the generated secret and trigger a callback when it is
 	// near expiry. It will constructs the SAN based on the token's 'sub' claim, expected to be in
 	// the K8S format. No other JWTs are currently supported due to client logic. If JWT is
 	// missing/invalid, the resourceName is used.
+	// 当前的逻辑同时监听创建的secret并且触发一个callback，当它接近过期的时候，它会基于token的'sub' claim构建
+	// SAN，期望以K8S的形式，因为client的逻辑，当前不支持其他JWTs，如果JWT遗失或者非法，使用resourceName
 	GenerateSecret(resourceName string) (*SecretItem, error)
 }
 
@@ -292,6 +302,7 @@ type TokenExchanger interface {
 }
 
 // SecretItem is the cached item in in-memory secret store.
+// SecretItem是内存中的secret store中缓存的item
 type SecretItem struct {
 	CertificateChain []byte
 	PrivateKey       []byte
@@ -299,7 +310,9 @@ type SecretItem struct {
 	RootCert []byte
 
 	// ResourceName passed from envoy SDS discovery request.
+	// 通过envoy的SDS discovery reques传递的ResourceName
 	// "ROOTCA" for root cert request, "default" for key/cert request.
+	// "ROOTCA"用于cert request，"default"用于key/cert request
 	ResourceName string
 
 	CreatedTime time.Time

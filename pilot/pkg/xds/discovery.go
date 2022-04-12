@@ -96,6 +96,7 @@ type DiscoveryServer struct {
 
 	// ProxyNeedsPush is a function that determines whether a push can be completely skipped. Individual generators
 	// may also choose to not send any updates.
+	// ProxyNeedsPush是一个函数用来确认一个push是否可以完全跳过，单个的generators也可能选择不发送任何的更新
 	ProxyNeedsPush func(proxy *model.Proxy, req *model.PushRequest) bool
 
 	// concurrentPushLimit is a semaphore that limits the amount of concurrent XDS pushes.
@@ -336,6 +337,7 @@ func (s *DiscoveryServer) dropCacheForRequest(req *model.PushRequest) {
 
 // Push is called to push changes on config updates using ADS. This is set in DiscoveryService.Push,
 // to avoid direct dependencies.
+// Push被调用用于使用ADS在配置更新的时候推送变更，它设置在DiscoveryService.Push
 func (s *DiscoveryServer) Push(req *model.PushRequest) {
 	if !req.Full {
 		req.Push = s.globalPushContext()
@@ -399,8 +401,12 @@ func (s *DiscoveryServer) ConfigUpdate(req *model.PushRequest) {
 // Debouncing and push request happens in a separate thread, it uses locks
 // and we want to avoid complications, ConfigUpdate may already hold other locks.
 // handleUpdates processes events from pushChannel
+// 去抖以及推送requests发生在另一个独立的线程，它使用locks，我们希望避免复杂性，ConfigUpdate可能已经维护了locks
+// handleUpdates处理来自pushChannel的events
 // It ensures that at minimum minQuiet time has elapsed since the last event before processing it.
 // It also ensures that at most maxDelay is elapsed between receiving an event and processing it.
+// 它确保从上次event以来至少经过了minQuiet时间段event才被处理，它同时确保在接收event并且处理它之间至多
+// 经过了maxDelay
 func (s *DiscoveryServer) handleUpdates(stopCh <-chan struct{}) {
 	debounce(s.pushChannel, stopCh, s.debounceOptions, s.Push, s.CommittedUpdates)
 }
@@ -513,6 +519,7 @@ func doSendPushes(stopCh <-chan struct{}, semaphore chan struct{}, queue *PushQu
 			semaphore <- struct{}{}
 
 			// Get the next proxy to push. This will block if there are no updates required.
+			// 获取下一个要push的proxy，它会阻塞，如果不需要任何的更新
 			client, push, shuttingdown := queue.Dequeue()
 			if shuttingdown {
 				return
@@ -538,6 +545,7 @@ func doSendPushes(stopCh <-chan struct{}, semaphore chan struct{}, queue *PushQu
 				}
 
 				select {
+				// 最终发送到client的pushChannel
 				case client.pushChannel <- pushEv:
 					return
 				case <-closed: // grpc stream was closed

@@ -34,6 +34,7 @@ import (
 var log = istiolog.RegisterScope("dns", "Istio DNS proxy", 0)
 
 // LocalDNSServer holds configurations for the DNS downstreamUDPServer in Istio Agent
+// LocalDNSServer提供了配置用于DNS downstreamUDPServer，在Istio Agent中
 type LocalDNSServer struct {
 	// Holds the pointer to the DNS lookup table
 	lookupTable atomic.Value

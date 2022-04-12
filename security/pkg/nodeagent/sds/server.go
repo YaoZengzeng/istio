@@ -33,7 +33,9 @@ const (
 )
 
 // Server is the gPRC server that exposes SDS through UDS.
+// Server是gRPC server来通过UDS来暴露SDS
 type Server struct {
+	// 包含一个sdsservice
 	workloadSds *sdsservice
 
 	grpcWorkloadListener net.Listener
@@ -43,6 +45,7 @@ type Server struct {
 }
 
 // NewServer creates and starts the Grpc server for SDS.
+// NewServer为SDS创建并且启动Grpc server
 func NewServer(options *security.Options, workloadSecretCache security.SecretManager) *Server {
 	s := &Server{stopped: atomic.NewBool(false)}
 	s.workloadSds = newSDSService(workloadSecretCache, options)
@@ -58,6 +61,7 @@ func (s *Server) UpdateCallback(resourceName string) {
 	s.workloadSds.XdsServer.Push(&model.PushRequest{
 		Full: false,
 		ConfigsUpdated: map[model.ConfigKey]struct{}{
+			// 类型是Secret，Name是资源名
 			{Kind: gvk.Secret, Name: resourceName}: {},
 		},
 		Reason: []model.TriggerReason{model.SecretTrigger},

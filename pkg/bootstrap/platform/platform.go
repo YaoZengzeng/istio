@@ -27,6 +27,7 @@ type Platform int
 
 // Environment provides information for the platform on which the bootstrapping
 // is taking place.
+// Environment提供信息，关于bootstrapping是在哪个平台发生的
 type Environment interface {
 	// Metadata returns a collection of environmental metadata, structured
 	// as a map for metadata names to values. An example for GCP would be a

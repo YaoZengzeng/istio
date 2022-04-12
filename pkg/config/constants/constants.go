@@ -126,6 +126,7 @@ const (
 	InternalParentName = "internal.istio.io/parent"
 
 	// TrustworthyJWTPath is the default 3P token to authenticate with third party services
+	// TrustworthyJWTPath是默认的第三方token用于和第三方服务进行认证
 	TrustworthyJWTPath = "./var/run/secrets/tokens/istio-token"
 
 	// CertProviderIstiod uses istiod self signed DNS certificates for the control plane

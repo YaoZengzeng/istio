@@ -95,6 +95,7 @@ func SetupSecurityOptions(proxyConfig *meshconfig.ProxyConfig, secOpt *security.
 	o.JWTPath = jwtPath
 
 	// If not set explicitly, default to the discovery address.
+	// 如果没有显式设置CAEndpoint，默认为discovery address
 	if o.CAEndpoint == "" {
 		o.CAEndpoint = proxyConfig.DiscoveryAddress
 		o.CAEndpointSAN = istiodSAN.Get()

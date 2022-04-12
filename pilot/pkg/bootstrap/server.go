@@ -315,6 +315,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 
 	s.initDiscoveryService(args)
 
+	// 初始化SDS Server
 	s.initSDSServer()
 
 	// Notice that the order of authenticators matters, since at runtime
@@ -535,6 +536,7 @@ func (s *Server) initSDSServer() {
 				Reason: []model.TriggerReason{model.SecretTrigger},
 			})
 		})
+		// 初始化secret generator
 		s.XDSServer.Generators[v3.SecretType] = xds.NewSecretGen(creds, s.XDSServer.Cache, s.clusterID)
 		s.multiclusterController.AddHandler(creds)
 	}

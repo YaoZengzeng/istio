@@ -49,7 +49,9 @@ func (key NamespacedName) String() string {
 }
 
 // ConfigKey describe a specific config item.
+// ConfigKey描述了一个特定的config item
 // In most cases, the name is the config's name. However, for ServiceEntry it is service's FQDN.
+// 多数情况下，name是config的name，但是对于ServiceEntry，它是service的FQDN
 type ConfigKey struct {
 	Kind      config.GroupVersionKind
 	Name      string

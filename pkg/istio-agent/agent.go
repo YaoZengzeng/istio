@@ -81,6 +81,9 @@ const (
 	// This is mounted from config map 'istio-ca-root-cert'. Part of startup,
 	// this may be replaced with ./etc/certs, if a root-cert.pem is found, to
 	// handle secrets mounted from non-citadel CAs.
+	// CitadelCACertPath是Citadel CA证书所在的目录，它挂载自config map 'istio-ca-root-cert'
+	// 启动的一部分，它可能被./etc/certs代替，如果找到了一个root-cert.pem，来处理
+	// secrets挂载自non-citadel CAs的情况
 	CitadelCACertPath = "./var/run/secrets/istio"
 )
 
@@ -92,10 +95,15 @@ const (
 
 // Agent contains the configuration of the agent, based on the injected
 // environment:
+// Agent包含了agent的配置，基于注入的environment
 // - SDS hostPath if node-agent was used
+// - SDS的hostPath，如果使用了node-agent
 // - /etc/certs/key if Citadel or other mounted Secrets are used
+// - /etc/certs/key，如果Citadel活着其他挂载的Secrets被使用
 // - root cert to use for connecting to XDS server
+// - 用于连接XDS server的root cert
 // - CA address, with proper defaults and detection
+// - CA地址，有着合适的默认值和detection
 type Agent struct {
 	proxyConfig *mesh.ProxyConfig
 
@@ -198,6 +206,8 @@ type AgentOptions struct {
 // NewAgent hosts the functionality for local SDS and XDS. This consists of the local SDS server and
 // associated clients to sign certificates (when not using files), and the local XDS proxy (including
 // health checking for VMs and DNS proxying).
+// NewAgent维护了local SDS和XDS的功能，它由local SDS以及相关的clients组成来签署certificates（当不使用文件的时候）
+// 以及local XDS proxy（包括对于VMs的健康检查，以及DNS proxying）
 func NewAgent(proxyConfig *mesh.ProxyConfig, agentOpts *AgentOptions, sopts *security.Options,
 	eopts envoy.ProxyConfig) *Agent {
 	return &Agent{
@@ -394,20 +404,25 @@ func (b *bootstrapDiscoveryRequest) Recv() (*discovery.DiscoveryRequest, error) 
 func (b *bootstrapDiscoveryRequest) Context() context.Context { return context.Background() }
 
 // Run is a non-blocking call which returns either an error or a function to await for completion.
+// Run是一个非阻塞的调用，它要么返回一个error或者一个函数等待它运行结束
 func (a *Agent) Run(ctx context.Context) (func(), error) {
 	var err error
+	// 初始化local dns server
 	if err = a.initLocalDNSServer(); err != nil {
 		return nil, fmt.Errorf("failed to start local DNS server: %v", err)
 	}
 
+	// 构建secret cache
 	a.secretCache, err = a.newSecretManager()
 	if err != nil {
 		return nil, fmt.Errorf("failed to start workload secret manager %v", err)
 	}
 
+	// 构建sds server
 	a.sdsServer = sds.NewServer(a.secOpts, a.secretCache)
 	a.secretCache.SetUpdateCallback(a.sdsServer.UpdateCallback)
 
+	// 初始化xds proxy
 	a.xdsProxy, err = initXdsProxy(a)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start xds proxy: %v", err)
@@ -425,6 +440,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 		}
 	}
 
+	// 启动envoy agent
 	if !a.EnvoyDisabled() {
 		err = a.initializeEnvoyAgent(ctx)
 		if err != nil {
@@ -452,6 +468,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 			}
 
 			// This is a blocking call for graceful termination.
+			// 这是一个阻塞调用，用于优雅结束
 			a.envoyAgent.Run(ctx)
 		}()
 	} else if a.WaitForSigterm() {
@@ -467,6 +484,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 
 func (a *Agent) initLocalDNSServer() (err error) {
 	// we don't need dns server on gateways
+	// 在gateways中，我们不需要dns server
 	if a.cfg.DNSCapture && a.cfg.ProxyType == model.SidecarProxy {
 		if a.localDNSServer, err = dnsClient.NewLocalDNSServer(a.cfg.ProxyNamespace, a.cfg.ProxyDomain, a.cfg.DNSAddr); err != nil {
 			return err
@@ -597,6 +615,7 @@ func fileExists(path string) bool {
 }
 
 // Find the root CA to use when connecting to the CA (Istiod or external).
+// 找到连接CA（Istiod或者外部的）的root CA
 func (a *Agent) FindRootCAForCA() (string, error) {
 	var rootCAPath string
 
@@ -620,11 +639,13 @@ func (a *Agent) FindRootCAForCA() (string, error) {
 		return "", fmt.Errorf("root CA file for CA required but configured provider as none")
 	} else {
 		// This is the default - a mounted config map on K8S
+		// 这是默认情况 - 一个挂载的config map，在K8S中
 		rootCAPath = path.Join(CitadelCACertPath, constants.CACertNamespaceConfigMapDataName)
 		// or: "./var/run/secrets/istio/root-cert.pem"
 	}
 
 	// Additional checks for root CA cert existence.
+	// 额外的检查，用于确保CA cert的存在
 	if fileExists(rootCAPath) {
 		return rootCAPath, nil
 	}
@@ -648,8 +669,10 @@ func getKeyCertInner(certPath string) (string, string) {
 }
 
 // newSecretManager creates the SecretManager for workload secrets
+// newSecretManager为workload secrets创建SecretManager
 func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	// If proxy is using file mounted certs, we do not have to connect to CA.
+	// 如果proxy使用文件挂载形式的certs，则我们不需要连接到CA
 	if a.secOpts.FileMountedCerts {
 		log.Info("Workload is using file mounted certificates. Skipping connecting to CA")
 		return cache.NewSecretManagerClient(nil, a.secOpts)
@@ -678,6 +701,7 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	}
 
 	// Using citadel CA
+	// 使用citadel CA
 	var tlsOpts *citadel.TLSOptions
 	var err error
 	// Special case: if Istiod runs on a secure network, on the default port, don't use TLS
@@ -686,12 +710,14 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 		log.Warn("Debug mode or IP-secure network")
 	} else {
 		tlsOpts = &citadel.TLSOptions{}
+		// 找到CA的Root CA cert
 		tlsOpts.RootCert, err = a.FindRootCAForCA()
 		if err != nil {
 			return nil, fmt.Errorf("failed to find root CA cert for CA: %v", err)
 		}
 
 		if tlsOpts.RootCert == "" {
+			// 使用系统的certs
 			log.Infof("Using CA %s cert with system certs", a.secOpts.CAEndpoint)
 		} else if _, err := os.Stat(tlsOpts.RootCert); os.IsNotExist(err) {
 			log.Fatalf("invalid config - %s missing a root certificate %s", a.secOpts.CAEndpoint, tlsOpts.RootCert)
@@ -705,6 +731,7 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	// Will use TLS unless the reserved 15010 port is used ( istiod on an ipsec/secure VPC)
 	// rootCert may be nil - in which case the system roots are used, and the CA is expected to have public key
 	// Otherwise assume the injection has mounted /etc/certs/root-cert.pem
+	// 创建Citadel Client
 	caClient, err := citadel.NewCitadelClient(a.secOpts, tlsOpts)
 	if err != nil {
 		return nil, err

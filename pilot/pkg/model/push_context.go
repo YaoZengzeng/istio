@@ -395,6 +395,7 @@ const (
 	// DebugTrigger describes a push triggered for debugging
 	DebugTrigger TriggerReason = "debug"
 	// SecretTrigger describes a push triggered for a Secret change
+	// SecretTrigger描述了一个因为Secret变更触发的推送
 	SecretTrigger TriggerReason = "secret"
 	// NetworksTrigger describes a push triggered for Networks change
 	NetworksTrigger TriggerReason = "networks"

@@ -34,6 +34,7 @@ import (
 // Unlike bootstrap/, this packet has no dependencies on K8S, CA,
 // and other features. It'll be used initially in the istio-agent,
 // to provide a minimal proxy while reusing the same code as istiod.
+// 它最初会在istio-agent使用，来作为minimal proxy，重用istiod中同样的代码
 // Portions of the code will also be used in istiod - after it becomes
 // stable the plan is to refactor bootstrap to use this code instead
 // of directly bootstrapping XDS.
@@ -63,6 +64,8 @@ type SimpleServer struct {
 
 // Creates an basic, functional discovery server, using the same code as Istiod, but
 // backed by an in-memory config and endpoint stores.
+// 创建一个基本的、可运行的discovery server，和Istiod使用同样的代码，但是背后是一个in-memory config
+// 以及endpoint stores
 //
 // Can be used in tests, or as a minimal XDS discovery server with no dependency on K8S or
 // the complex bootstrap used by Istiod. A memory registry and memory config store are used to

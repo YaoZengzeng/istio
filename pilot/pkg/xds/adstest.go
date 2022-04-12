@@ -39,6 +39,7 @@ func NewAdsTest(t test.Failer, conn *grpc.ClientConn) *AdsTest {
 
 func NewSdsTest(t test.Failer, conn *grpc.ClientConn) *AdsTest {
 	return NewXdsTest(t, conn, func(conn *grpc.ClientConn) (DiscoveryClient, error) {
+		// 构建sds的client
 		xds := sds.NewSecretDiscoveryServiceClient(conn)
 		return xds.StreamSecrets(context.Background())
 	}).WithType(v3.SecretType)
@@ -192,17 +193,20 @@ func (a *AdsTest) fillInRequestDefaults(req *discovery.DiscoveryRequest) *discov
 func (a *AdsTest) Request(t test.Failer, req *discovery.DiscoveryRequest) {
 	t.Helper()
 	req = a.fillInRequestDefaults(req)
+	// 发送request
 	if err := a.client.Send(req); err != nil {
 		t.Fatal(err)
 	}
 }
 
 // RequestResponseAck does a full XDS exchange: Send a request, get a response, and ACK the response
+// RequestResponseAck做一个完整的XDS交互：发送一个请求，获取一个response并且ACK这个response
 func (a *AdsTest) RequestResponseAck(t test.Failer, req *discovery.DiscoveryRequest) *discovery.DiscoveryResponse {
 	t.Helper()
 	req = a.fillInRequestDefaults(req)
 	a.Request(t, req)
 	resp := a.ExpectResponse(t)
+	// 在ack request中设置response的Nonce和VersionInfo
 	req.ResponseNonce = resp.Nonce
 	req.VersionInfo = resp.VersionInfo
 	a.Request(t, req)
