@@ -85,6 +85,7 @@ const (
 )
 
 // MutableListener represents a listener that is being built.
+// MutableListener代表一个正在被构建的listener
 type MutableListener struct {
 	istionetworking.MutableObjects
 }
@@ -115,6 +116,7 @@ var (
 // BuildListeners produces a list of listeners and referenced clusters for all proxies
 func (configgen *ConfigGeneratorImpl) BuildListeners(node *model.Proxy,
 	push *model.PushContext) []*listener.Listener {
+	// 构建listener builder
 	builder := NewListenerBuilder(node, push)
 
 	switch node.Type {
@@ -235,6 +237,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarListeners(builder *ListenerBui
 
 // buildSidecarInboundListeners creates listeners for the server-side (inbound)
 // configuration for co-located service proxyInstances.
+// buildSidecarInboundListeners为服务端（inbound）创建listeners配置，对于co-located的service proxyInstances
 func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 	node *model.Proxy,
 	push *model.PushContext) []*listener.Listener {
@@ -244,6 +247,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 	sidecarScope := node.SidecarScope
 	noneMode := node.GetInterceptionMode() == model.InterceptionNone
 	// No user supplied sidecar scope or the user supplied one has no ingress listeners.
+	// 没有用户提供的sidecar scope或者用户提供了一个没有ingress listeners的sidecar scope
 	if !sidecarScope.HasIngressListener() {
 		// Construct inbound listeners in the usual way by looking at the ports of the service instances
 		// attached to the proxy
@@ -462,6 +466,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListenerForPortOrUDS(li
 	listenerOpts.filterChainOpts = fcOpts
 
 	// Buildup the complete listener
+	// 构建完整的listener
 	// TODO: Currently, we build filter chains, then convert them to listener.Listeners then
 	// aggregate them back to filter chains in the virtual listener. This is complex and inefficient.
 	// We should instead just directly construct the filter chains. We do still need the ability to
@@ -692,6 +697,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 					// bind might have been modified by below code, so reset it for every Service.
 					listenerOpts.bind = bind
 					// port depends on servicePort.
+					// 端口由servicePort决定
 					listenerOpts.port = servicePort
 					listenerOpts.service = service
 
@@ -701,6 +707,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 					// wildcard route match to get to the appropriate IP through original dst clusters.
 					if features.EnableHeadlessService && bind == "" && service.Resolution == model.Passthrough &&
 						saddress == constants.UnspecifiedIP && (servicePort.Protocol.IsTCP() || servicePort.Protocol.IsUnsupported()) {
+						// 通过端口获取service instances
 						instances := push.ServiceInstancesByPort(service, servicePort.Port, nil)
 						if service.Attributes.ServiceRegistry != provider.Kubernetes && len(instances) == 0 && service.Attributes.LabelSelectors == nil {
 							// A Kubernetes service with no endpoints means there are no endpoints at
@@ -716,14 +723,18 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 						}
 						for _, instance := range instances {
 							// Make sure each endpoint address is a valid address
+							// 确保每个endpoint address都有一个合法的地址
 							// as service entries could have NONE resolution with label selectors for workload
 							// entries (which could technically have hostnames).
 							if net.ParseIP(instance.Endpoint.Address) == nil {
 								continue
 							}
 							// Skip build outbound listener to the node itself,
+							// 跳过为node自己构建outbound listener
 							// as when app access itself by pod ip will not flow through this listener.
+							// 因为当app通过pod ip访问自己时，它不会流经这个listener
 							// Simultaneously, it will be duplicate with inbound listener.
+							// 同时，它会和inbound listener重复
 							if instance.Endpoint.Address == node.IPAddresses[0] {
 								continue
 							}
@@ -732,6 +743,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 						}
 					} else {
 						// Standard logic for headless and non headless services
+						// 对于headless以及non headless services的标准逻辑
 						configgen.buildSidecarOutboundListenerForPortOrUDS(listenerOpts, listenerMap, virtualServices, actualWildcard)
 					}
 				}
@@ -1020,6 +1032,9 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundTCPListenerOptsForPort
 // if one doesn't already exist. HTTP listeners on same port are ignored
 // (as vhosts are shipped through RDS).  TCP listeners on same port are
 // allowed only if they have different CIDR matches.
+// buildSidecarOutboundListenerForPortOrUDS构建一个listener并且增加到调用者提供的
+// listenerMap，Listeners会被添加，如果它不存在的话，监听同一个端口的listeners会被忽略
+// 监听同一个端口的TCP listeners是被允许的，如果它们有着不同的CIDR mathes
 func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListenerForPortOrUDS(listenerOpts buildListenerOpts,
 	listenerMap map[string]*outboundListenerEntry, virtualServices []config.Config, actualWildcard string) {
 	var destinationCIDR string
@@ -1179,6 +1194,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListenerForPortOrUDS(l
 		Push: listenerOpts.push,
 	}
 
+	// 遍历plugins
 	for _, p := range configgen.Plugins {
 		if err := p.OnOutboundListener(pluginParams, &mutable.MutableObjects); err != nil {
 			log.Warn(err.Error())

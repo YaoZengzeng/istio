@@ -86,6 +86,8 @@ func (s *DiscoveryServer) findGenerator(typeURL string, con *Connection) model.X
 // Push an XDS resource for the given connection. Configuration will be generated
 // based on the passed in generator. Based on the updates field, generators may
 // choose to send partial or even no response if there are no changes.
+// 为给定连接推送一个XDS资源，Configuration会基于传入的generator生成，基于updates字段
+// generators可能会选择发送部分，甚至不发送response，如果没有变更发生的话
 func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 	w *model.WatchedResource, req *model.PushRequest) error {
 	if w == nil {
@@ -98,6 +100,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 
 	t0 := time.Now()
 
+	// 调用generator，创建resources
 	res, logdata, err := gen.Generate(con.proxy, push, w, req)
 	if err != nil || res == nil {
 		// If we have nothing to send, report that we got an ACK for this version.
@@ -108,6 +111,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 	}
 	defer func() { recordPushTime(w.TypeUrl, time.Since(t0)) }()
 
+	// 构建response
 	resp := &discovery.DiscoveryResponse{
 		ControlPlane: ControlPlane(),
 		TypeUrl:      w.TypeUrl,
@@ -129,6 +133,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 		info = " " + logdata.AdditionalInfo
 	}
 
+	// 在连接之上发送response
 	if err := con.send(resp); err != nil {
 		if recordSendError(w.TypeUrl, err) {
 			log.Warnf("%s: Send failure for node:%s resources:%d size:%s%s: %v",

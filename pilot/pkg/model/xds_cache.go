@@ -120,6 +120,7 @@ type CacheToken uint64
 
 // XdsCache interface defines a store for caching XDS responses.
 // All operations are thread safe.
+// XdsCache接口定义了一个store用于缓存XDS responses
 type XdsCache interface {
 	// Add adds the given XdsCacheEntry with the value for the given pushContext to the cache.
 	// If the cache has been updated to a newer push context, the write will be dropped silently.

@@ -67,6 +67,7 @@ type DiscoveryClient = discovery.AggregatedDiscoveryService_StreamAggregatedReso
 type DeltaDiscoveryClient = discovery.AggregatedDiscoveryService_DeltaAggregatedResourcesClient
 
 // Connection holds information about connected client.
+// Connection维护了一个连接的client的信息
 type Connection struct {
 	// PeerAddr is the address of the client, from network layer.
 	PeerAddr string
@@ -76,6 +77,8 @@ type Connection struct {
 
 	// ConID is the connection identifier, used as a key in the connection table.
 	// Currently based on the node name and a counter.
+	// ConID是连接的标识符，在connection table中作为key使用
+	// 当前基于node name和counter
 	ConID string
 
 	// proxy is the client to which this connection is established.
@@ -95,6 +98,8 @@ type Connection struct {
 
 	// initialized channel will be closed when proxy is initialized. Pushes, or anything accessing
 	// the proxy, should not be started until this channel is closed.
+	// 当proxy初始化完成的时候，initialized channel会被关闭，Pushes或者任何对proxy的访问，不应开始，直到
+	// channel被关闭
 	initialized chan struct{}
 
 	// stop can be used to end the connection manually via debug endpoints. Only to be used for testing.
@@ -110,15 +115,19 @@ type Connection struct {
 	// blockedPushes is a map of TypeUrl to push request. This is set when we attempt to push to a busy Envoy
 	// (last push not ACKed). When we get an ACK from Envoy, if the type is populated here, we will trigger
 	// the push.
+	// blockedPushes是一个TypeUrl到push request之间的映射，当我们试着向一个busy Envoy（上一个push没有被ACK）进行push的时候会被设置
+	// 当我们从Envoy获取一个ACK，如果对应的类型已经在这里填充了，则我们会触发push
 	blockedPushes map[string]*model.PushRequest
 }
 
 // Event represents a config or registry event that results in a push.
+// Event代表一个config或者registry事件，这会导致一个push
 type Event struct {
 	// pushRequest PushRequest to use for the push.
 	pushRequest *model.PushRequest
 
 	// function to call once a push is finished. This must be called or future changes may be blocked.
+	// 当一次push完成之后会被调用的函数，这必须被调用，否则之后的变更会被阻塞
 	done func()
 }
 
@@ -204,6 +213,7 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 
 	// For now, don't let xDS piggyback debug requests start watchers.
 	if strings.HasPrefix(req.TypeUrl, v3.DebugType) {
+		// 如果是debug requests
 		return s.pushXds(con, s.globalPushContext(), &model.WatchedResource{
 			TypeUrl: req.TypeUrl, ResourceNames: req.ResourceNames,
 		}, &model.PushRequest{Full: true})
@@ -218,10 +228,14 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 	if shouldRespond {
 		// This is a request, trigger a full push for this type. Override the blocked push (if it exists),
 		// as this full push is guaranteed to be a superset of what we would have pushed from the blocked push.
+		// 这是一个request，为这种类型触发一个full push，覆盖阻塞的push（如果存在的话），因为这个full push保证是对于
+		// 阻塞的push应该推送的内容的一个超集
 		request = &model.PushRequest{Full: true, Push: push}
 	} else {
 		// Check if we have a blocked push. If this was an ACK, we will send it.
 		// Either way we remove the blocked push as we will send a push.
+		// 检查是否我们有一个blocked push，如果这是一个ACK，我们会发送它
+		// 不管哪种方式，我们移除blocked push，因为我们会发送一个push
 		haveBlockedPush := false
 		con.proxy.Lock()
 		request, haveBlockedPush = con.blockedPushes[req.TypeUrl]
@@ -233,6 +247,7 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 		} else {
 			// This is an ACK, no delayed push
 			// Return immediately, no action needed
+			// 这是一个ACK，没有delayed push，立即返回，因为不需要任何action
 			return nil
 		}
 	}
@@ -362,6 +377,8 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	// If there is an error in request that means previous response is erroneous.
 	// We do not have to respond in that case. In this case request's version info
 	// will be different from the version sent. But it is fragile to rely on that.
+	// 如果在request中有一个error，这意味着之前的response有错误，这种情况下我们不需要response
+	// 在这种情况下，request的version info会和发送的version不同，但是依靠它是很脆弱的
 	if request.ErrorDetail != nil {
 		errCode := codes.Code(request.ErrorDetail.Code)
 		log.Warnf("ADS:%s: ACK ERROR %s %s:%s", stype, con.ConID, errCode.String(), request.ErrorDetail.GetMessage())
@@ -392,6 +409,8 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	// This can happen in two cases:
 	// 1. Envoy initially send request to Istiod
 	// 2. Envoy reconnect to Istiod i.e. Istiod does not have
+	// 当Envoy初始发送请求到Istiod的时候或者Envoy重新连接到Istiod的时候会使用，Istiod没有这个typeUrl的信息
+	// 但是Envoy发送response nonce
 	// information about this typeUrl, but Envoy sends response nonce - either
 	// because Istiod is restarted or Envoy disconnects and reconnects.
 	// We should always respond with the current resource names.
@@ -404,7 +423,9 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	}
 
 	// If there is mismatch in the nonce, that is a case of expired/stale nonce.
+	// 如果nonce不匹配，这里有一个expired/stale nonce
 	// A nonce becomes stale following a newer nonce being sent to Envoy.
+	// 当一个新的nonce被发送到Envoy的时候，nonce会过期
 	if request.ResponseNonce != previousInfo.NonceSent {
 		log.Debugf("ADS:%s: REQ %s Expired nonce received %s, sent %s", stype,
 			con.ConID, request.ResponseNonce, previousInfo.NonceSent)
@@ -417,6 +438,8 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 
 	// If it comes here, that means nonce match. This an ACK. We should record
 	// the ack details and respond if there is a change in resource names.
+	// 如果到达了这里，这意味着nonce匹配，这是一个ACK，我们应该记录ack details并且respond
+	// 如果resource names有变更
 	con.proxy.Lock()
 	previousResources := con.proxy.WatchedResources[request.TypeUrl].ResourceNames
 	con.proxy.WatchedResources[request.TypeUrl].NonceAcked = request.ResponseNonce
@@ -426,6 +449,8 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 
 	// Envoy can send two DiscoveryRequests with same version and nonce
 	// when it detects a new resource. We should respond if they change.
+	// Envoy可以发送两个有着同样的version以及nonce的DiscoveryRequests，
+	// 当它检测到一个新的resource的时候，我们应该respond，如果它们发生了变更
 	if listEqualUnordered(previousResources, request.ResourceNames) {
 		log.Debugf("ADS:%s: ACK %s %s %s", stype, con.ConID, request.VersionInfo, request.ResponseNonce)
 		return false
@@ -441,7 +466,9 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 // unsubscribe from RDS. NOTE: This may happen as part of the initial request. If
 // there are no routes needed, Envoy will send an empty request, which this
 // properly handles by not adding it to the watched resource list.
+// shouldUnsubscribe检查我们是否应该取消订阅，当Envoy不再进行watching的时候会这样做
 func shouldUnsubscribe(request *discovery.DiscoveryRequest) bool {
+	// 如果ResourceNames为空并且不是wildcard type url
 	return len(request.ResourceNames) == 0 && !isWildcardTypeURL(request.TypeUrl)
 }
 
@@ -459,6 +486,7 @@ func isWildcardTypeURL(typeURL string) bool {
 		return false
 	case v3.ClusterType, v3.ListenerType:
 		// By XDS spec, these are wildcard
+		// 对于Cluster以及Listener，是wildcard
 		return true
 	default:
 		// All of our internal types use wildcard semantics
@@ -681,6 +709,7 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 // shouldProcessRequest returns whether or not to continue with the request.
 func (s *DiscoveryServer) shouldProcessRequest(proxy *model.Proxy, req *discovery.DiscoveryRequest) bool {
 	if req.TypeUrl != v3.HealthInfoType {
+		// 不是HealthInfo则都需要处理
 		return true
 	}
 	if features.WorkloadEntryHealthChecks {
@@ -917,6 +946,7 @@ func (s *DiscoveryServer) removeCon(conID string) {
 }
 
 // Send with timeout if configured.
+// 发送伴随着超时，如果配置了的话
 func (conn *Connection) send(res *discovery.DiscoveryResponse) error {
 	sendHandler := func() error {
 		start := time.Now()

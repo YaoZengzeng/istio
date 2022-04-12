@@ -183,6 +183,7 @@ type PushContext struct {
 	exportToDefaults exportToDefaults
 
 	// ServiceIndex is the index of services by various fields.
+	// ServiceIndex是基于各个字段进行索引的services
 	ServiceIndex serviceIndex
 
 	// ServiceAccounts contains a map of hostname and port to service accounts.
@@ -780,6 +781,7 @@ func (ps *PushContext) GatewayServices(proxy *Proxy) []*Service {
 }
 
 // Services returns the list of services that are visible to a Proxy in a given config namespace
+// Services返回一系列对一个Proxy可见的services，在给定的config namespace
 func (ps *PushContext) Services(proxy *Proxy) []*Service {
 	// If proxy has a sidecar scope that is user supplied, then get the services from the sidecar scope
 	// sidecarScope.config is nil if there is no sidecar scope for the namespace
@@ -800,6 +802,7 @@ func (ps *PushContext) Services(proxy *Proxy) []*Service {
 	}
 
 	// Second add public services
+	// 增加public services
 	out = append(out, ps.ServiceIndex.public...)
 
 	return out
@@ -2157,6 +2160,7 @@ func (ps *PushContext) BestEffortInferServiceMTLSMode(tp *networking.TrafficPoli
 }
 
 // ServiceInstancesByPort returns the cached instances by port if it exists.
+// ServiceInstancesByPort通过端口返回缓存的instances，如果它存在的话
 func (ps *PushContext) ServiceInstancesByPort(svc *Service, port int, labels labels.Collection) []*ServiceInstance {
 	out := []*ServiceInstance{}
 	if instances, exists := ps.ServiceIndex.instancesByPort[svc.Key()][port]; exists {

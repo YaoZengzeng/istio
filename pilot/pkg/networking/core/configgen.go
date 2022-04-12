@@ -27,10 +27,13 @@ import (
 )
 
 // ConfigGenerator represents the interfaces to be implemented by code that generates xDS responses
+// ConfigGenerator代表需要用代码实现的接口，用于生成xDS responses
 type ConfigGenerator interface {
 	// BuildListeners returns the list of inbound/outbound listeners for the given proxy. This is the LDS output
 	// Internally, the computation will be optimized to ensure that listeners are computed only
 	// once and shared across multiple invocations of this function.
+	// BuildListeners返回一系列的inbound/outbound listeners，为给定的proxy，这是LDS的输出
+	// 内部实现的话，计算会被优化来确保listeners只被计算一次并且在这个函数被多次调用的时候共享
 	BuildListeners(node *model.Proxy, push *model.PushContext) []*listener.Listener
 
 	// BuildClusters returns the list of clusters for the given proxy. This is the CDS output
@@ -42,6 +45,7 @@ type ConfigGenerator interface {
 		watched *model.WatchedResource) ([]*discovery.Resource, []string, model.XdsLogDetails, bool)
 
 	// BuildHTTPRoutes returns the list of HTTP routes for the given proxy. This is the RDS output
+	// BuildHTTPRoutes为给定的proxy返回一系列的HTTP routes
 	BuildHTTPRoutes(node *model.Proxy, req *model.PushRequest, routeNames []string) ([]*discovery.Resource, model.XdsLogDetails)
 
 	// BuildNameTable returns list of hostnames and the associated IPs
@@ -51,6 +55,7 @@ type ConfigGenerator interface {
 	BuildExtensionConfiguration(node *model.Proxy, push *model.PushContext, extensionConfigNames []string) []*core.TypedExtensionConfig
 
 	// MeshConfigChanged is invoked when mesh config is changed, giving a chance to rebuild any cached config.
+	// MeshConfigChanged被调用，当mesh config发生变更的时候，给一个机会用于rebuild任何缓存的配置
 	MeshConfigChanged(mesh *meshconfig.MeshConfig)
 }
 

@@ -121,6 +121,8 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundHTTPRouteConfig(
 
 // buildSidecarOutboundHTTPRouteConfig builds an outbound HTTP Route for sidecar.
 // Based on port, will determine all virtual hosts that listen on the port.
+// buildSidecarOutboundHTTPRouteConfig为sidecar构建一个outbound HTTP Route
+// 基于端口，它会决定所有监听在这个端口哦的virtual hosts
 func (configgen *ConfigGeneratorImpl) buildSidecarOutboundHTTPRouteConfig(
 	node *model.Proxy,
 	req *model.PushRequest,

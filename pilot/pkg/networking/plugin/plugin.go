@@ -47,9 +47,12 @@ type InputParams struct {
 // Plugin is called during the construction of a listener.Listener which may alter the Listener in any
 // way. Examples include AuthenticationPlugin that sets up mTLS authentication on the inbound Listener
 // and outbound Cluster, etc.
+// Plugin是在构建一个listener.Listener的时候被调用，可能以任何方式改变listener
+// 包括AuthenticationPlugin，用来在inbound Listener以及outbound Cluster设置mTLS authentication
 type Plugin interface {
 	// OnOutboundListener is called whenever a new outbound listener is added to the LDS output for a given service.
 	// Can be used to add additional filters on the outbound path.
+	// 可以用于在outbound path添加额外的filters
 	OnOutboundListener(in *InputParams, mutable *istionetworking.MutableObjects) error
 
 	// OnInboundListener is called whenever a new listener is added to the LDS output for a given service

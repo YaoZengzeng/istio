@@ -50,9 +50,13 @@ var dummyServiceInstance = &model.ServiceInstance{
 }
 
 // A stateful listener builder
+// 一个有状态的listener builder
 // Support the below intentions
+// 支持如下意图
 // 1. Use separate inbound capture listener(:15006) and outbound capture listener(:15001)
+// 1. 使用分开的inbound capture listener（：15006）以及outbound capture listener（：15001）
 // 2. The above listeners use bind_to_port sub listeners or filter chains.
+// 2. 上述的listeners使用bind_to_port sub listeners或者filter chains
 type ListenerBuilder struct {
 	node              *model.Proxy
 	push              *model.PushContext

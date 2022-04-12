@@ -206,8 +206,11 @@ var DefaultXdsLogDetails = XdsLogDetails{}
 
 // XdsResourceGenerator creates the response for a typeURL DiscoveryRequest or DeltaDiscoveryRequest. If no generator
 // is associated with a Proxy, the default (a networking.core.ConfigGenerator instance) will be used.
+// XdsResourceGenerator为一个typeURL DiscoveryRequest或者DeltaDiscoveryRequest创建response，如果没有generator和一个proxy
+// 相关联，就会使用默认的（一个networking.core.ConfigGenerator实例）
 // The server may associate a different generator based on client metadata. Different
 // WatchedResources may use same or different Generator.
+// server可能会基于client metadata将它和不同的generator相关，不同的WatchedResources可能使用相同或者不同的Generator
 // Note: any errors returned will completely close the XDS stream. Use with caution; typically and empty
 // or no response is preferred.
 type XdsResourceGenerator interface {
