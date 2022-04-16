@@ -106,6 +106,7 @@ func ConfigNamesOfKind(configs map[ConfigKey]struct{}, kind config.GroupVersionK
 
 // ConfigStore describes a set of platform agnostic APIs that must be supported
 // by the underlying platform to store and retrieve Istio configuration.
+// ConfigStore描述了一系列平台无关的APIs，它必须被底层的平台支持来存储以及获取Istio的配置
 //
 // Configuration key is defined to be a combination of the type, name, and
 // namespace of the configuration object. The configuration key is guaranteed

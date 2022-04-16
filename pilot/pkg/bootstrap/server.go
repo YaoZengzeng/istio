@@ -82,6 +82,7 @@ import (
 
 // DefaultPlugins is the default list of plugins to enable, when no plugin(s)
 // is specified through the command line
+// DefaultPlugins是默认使能的一系列plugins，当在命令行中没有指定plugins的话
 var DefaultPlugins = []string{
 	plugin.AuthzCustom,
 	plugin.Authn,
@@ -110,6 +111,7 @@ func init() {
 type readinessProbe func() (bool, error)
 
 // Server contains the runtime configuration for the Pilot discovery service.
+// Server包含了Pilot discovery service的运行时配置
 type Server struct {
 	XDSServer *xds.DiscoveryServer
 
@@ -189,6 +191,7 @@ type Server struct {
 }
 
 // NewServer creates a new Server instance based on the provided arguments.
+// NewServer基于提供的参数创建一个新的Server实例
 func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	e := &model.Environment{
 		PushContext:  model.NewPushContext(),
@@ -219,7 +222,9 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 		fn(s)
 	}
 	// Initialize workload Trust Bundle before XDS Server
+	// 在XDS Server之前初始化workload Trust Bundle
 	e.TrustBundle = s.workloadTrustBundle
+	// 初始化XDSServer
 	s.XDSServer = xds.NewDiscoveryServer(e, args.Plugins, args.PodName, args.Namespace, args.RegistryOptions.KubeOptions.ClusterAliases)
 
 	prometheus.EnableHandlingTimeHistogram()
@@ -232,9 +237,11 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	// used for both initKubeRegistry and initClusterRegistries
 	args.RegistryOptions.KubeOptions.EndpointMode = kubecontroller.DetectEndpointMode(s.kubeClient)
 
+	// 初始化mesh configuration
 	s.initMeshConfiguration(args, s.fileWatcher)
 	spiffe.SetTrustDomain(s.environment.Mesh().GetTrustDomain())
 
+	// 初始化mesh networks
 	s.initMeshNetworks(args, s.fileWatcher)
 	s.initMeshHandlers()
 	s.environment.Init()
@@ -263,6 +270,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 		return nil, err
 	}
 
+	// 初始化generator
 	s.XDSServer.InitGenerators(e, args.Namespace)
 
 	// Initialize workloadTrustBundle after CA has been initialized
@@ -862,9 +870,11 @@ func (s *Server) cachesSynced() bool {
 }
 
 // initRegistryEventHandlers sets up event handlers for config and service updates
+// initRegistryEventHandlers针对config以及service的升级配置event handler
 func (s *Server) initRegistryEventHandlers() {
 	log.Info("initializing registry event handlers")
 	// Flush cached discovery responses whenever services configuration change.
+	// 清理缓存的discovery responses，当services的配置发生变更时
 	serviceHandler := func(svc *model.Service, _ model.Event) {
 		pushReq := &model.PushRequest{
 			Full: true,
@@ -1075,6 +1085,7 @@ func (s *Server) getIstiodCertificate(*tls.ClientHelloInfo) (*tls.Certificate, e
 }
 
 // initControllers initializes the controllers.
+// initControllers初始化controllers
 func (s *Server) initControllers(args *PilotArgs) error {
 	log.Info("initializing controllers")
 	s.initMulticluster(args)
@@ -1180,6 +1191,7 @@ func (s *Server) startCA(caOpts *caOptions) {
 func (s *Server) initMeshHandlers() {
 	log.Info("initializing mesh handlers")
 	// When the mesh config or networks change, do a full push.
+	// 当网格配置或者networks发送变更的时候，做一次full push
 	s.environment.AddMeshHandler(func() {
 		spiffe.SetTrustDomain(s.environment.Mesh().GetTrustDomain())
 		s.XDSServer.ConfigGenerator.MeshConfigChanged(s.environment.Mesh())

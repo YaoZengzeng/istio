@@ -269,6 +269,10 @@ type processedDestRules struct {
 // to avoid passing around large objects - like full list of endpoints for a registry,
 // or the full list of endpoints for a service across registries, since it limits
 // scalability.
+// XDSUpdater用于xDS model的直接更新以及incremental push，Pilot使用多个registries - 例如每个K8S
+// cluster是一个registry实例，每个registry负责追踪一系列和mesh services相关的endpoints，并且在
+// 发生变更的时候调用EDSUpdate，一个registry可能将一个service的endpoints封装到更小的一个子集
+// 例如通过deployment，用来处理一个service的endpoints非常大的情况
 //
 // Future optimizations will include grouping the endpoints by labels, gateway or region to
 // reduce the time when subsetting or split-horizon is used. This design assumes pilot
@@ -287,6 +291,7 @@ type XDSUpdater interface {
 	// must be sent. The shard name is used as a key - current implementation is using the
 	// registry name.
 	// Note: the difference with `EDSUpdate` is that it only update the cache rather than requesting a push
+	// 注意：与`EDSUpdate`不同的是，它只更新缓存而不请求一个push
 	EDSCacheUpdate(shard ShardKey, hostname string, namespace string, entry []*IstioEndpoint)
 
 	// SvcUpdate is called when a service definition is updated/deleted.

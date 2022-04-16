@@ -43,6 +43,7 @@ func makeSecret(name string, data map[string]string) *corev1.Secret {
 		bdata[k] = []byte(v)
 	}
 	return &corev1.Secret{
+		// 构造了一个k8s secret
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "istio-system",

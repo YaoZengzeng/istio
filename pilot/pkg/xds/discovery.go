@@ -117,6 +117,8 @@ type DiscoveryServer struct {
 	mutex sync.RWMutex
 	// EndpointShards for a service. This is a global (per-server) list, built from
 	// incremental updates. This is keyed by service and namespace
+	// 一个service的EndpointShards，这是一个全局（每个server一个）的列表，基于incremental updates
+	// 构建，它以service和namespace作为key
 	EndpointShardsByService map[string]map[string]*EndpointShards
 
 	// pushChannel is the buffer used for debouncing.
@@ -392,6 +394,7 @@ func (s *DiscoveryServer) globalPushContext() *model.PushContext {
 
 // ConfigUpdate implements ConfigUpdater interface, used to request pushes.
 // It replaces the 'clear cache' from v1.
+// ConfigUpdate实现了ConfigUpdater接口，用于推送请求，它替换了v1中的'clear cache'接口
 func (s *DiscoveryServer) ConfigUpdate(req *model.PushRequest) {
 	inboundConfigUpdates.Increment()
 	s.InboundUpdates.Inc()

@@ -24,10 +24,14 @@ import (
 const (
 	// KubernetesSecretType is the name of a SDS secret stored in Kubernetes. Secrets here take the form
 	// kubernetes://secret-name. They will be pulled from the same namespace and cluster as the requesting proxy lives in.
+	// KubernetesSecretType是一个存储在kubernetes中的SDS secret的名字，Secrets的形式为kubernetes://secret-name，它们从
+	// 请求的proxy所在的同一个namespace以及cluster进行拉取
 	KubernetesSecretType    = "kubernetes"
 	kubernetesSecretTypeURI = KubernetesSecretType + "://"
 	// KubernetesGatewaySecretType is the name of a SDS secret stored in Kubernetes, used by the gateway-api. Secrets here
 	// take the form kubernetes-gateway://namespace/name. They are pulled from the config cluster.
+	// KubernetesGatewaySecretType是存储在Kubernetes中的一个SDS secret的名字，由gateway-api使用，
+	// 这里的secret的形式为kubernetes-gateway:://namespace/name，它们拉取自config cluster
 	KubernetesGatewaySecretType    = "kubernetes-gateway"
 	kubernetesGatewaySecretTypeURI = KubernetesGatewaySecretType + "://"
 )

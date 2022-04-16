@@ -41,14 +41,19 @@ import (
 //
 // The server support proxy/federation of multiple sources - last part
 // or parity with MCP/Galley and MCP-over-XDS.
+// 这个server支持multiple sources的proxy/federation
 type SimpleServer struct {
 	// DiscoveryServer is the gRPC XDS implementation
+	// DiscoveryServer是gRPC的XDS实现
 	// Env and MemRegistry are available as fields, as well as the default
 	// PushContext.
+	// Env和MemRegistry作为字段可用，以及默认的PushContext
 	DiscoveryServer *DiscoveryServer
 
 	// MemoryStore is an in-memory config store, part of the aggregate store
 	// used by the discovery server.
+	// MemoryStore是一个内存中的config store，部分的aggregate store由discovery server
+	// 使用
 	MemoryConfigStore model.IstioConfigStore
 
 	// GRPCListener is the listener used for GRPC. For agent it is
@@ -57,6 +62,7 @@ type SimpleServer struct {
 
 	// syncCh is used for detecting if the stores have synced,
 	// which needs to happen before serving requests.
+	// syncCh用于检测stores是否已经同步了，这在服务请求之间要能够满足
 	syncCh chan string
 
 	ConfigStoreCache model.ConfigStoreCache
@@ -72,6 +78,7 @@ type SimpleServer struct {
 // generate the configs - they can be programmatically updated.
 func NewXDS(stop chan struct{}) *SimpleServer {
 	// Prepare a working XDS server, with aggregate config and registry stores and a memory store for each.
+	// 准备一个可工作的XDS server，每个都有着聚合的配置以及registry stores，以及一个memory store
 	// TODO: refactor bootstrap code to use this server, and add more registries.
 
 	env := &model.Environment{

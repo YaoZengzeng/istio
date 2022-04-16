@@ -89,12 +89,14 @@ func newDiscoveryCommand() *cobra.Command {
 			stop := make(chan struct{})
 
 			// Create the server for the discovery service.
+			// 创建server用于discovery service
 			discoveryServer, err := bootstrap.NewServer(serverArgs)
 			if err != nil {
 				return fmt.Errorf("failed to create discovery service: %v", err)
 			}
 
 			// Start the server
+			// 启动server
 			if err := discoveryServer.Start(stop); err != nil {
 				return fmt.Errorf("failed to start discovery service: %v", err)
 			}
