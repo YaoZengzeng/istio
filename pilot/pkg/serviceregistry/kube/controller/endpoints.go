@@ -46,11 +46,13 @@ func newEndpointsController(c *Controller) *endpointsController {
 			informer: informer,
 		},
 	}
+	// 注册endpoints的处理函数
 	c.registerHandlers(informer, "Endpoints", out.onEvent, endpointsEqual)
 	return out
 }
 
 func (e *endpointsController) GetProxyServiceInstances(c *Controller, proxy *model.Proxy) []*model.ServiceInstance {
+	// 遍历所有的endpoints
 	eps, err := listerv1.NewEndpointsLister(e.informer.GetIndexer()).Endpoints(proxy.Metadata.Namespace).List(klabels.Everything())
 	if err != nil {
 		log.Errorf("Get endpoints by index failed: %v", err)
@@ -58,6 +60,7 @@ func (e *endpointsController) GetProxyServiceInstances(c *Controller, proxy *mod
 	}
 	var out []*model.ServiceInstance
 	for _, ep := range eps {
+		// 将endpoints转换为service instances
 		instances := endpointServiceInstances(c, ep, proxy)
 		out = append(out, instances...)
 	}
@@ -186,6 +189,7 @@ func (e *endpointsController) forgetEndpoint(endpoint interface{}) map[host.Name
 	key := kube.KeyFunc(ep.Name, ep.Namespace)
 	for _, ss := range ep.Subsets {
 		for _, ea := range ss.Addresses {
+			// 在pods中标记endpoints已经被删除，pods即podCache
 			e.c.pods.endpointDeleted(key, ea.IP)
 		}
 	}

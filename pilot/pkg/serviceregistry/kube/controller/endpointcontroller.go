@@ -41,6 +41,7 @@ type kubeEndpointsController interface {
 	buildIstioEndpoints(ep interface{}, host host.Name) []*model.IstioEndpoint
 	buildIstioEndpointsWithService(name, namespace string, host host.Name, clearCache bool) []*model.IstioEndpoint
 	// forgetEndpoint does internal bookkeeping on a deleted endpoint
+	// forgetEndpoint对于一个已经被删除的endpoint做一个内部的记录
 	forgetEndpoint(endpoint interface{}) map[host.Name][]*model.IstioEndpoint
 	getServiceNamespacedName(ep interface{}) types.NamespacedName
 }
@@ -60,9 +61,12 @@ func (e *kubeEndpoints) Run(stopCh <-chan struct{}) {
 }
 
 // processEndpointEvent triggers the config update.
+// processEndpointEvent触发config更新
 func processEndpointEvent(c *Controller, epc kubeEndpointsController, name string, namespace string, event model.Event, ep interface{}) error {
 	// Update internal endpoint cache no matter what kind of service, even headless service.
+	// 更新内部的endpoint缓存，不管是什么类型的service，即使是headless service
 	// As for gateways, the cluster discovery type is `EDS` for headless service.
+	// 至于对gateways，cluster discovery类型为`EDS`，对于headless service
 	updateEDS(c, epc, ep, event)
 	if features.EnableHeadlessService {
 		if svc, _ := c.serviceLister.Services(namespace).Get(name); svc != nil {
@@ -93,16 +97,19 @@ func updateEDS(c *Controller, epc kubeEndpointsController, ep interface{}, event
 	log.Debugf("Handle EDS endpoint %s %s %s in namespace %s", namespacedName.Name, event, namespacedName.Namespace)
 	var forgottenEndpointsByHost map[host.Name][]*model.IstioEndpoint
 	if event == model.EventDelete {
+		// 如果事件类型为Delete
 		forgottenEndpointsByHost = epc.forgetEndpoint(ep)
 	}
 
 	shard := model.ShardKeyFromRegistry(c)
 
+	// 获取所有可能的hostname
 	for _, hostName := range c.hostNamesForNamespacedName(namespacedName) {
 		var endpoints []*model.IstioEndpoint
 		if forgottenEndpointsByHost != nil {
 			endpoints = forgottenEndpointsByHost[hostName]
 		} else {
+			// 构建istio endpoints
 			endpoints = epc.buildIstioEndpoints(ep, hostName)
 		}
 
@@ -117,6 +124,7 @@ func updateEDS(c *Controller, epc kubeEndpointsController, ep interface{}, event
 			}
 		}
 
+		// eds更新
 		c.opts.XDSUpdater.EDSUpdate(shard, string(hostName), namespacedName.Namespace, endpoints)
 	}
 }

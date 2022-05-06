@@ -375,6 +375,8 @@ func convertWorkloadInstanceToServiceInstance(workloadInstance *model.IstioEndpo
 
 // Convenience function to convert a workloadEntry into a WorkloadInstance object encoding the endpoint (without service
 // port names) and the namespace - k8s will consume this workload instance when selecting workload entries
+// Convenience函数用于将一个workloadEntry转换为WorkloadInstance对象，对enpoint（没有service port names）以及namespace进行编码
+// k8s会消费这个workload instance，当选择workload entries时
 func (s *ServiceEntryStore) convertWorkloadEntryToWorkloadInstance(cfg config.Config, clusterID cluster.ID) *model.WorkloadInstance {
 	we := cfg.Spec.(*networking.WorkloadEntry)
 	// we will merge labels from metadata with spec, with precedence to the metadata
@@ -402,6 +404,7 @@ func (s *ServiceEntryStore) convertWorkloadEntryToWorkloadInstance(cfg config.Co
 	}
 	networkID := s.workloadEntryNetwork(we)
 	labels = labelutil.AugmentLabels(labels, clusterID, we.Locality, networkID)
+	// 构建WorkloadInstance
 	return &model.WorkloadInstance{
 		Endpoint: &model.IstioEndpoint{
 			Address: addr,

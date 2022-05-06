@@ -796,6 +796,7 @@ func (s *DiscoveryServer) adsClientCount() int {
 func (s *DiscoveryServer) ProxyUpdate(clusterID cluster.ID, ip string) {
 	var connection *Connection
 
+	// 遍历discovery server的各个连接，找到目标连接
 	for _, v := range s.Clients() {
 		if v.proxy.Metadata.ClusterID == clusterID && v.proxy.IPAddresses[0] == ip {
 			connection = v
@@ -804,6 +805,7 @@ func (s *DiscoveryServer) ProxyUpdate(clusterID cluster.ID, ip string) {
 	}
 
 	// It is possible that the envoy has not connected to this pilot, maybe connected to another pilot
+	// 可能envoy没有连接到这个pilot，可能连接到了另一个pilot
 	if connection == nil {
 		return
 	}
@@ -814,9 +816,11 @@ func (s *DiscoveryServer) ProxyUpdate(clusterID cluster.ID, ip string) {
 		}
 	}
 
+	// 将一个full push入队
 	s.pushQueue.Enqueue(connection, &model.PushRequest{
 		Full:   true,
 		Push:   s.globalPushContext(),
+		// 没有配置ConfigsUpdated
 		Start:  time.Now(),
 		Reason: []model.TriggerReason{model.ProxyUpdate},
 	})

@@ -105,6 +105,7 @@ func incrementEvent(kind, event string) {
 }
 
 // Options stores the configurable attributes of a Controller.
+// Options保存了一个Controller的可配置的特性
 type Options struct {
 	SystemNamespace string
 
@@ -220,6 +221,7 @@ var (
 )
 
 // Controller is a collection of synchronized resource watchers
+// Controller是一系列同步的资源的watchers
 // Caches are thread-safe
 type Controller struct {
 	opts Options
@@ -258,6 +260,9 @@ type Controller struct {
 	// If Kubernetes Multi-Cluster Services (MCS) is enabled, this will contain the regular
 	// hostname as well as the MCS hostname (clusterset.local). Otherwise, only the regular
 	// hostname will be returned.
+	// hostNamesForNamespacedName对于给定的service name返回所有可能的hostnames
+	// 如果使能了kubernetes的Multi-Cluster Services，这会包含通常的hostname以及MCS hostname（clusterset.local）
+	// 否则只会返回通常的hostname
 	hostNamesForNamespacedName func(name types.NamespacedName) []host.Name
 	// servicesForNamespacedName returns all services for the given service name.
 	// If Kubernetes Multi-Cluster Services (MCS) is enabled, this will contain the regular
@@ -290,7 +295,9 @@ type Controller struct {
 }
 
 // NewController creates a new Kubernetes controller
+// NewController创建一个新的Kubernetes controller
 // Created by bootstrap and multicluster (see multicluster.Controller).
+// 通过bootstrap以及multicluster创建
 func NewController(kubeClient kubelib.Client, options Options) *Controller {
 	c := &Controller{
 		opts:                       options,
@@ -368,10 +375,12 @@ func NewController(kubeClient kubelib.Client, options Options) *Controller {
 	c.serviceInformer = filter.NewFilteredSharedIndexInformer(c.opts.DiscoveryNamespacesFilter.Filter, kubeClient.KubeInformer().Core().V1().Services().Informer())
 	c.serviceLister = listerv1.NewServiceLister(c.serviceInformer.GetIndexer())
 
+	// 对service事件进行处理
 	c.registerHandlers(c.serviceInformer, "Services", c.onServiceEvent, nil)
 
 	switch options.EndpointMode {
 	case EndpointsOnly:
+		// 构建endpoints controller
 		c.endpoints = newEndpointsController(c)
 	case EndpointSliceOnly:
 		c.endpoints = newEndpointSliceController(c)
@@ -383,7 +392,9 @@ func NewController(kubeClient kubelib.Client, options Options) *Controller {
 	c.registerHandlers(c.nodeInformer, "Nodes", c.onNodeEvent, nil)
 
 	podInformer := filter.NewFilteredSharedIndexInformer(c.opts.DiscoveryNamespacesFilter.Filter, kubeClient.KubeInformer().Core().V1().Pods().Informer())
+	// 传入的函数为queueEndpointEvent
 	c.pods = newPodCache(c, podInformer, func(key string) {
+		// 根据key找到endpoint
 		item, exists, err := c.endpoints.getInformer().GetIndexer().GetByKey(key)
 		if err != nil {
 			log.Debugf("Endpoint %v lookup failed with error %v, skipping stale endpoint", key, err)
@@ -393,8 +404,10 @@ func NewController(kubeClient kubelib.Client, options Options) *Controller {
 			log.Debugf("Endpoint %v not found, skipping stale endpoint", key)
 			return
 		}
+		// 是否应该将事件处理入队
 		if shouldEnqueue("Pods", c.beginSync) {
 			c.queue.Push(func() error {
+				// 重新处理endpoint的事件，类型为EventUpdate
 				return c.endpoints.onEvent(item, model.EventUpdate)
 			})
 		}
@@ -1056,6 +1069,7 @@ func (c *Controller) GetProxyServiceInstances(proxy *model.Proxy) []*model.Servi
 	if len(proxy.IPAddresses) > 0 {
 		proxyIP := proxy.IPAddresses[0]
 		c.RLock()
+		// 根据proxy ip获取workload
 		workload, f := c.workloadInstancesByIP[proxyIP]
 		c.RUnlock()
 		if f {
@@ -1072,8 +1086,10 @@ func (c *Controller) GetProxyServiceInstances(proxy *model.Proxy) []*model.Servi
 
 			// 1. find proxy service by label selector, if not any, there may exist headless service without selector
 			// failover to 2
+			// 1. 通过label selector找到proxy service，如果没有的话，可能有没有selector的headless service，转到2的处理
 			if services, err := getPodServices(c.serviceLister, pod); err == nil && len(services) > 0 {
 				out := make([]*model.ServiceInstance, 0)
+				// 遍历services
 				for _, svc := range services {
 					out = append(out, c.getProxyServiceInstancesByPod(pod, svc, proxy)...)
 				}
@@ -1107,12 +1123,15 @@ func (c *Controller) GetProxyServiceInstances(proxy *model.Proxy) []*model.Servi
 func (c *Controller) hydrateWorkloadInstance(si *model.WorkloadInstance) []*model.ServiceInstance {
 	out := make([]*model.ServiceInstance, 0)
 	// find the workload entry's service by label selector
+	// 通过label selector找到workload entry的service
 	// rather than scanning through our internal map of model.services, get the services via the k8s apis
+	// 而不是遍历我们内部的model.services map，通过k8s api获取services
 	dummyPod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Namespace: si.Namespace, Labels: si.Endpoint.Labels},
 	}
 
 	// find the services that map to this workload entry, fire off eds updates if the service is of type client-side lb
+	// 找到映射到这个workload entry的services，触发eds updates，如果service的类型为client-side lb
 	if k8sServices, err := getPodServices(c.serviceLister, dummyPod); err == nil && len(k8sServices) > 0 {
 		for _, k8sSvc := range k8sServices {
 			service := c.GetService(kube.ServiceHostname(k8sSvc.Name, k8sSvc.Namespace, c.opts.DomainSuffix))
@@ -1136,6 +1155,7 @@ func (c *Controller) hydrateWorkloadInstance(si *model.WorkloadInstance) []*mode
 }
 
 // WorkloadInstanceHandler defines the handler for service instances generated by other registries
+// WorkloadInstanceHandler定义了处理其他registries生成的service instances的handler
 func (c *Controller) WorkloadInstanceHandler(si *model.WorkloadInstance, event model.Event) {
 	// ignore malformed workload entries. And ignore any workload entry that does not have a label
 	// as there is no way for us to select them
@@ -1181,6 +1201,8 @@ func (c *Controller) WorkloadInstanceHandler(si *model.WorkloadInstance, event m
 			// Get the updated list of endpoints that includes k8s pods and the workload entries for this service
 			// and then notify the EDS server that endpoints for this service have changed.
 			// We need one endpoint object for each service port
+			// 获取更新的endpoints列表，包括k8s pods以及这个service的workload entries，并且通知EDS server
+			// 这个service的endpoints已经发生了改变，对于每个service port，我们需要一个endpoint对象
 			endpoints := make([]*model.IstioEndpoint, 0)
 			for _, port := range service.Ports {
 				if port.Protocol == protocol.UDP {
@@ -1193,6 +1215,7 @@ func (c *Controller) WorkloadInstanceHandler(si *model.WorkloadInstance, event m
 				}
 			}
 			// fire off eds update
+			// 触发eds的更新
 			c.opts.XDSUpdater.EDSUpdate(shard, string(service.Hostname), service.Attributes.Namespace, endpoints)
 		}
 	}

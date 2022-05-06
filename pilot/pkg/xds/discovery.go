@@ -387,6 +387,7 @@ func (s *DiscoveryServer) globalPushContext() *model.PushContext {
 func (s *DiscoveryServer) ConfigUpdate(req *model.PushRequest) {
 	inboundConfigUpdates.Increment()
 	s.InboundUpdates.Inc()
+	// 将请求推送到pushChannel
 	s.pushChannel <- req
 }
 

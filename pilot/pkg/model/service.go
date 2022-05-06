@@ -274,6 +274,7 @@ type WorkloadInstance struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 	// Where the workloadInstance come from, valid values are`Pod` or `WorkloadEntry`
+	// workloadInstance的来源，合法的值为`Pod`或者`WorkloadEntry`
 	Kind     workloadKind      `json:"kind"`
 	Endpoint *IstioEndpoint    `json:"endpoint,omitempty"`
 	PortMap  map[string]uint32 `json:"portMap,omitempty"`

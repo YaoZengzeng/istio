@@ -74,9 +74,11 @@ func (s *DiscoveryServer) UpdateServiceShards(push *model.PushContext) error {
 }
 
 // SvcUpdate is a callback from service discovery when service info changes.
+// SvcUpdate是一个当service info发生变更时的service discovery的回调函数
 func (s *DiscoveryServer) SvcUpdate(shard model.ShardKey, hostname string, namespace string, event model.Event) {
 	// When a service deleted, we should cleanup the endpoint shards and also remove keys from EndpointShardsByService to
 	// prevent memory leaks.
+	// 当一个service删除的时候，我们应该清理endpoint shards并且从EndpointsShardsByService中移除keys来避免内存泄露
 	if event == model.EventDelete {
 		inboundServiceDeletes.Increment()
 		s.deleteService(shard, hostname, namespace)
@@ -87,15 +89,20 @@ func (s *DiscoveryServer) SvcUpdate(shard model.ShardKey, hostname string, names
 
 // EDSUpdate computes destination address membership across all clusters and networks.
 // This is the main method implementing EDS.
+// EDSUpdate计算跨越所有clusters以及networks的membership，这是实现EDS的主要方法
 // It replaces InstancesByPort in model - instead of iterating over all endpoints it uses
 // the hostname-keyed map. And it avoids the conversion from Endpoint to ServiceEntry to envoy
 // on each step: instead the conversion happens once, when an endpoint is first discovered.
+// 它替代了model中的InstancesByPort - 它使用以hostname作为key的map而不是遍历所有的endpoints
+// 它避免了ServiceEntry到Endpoint之间的转换在每一步：而是在endpoint首次被发现时转换一次
 func (s *DiscoveryServer) EDSUpdate(shard model.ShardKey, serviceName string, namespace string,
 	istioEndpoints []*model.IstioEndpoint) {
 	inboundEDSUpdates.Increment()
 	// Update the endpoint shards
+	// 更新endpoint shards
 	fp := s.edsCacheUpdate(shard, serviceName, namespace, istioEndpoints)
 	// Trigger a push
+	// 触发一次更新
 	s.ConfigUpdate(&model.PushRequest{
 		Full: fp,
 		ConfigsUpdated: map[model.ConfigKey]struct{}{{
@@ -103,6 +110,7 @@ func (s *DiscoveryServer) EDSUpdate(shard model.ShardKey, serviceName string, na
 			Name:      serviceName,
 			Namespace: namespace,
 		}: {}},
+		// endpoints的更新
 		Reason: []model.TriggerReason{model.EndpointUpdate},
 	})
 }
@@ -137,8 +145,10 @@ func (s *DiscoveryServer) edsCacheUpdate(shard model.ShardKey, hostname string, 
 
 	fullPush := false
 	// Find endpoint shard for this service, if it is available - otherwise create a new one.
+	// 对于这个service找到endpoint shard，如果可获得的话 - 否则创建一个新的
 	ep, created := s.getOrCreateEndpointShard(hostname, namespace)
 	// If we create a new endpoint shard, that means we have not seen the service earlier. We should do a full push.
+	// 如果我们创建了一个新的endpoint shard，这意味着我们之前没见过这个service，我们应该做一个full push
 	if created {
 		log.Infof("Full push, new service %s/%s", namespace, hostname)
 		fullPush = true
@@ -147,6 +157,7 @@ func (s *DiscoveryServer) edsCacheUpdate(shard model.ShardKey, hostname string, 
 	ep.mutex.Lock()
 	ep.Shards[shard] = istioEndpoints
 	// Check if ServiceAccounts have changed. We should do a full push if they have changed.
+	// 检查ServiceAccounts是否发生变更，我们应该做一个full push，如果变更发生了的话
 	saUpdated := s.UpdateServiceAccount(ep, hostname)
 	// Clear the cache here. While it would likely be cleared later when we trigger a push, a race
 	// condition is introduced where an XDS response may be generated before the update, but not
@@ -163,6 +174,7 @@ func (s *DiscoveryServer) edsCacheUpdate(shard model.ShardKey, hostname string, 
 	ep.mutex.Unlock()
 
 	// For existing endpoints, we need to do full push if service accounts change.
+	// 对于已经存在的endpoints，我们需要做full push，如果service accounts发生了变更
 	if saUpdated {
 		log.Infof("Full push, service accounts changed, %v", hostname)
 		fullPush = true
@@ -192,12 +204,14 @@ func (s *DiscoveryServer) getOrCreateEndpointShard(serviceName, namespace string
 		return ep, false
 	}
 	// This endpoint is for a service that was not previously loaded.
+	// 这个endpoint针对的service是之前没有加载过的
 	ep := &EndpointShards{
 		Shards:          map[model.ShardKey][]*model.IstioEndpoint{},
 		ServiceAccounts: sets.Set{},
 	}
 	s.EndpointShardsByService[serviceName][namespace] = ep
 	// Clear the cache here to avoid race in cache writes (see edsCacheUpdate for details).
+	// 清理缓存来避免cache writes时的冲突
 	s.Cache.Clear(map[model.ConfigKey]struct{}{{
 		Kind:      gvk.ServiceEntry,
 		Name:      serviceName,

@@ -73,6 +73,7 @@ type configKey struct {
 }
 
 // ServiceEntryStore communicates with ServiceEntry CRDs and monitors for changes
+// ServiceEntryStore和ServiceEntry CRDs进行交互并且监听变更
 type ServiceEntryStore struct { // nolint:golint
 	XdsUpdater model.XDSUpdater
 	store      model.IstioConfigStore

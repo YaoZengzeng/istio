@@ -278,6 +278,8 @@ type XDSUpdater interface {
 	// For each cluster and hostname, the full list of active endpoints (including empty list)
 	// must be sent. The shard name is used as a key - current implementation is using the
 	// registry name.
+	// EDSUpdate当一个Service中的一系列endpoints或labels发生变更的时候被调用，对于每个cluster以及hostname
+	// 必须发送全量的active endpoints（包括空的list），shard name作为一个key - 当前的实现使用registry name
 	EDSUpdate(shard ShardKey, hostname string, namespace string, entry []*IstioEndpoint)
 
 	// EDSCacheUpdate is called when the list of endpoints or labels in a Service is changed.
@@ -285,16 +287,19 @@ type XDSUpdater interface {
 	// must be sent. The shard name is used as a key - current implementation is using the
 	// registry name.
 	// Note: the difference with `EDSUpdate` is that it only update the cache rather than requesting a push
+	// 注意：`EDSCacheUpdate`和`EDSUpdate`的不同在于，它只更新cache而不会请求一次push
 	EDSCacheUpdate(shard ShardKey, hostname string, namespace string, entry []*IstioEndpoint)
 
 	// SvcUpdate is called when a service definition is updated/deleted.
 	SvcUpdate(shard ShardKey, hostname string, namespace string, event Event)
 
 	// ConfigUpdate is called to notify the XDS server of config updates and request a push.
+	// ConfigUpdate被调用用于通知XDS server配置的变更并且请求一个push
 	// The requests may be collapsed and throttled.
 	ConfigUpdate(req *PushRequest)
 
 	// ProxyUpdate is called to notify the XDS server to send a push to the specified proxy.
+	// ProxyUpdate被调用用于通知XDS server发送一个push到特定的proxy
 	// The requests may be collapsed and throttled.
 	ProxyUpdate(clusterID cluster.ID, ip string)
 
@@ -313,6 +318,7 @@ func NewShardKey(cluster cluster.ID, provider provider.ID) ShardKey {
 }
 
 // ShardKeyFromRegistry computes the shard key based on provider type and cluster id.
+// ShardKeyFromRegistry基于给定的provider类型以及cluster id计算shard key
 func ShardKeyFromRegistry(instance shardRegistry) ShardKey {
 	return NewShardKey(instance.Cluster(), instance.Provider())
 }
@@ -338,12 +344,17 @@ type PushRequest struct {
 	// * Are not reported in standard metrics such as push time
 	// As a result, configuration updates should never be incremental. Generally, only EDS will set this, but
 	// in the future SDS will as well.
+	// 一般来说只有EDS会设置这个字段，在以后SDS也会
 	Full bool
 
 	// ConfigsUpdated keeps track of configs that have changed.
+	// ConfigsUpdated追踪已经发生了的变更
 	// This is used as an optimization to avoid unnecessary pushes to proxies that are scoped with a Sidecar.
+	// 这是一个优化，用来避免对于有着Sidecar进行限制的proxies的非必要推送
 	// If this is empty, then all proxies will get an update.
+	// 如果为空，则所有proxies都会获得一个更新
 	// Otherwise only proxies depend on these configs will get an update.
+	// 否则，只有依赖这些配置的proxies会获得一个更新
 	// The kind of resources are defined in pkg/config/schemas.
 	ConfigsUpdated map[ConfigKey]struct{}
 

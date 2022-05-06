@@ -43,6 +43,8 @@ type PodCache struct {
 	// needResync is map of IP to endpoint namespace/name. This is used to requeue endpoint
 	// events when pod event comes. This typically happens when pod is not available
 	// in podCache when endpoint event comes.
+	// needResync是一个IP到endpoint namespace/name的映射，这用于将endpoint events重新入队，当pod event
+	// 来的时候，这通常用于pod不在podCache中而endpoint事件到来时发生
 	needResync         map[string]sets.Set
 	queueEndpointEvent func(string)
 
@@ -140,6 +142,7 @@ func (pc *PodCache) onEvent(curr interface{}, ev model.Event) error {
 		if pod.DeletionTimestamp != nil || !IsPodReady(pod) {
 			return nil
 		} else if shouldPodBeInEndpoints(pod) {
+			// 如果添加了pod或者更新了，则需要触发一次full push
 			pc.update(ip, key)
 		} else {
 			return nil
@@ -147,6 +150,7 @@ func (pc *PodCache) onEvent(curr interface{}, ev model.Event) error {
 	case model.EventUpdate:
 		if pod.DeletionTimestamp != nil || !IsPodReady(pod) {
 			// delete only if this pod was in the cache
+			// 只有pod在缓存的时候才删除
 			pc.deleteIP(ip, key)
 			ev = model.EventDelete
 		} else if shouldPodBeInEndpoints(pod) {
@@ -210,12 +214,14 @@ func (pc *PodCache) deleteIP(ip string, podKey string) bool {
 func (pc *PodCache) update(ip, key string) {
 	pc.Lock()
 	// if the pod has been cached, return
+	// 如果Pod已经缓存了，直接返回
 	if key == pc.podsByIP[ip] {
 		pc.Unlock()
 		return
 	}
 	if current, f := pc.IPByPods[key]; f {
 		// The pod already exists, but with another IP Address. We need to clean up that
+		// pod已经存在，但是有另一个ip，我们需要先清理它
 		delete(pc.podsByIP, current)
 	}
 	pc.podsByIP[ip] = key
@@ -224,6 +230,7 @@ func (pc *PodCache) update(ip, key string) {
 	if endpointsToUpdate, f := pc.needResync[ip]; f {
 		delete(pc.needResync, ip)
 		for epKey := range endpointsToUpdate {
+			// 将endpoint event入队
 			pc.queueEndpointEvent(epKey)
 		}
 		endpointsPendingPodUpdate.Record(float64(len(pc.needResync)))
@@ -247,6 +254,7 @@ func (pc *PodCache) queueEndpointEventOnPodArrival(key, ip string) {
 }
 
 // endpointDeleted cleans up endpoint from resync endpoint list.
+// endpointDeleted从resync endpoint列表中清理endpoint
 func (pc *PodCache) endpointDeleted(key string, ip string) {
 	pc.Lock()
 	defer pc.Unlock()
@@ -259,6 +267,7 @@ func (pc *PodCache) endpointDeleted(key string, ip string) {
 
 func (pc *PodCache) proxyUpdates(ip string) {
 	if pc.c != nil && pc.c.opts.XDSUpdater != nil {
+		// 调用ProxyUpdate函数进行更新
 		pc.c.opts.XDSUpdater.ProxyUpdate(pc.c.Cluster(), ip)
 	}
 }

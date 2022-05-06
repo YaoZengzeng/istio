@@ -25,14 +25,18 @@ type PushQueue struct {
 
 	// pending stores all connections in the queue. If the same connection is enqueued again,
 	// the PushRequest will be merged.
+	// pending存储了队列中的所有连接，如果同样的连接再次入队，PushRequest会被合并
 	pending map[*Connection]*model.PushRequest
 
 	// queue maintains ordering of the queue
+	// queue保持了队列的顺序
 	queue []*Connection
 
 	// processing stores all connections that have been Dequeue(), but not MarkDone().
 	// The value stored will be initially be nil, but may be populated if the connection is Enqueue().
 	// If model.PushRequest is not nil, it will be Enqueued again once MarkDone has been called.
+	// processing存储了所有已经Dequeue()但是没有被标记为MarkDone()的连接，存储的值喀什为nil，但是可能会被
+	// 填充，如果连接被Enqueue()的话，如果model.PushRequest不为nil，他可能再次入队，一旦MarkDone被调用
 	processing map[*Connection]*model.PushRequest
 
 	shuttingDown bool
@@ -48,6 +52,8 @@ func NewPushQueue() *PushQueue {
 
 // Enqueue will mark a proxy as pending a push. If it is already pending, pushInfo will be merged.
 // ServiceEntry updates will be added together, and full will be set if either were full
+// Enqueue会将一个proxy标记为挂起了一个push，如果它已经处于pending，pushInfo会被合并
+// ServiceEntry的更新会被一起添加，并且full会被设置，如果either were full
 func (p *PushQueue) Enqueue(con *Connection, pushRequest *model.PushRequest) {
 	p.cond.L.Lock()
 	defer p.cond.L.Unlock()
