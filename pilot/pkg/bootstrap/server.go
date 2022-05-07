@@ -513,6 +513,7 @@ func (s *Server) WaitUntilCompletion() {
 }
 
 // initSDSServer starts the SDS server
+// initSDSServer启动SDS server
 func (s *Server) initSDSServer() {
 	if s.kubeClient == nil {
 		return
@@ -535,6 +536,7 @@ func (s *Server) initSDSServer() {
 				Reason: []model.TriggerReason{model.SecretTrigger},
 			})
 		})
+		// 构建sds generator
 		s.XDSServer.Generators[v3.SecretType] = xds.NewSecretGen(creds, s.XDSServer.Cache, s.clusterID)
 		s.multiclusterController.AddHandler(creds)
 	}

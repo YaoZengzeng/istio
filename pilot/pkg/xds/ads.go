@@ -172,6 +172,7 @@ func (s *DiscoveryServer) receive(con *Connection, identities []string) {
 				con.errorChan <- status.New(codes.InvalidArgument, "missing node information").Err()
 				return
 			}
+			// 初始化连接
 			if err := s.initConnection(req.Node, con, identities); err != nil {
 				con.errorChan <- err
 				return
@@ -192,6 +193,7 @@ func (s *DiscoveryServer) receive(con *Connection, identities []string) {
 // processRequest is handling one request. This is currently called from the 'main' thread, which also
 // handles 'push' requests and close - the code will eventually call the 'push' code, and it needs more mutex
 // protection. Original code avoided the mutexes by doing both 'push' and 'process requests' in same thread.
+// processRequest处理一个request，它当前在主线程中被调用，它同时处理'push'请求以及关闭
 func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *Connection) error {
 	if !s.shouldProcessRequest(con.proxy, req) {
 		return nil
@@ -209,14 +211,19 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 	shouldRespond := s.shouldRespond(con, req)
 
 	var request *model.PushRequest
+	// 获取全局的push context
 	push := s.globalPushContext()
 	if shouldRespond {
 		// This is a request, trigger a full push for this type. Override the blocked push (if it exists),
 		// as this full push is guaranteed to be a superset of what we would have pushed from the blocked push.
+		// 这是一个request，触发对于这种类型的一个full push，覆盖blocked push（如果存在的话
+		// 因为这个full push确保是我们应该推送的blocked push的一个超集
 		request = &model.PushRequest{Full: true, Push: push}
 	} else {
 		// Check if we have a blocked push. If this was an ACK, we will send it.
 		// Either way we remove the blocked push as we will send a push.
+		// 检查是否我们有一个blocked push，如果这是一个ACK，我们会发送它，无论怎样我们会移除
+		// blocked push，因为我们将发送一个push
 		haveBlockedPush := false
 		con.proxy.Lock()
 		request, haveBlockedPush = con.blockedPushes[req.TypeUrl]
@@ -264,6 +271,8 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 	// configuration. This is an additional safety check inaddition to adding
 	// cachesSynced logic to readiness probe to handle cases where kube-proxy
 	// ip tables update latencies.
+	// 检查server是否准备好接收clients并且处理新的requests，当前ready意味着缓存已经被同步
+	// 并且可以正确地构建clusters
 	// See https://github.com/istio/istio/issues/25495.
 	if !s.IsServerReady() {
 		return status.Error(codes.Unavailable, "server is not ready to serve discovery information")
@@ -340,12 +349,16 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 
 // shouldRespond determines whether this request needs to be responded back. It applies the ack/nack rules as per xds protocol
 // using WatchedResource for previous state and discovery request for the current state.
+// shouldRespond决定这个request是否需要回复，它应用ack/nack规则，因为每个xds protocol对于之前的状态使用WatchedResource
+// 对于现在的状态使用discovery request
 func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.DiscoveryRequest) bool {
 	stype := v3.GetShortType(request.TypeUrl)
 
 	// If there is an error in request that means previous response is erroneous.
 	// We do not have to respond in that case. In this case request's version info
 	// will be different from the version sent. But it is fragile to rely on that.
+	// 如果request中有一个error，则意味着之前的response是错误的，这种情况下我们不需要回复
+	// 在这个情况下，request的version info会和发送的version info不同，但是依赖这个是很脆弱的
 	if request.ErrorDetail != nil {
 		errCode := codes.Code(request.ErrorDetail.Code)
 		log.Warnf("ADS:%s: ACK ERROR %s %s:%s", stype, con.ConID, errCode.String(), request.ErrorDetail.GetMessage())
@@ -355,12 +368,14 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 		}
 		con.proxy.Lock()
 		if w, f := con.proxy.WatchedResources[request.TypeUrl]; f {
+			// 设置NonceNacked
 			w.NonceNacked = request.ResponseNonce
 		}
 		con.proxy.Unlock()
 		return false
 	}
 
+	// 不再订阅相应的资源类型
 	if shouldUnsubscribe(request) {
 		log.Debugf("ADS:%s: UNSUBSCRIBE %s %s %s", stype, con.ConID, request.VersionInfo, request.ResponseNonce)
 		con.proxy.Lock()
@@ -380,15 +395,22 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	// because Istiod is restarted or Envoy disconnects and reconnects.
 	// We should always respond with the current resource names.
 	if request.ResponseNonce == "" || previousInfo == nil {
+		// 没有ResponseNonce并且也没有之前存储的信息，这会在两种情况下发生
+		// 1. Envoy第一次发送请求到Istiod
+		// 2. Envoy重新连接到Istiod，例如，Istiod没有关于这个typeUrl的信息，但是Envoy发送了response nonce
+		// 要么Istiod重启了或者Envoy断连并且重新连接了，我们总是应该用当前的resource names进行回复
 		log.Debugf("ADS:%s: INIT/RECONNECT %s %s %s", stype, con.ConID, request.VersionInfo, request.ResponseNonce)
 		con.proxy.Lock()
+		// 对WatchedResources进行配置
 		con.proxy.WatchedResources[request.TypeUrl] = &model.WatchedResource{TypeUrl: request.TypeUrl, ResourceNames: request.ResourceNames}
 		con.proxy.Unlock()
 		return true
 	}
 
 	// If there is mismatch in the nonce, that is a case of expired/stale nonce.
+	// 如果nonce有不匹配，则这是一个过期的nonce，
 	// A nonce becomes stale following a newer nonce being sent to Envoy.
+	// 一个nonce会变为过期，当有一个新的nonce被发送到Envoy的时候
 	if request.ResponseNonce != previousInfo.NonceSent {
 		log.Debugf("ADS:%s: REQ %s Expired nonce received %s, sent %s", stype,
 			con.ConID, request.ResponseNonce, previousInfo.NonceSent)
@@ -401,6 +423,8 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 
 	// If it comes here, that means nonce match. This an ACK. We should record
 	// the ack details and respond if there is a change in resource names.
+	// 如果到了这里，意味着nonce匹配，这是一个ACK，我们应该记录ack details并且进行response
+	// 如果resource names有发生变更
 	con.proxy.Lock()
 	previousResources := con.proxy.WatchedResources[request.TypeUrl].ResourceNames
 	con.proxy.WatchedResources[request.TypeUrl].NonceAcked = request.ResponseNonce
@@ -410,6 +434,8 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 
 	// Envoy can send two DiscoveryRequests with same version and nonce
 	// when it detects a new resource. We should respond if they change.
+	// Envoy可以发送两个有着同样version和nonce的DiscoveryRequests，当它检测到一个新的resource的时候
+	// 我们应该进行respond，如果它们发生了变更的话
 	if listEqualUnordered(previousResources, request.ResourceNames) {
 		log.Debugf("ADS:%s: ACK %s %s %s", stype, con.ConID, request.VersionInfo, request.ResponseNonce)
 		return false
@@ -470,6 +496,7 @@ func listEqualUnordered(a []string, b []string) bool {
 
 // update the node associated with the connection, after receiving a packet from envoy, also adds the connection
 // to the tracking map.
+// 更新和连接相关的node，在从envoy接收到一个packet之后，同时添加connection到tracking map
 func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection, identities []string) error {
 	// Setup the initial proxy metadata
 	proxy, err := s.initProxyMetadata(node)
@@ -501,6 +528,7 @@ func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection, ident
 	defer close(con.initialized)
 
 	// Complete full initialization of the proxy
+	// 完成proxy的完整初始化
 	if err := s.initializeProxy(node, con); err != nil {
 		s.closeConnection(con)
 		return err
@@ -551,6 +579,7 @@ func (s *DiscoveryServer) initProxyMetadata(node *core.Node) (*model.Proxy, erro
 
 // initializeProxy completes the initialization of a proxy. It is expected to be called only after
 // initProxyMetadata.
+// initializeProxy完成一个proxy的初始化，它期望在initProxyMetadata之后被调用
 func (s *DiscoveryServer) initializeProxy(node *core.Node, con *Connection) error {
 	proxy := con.proxy
 	// this should be done before we look for service instances, but after we load metadata
@@ -558,6 +587,7 @@ func (s *DiscoveryServer) initializeProxy(node *core.Node, con *Connection) erro
 	if err := s.WorkloadEntryController.RegisterWorkload(proxy, con.Connect); err != nil {
 		return err
 	}
+	// 计算proxy state
 	s.computeProxyState(proxy, nil)
 
 	// Get the locality from the proxy's service instances.
@@ -586,6 +616,7 @@ func (s *DiscoveryServer) initializeProxy(node *core.Node, con *Connection) erro
 
 	proxy.WatchedResources = map[string]*model.WatchedResource{}
 	// Based on node metadata and version, we can associate a different generator.
+	// 基于node metadata和version，我们可以关联一个不同的generator
 	if proxy.Metadata.Generator != "" {
 		proxy.XdsResourceGenerator = s.Generators[proxy.Metadata.Generator]
 	}
@@ -599,6 +630,8 @@ func (s *DiscoveryServer) updateProxy(proxy *model.Proxy, request *model.PushReq
 		// Get the locality from the proxy's service instances.
 		// We expect all instances to have the same locality.
 		// So its enough to look at the first instance.
+		// 从proxy的service instances中获取locality，我们期望所有的实例有着同样的locality
+		// 这样看第一个实例就足够了
 		if len(proxy.ServiceInstances) > 0 {
 			proxy.Locality = util.ConvertLocality(proxy.ServiceInstances[0].Endpoint.Locality.Label)
 			locality := proxy.ServiceInstances[0].Endpoint.Locality.Label
@@ -612,9 +645,12 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 	proxy.SetWorkloadLabels(s.Env)
 	proxy.SetServiceInstances(s.Env.ServiceDiscovery)
 	// Precompute the sidecar scope and merged gateways associated with this proxy.
+	// 提前计算和这个proxy相关的sidecar scope和merged gateways
 	// Saves compute cycles in networking code. Though this might be redundant sometimes, we still
 	// have to compute this because as part of a config change, a new Sidecar could become
 	// applicable to this proxy
+	// 在网络代码中节省compute cycles，尽管有时候比较冗余，我们还是要计算，因为作为配置变更的一部分，一个新的
+	// Sidecar可能会变得适用
 	var sidecar, gateway bool
 	push := s.globalPushContext()
 	if request == nil {
@@ -623,10 +659,12 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 	} else {
 		push = request.Push
 		if len(request.ConfigsUpdated) == 0 {
+			// 没有配置ConfigsUpdated，则需全量计算并且推送
 			sidecar = true
 			gateway = true
 		}
 		for conf := range request.ConfigsUpdated {
+			// 根据发生变化的资源对象的类型，决定是否需要对sidecar以及gateway进行计算
 			switch conf.Kind {
 			case gvk.ServiceEntry, gvk.DestinationRule, gvk.VirtualService, gvk.Sidecar, gvk.HTTPRoute, gvk.TCPRoute:
 				sidecar = true
@@ -642,10 +680,12 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 		}
 	}
 	// compute the sidecarscope for both proxy types whenever it changes.
+	// 为两种proxy类型计算sidecarscope，当变更发生的时候
 	if sidecar {
 		proxy.SetSidecarScope(push)
 	}
 	// only compute gateways for "router" type proxy.
+	// 只对"router"类型的proxy计算gateways
 	if gateway && proxy.Type == model.Router {
 		proxy.SetGatewaysForProxy(push)
 	}
@@ -679,11 +719,13 @@ func (s *DiscoveryServer) DeltaAggregatedResources(stream discovery.AggregatedDi
 }
 
 // Compute and send the new configuration for a connection.
+// 为一个连接计算并且发送新的配置
 func (s *DiscoveryServer) pushConnection(con *Connection, pushEv *Event) error {
 	pushRequest := pushEv.pushRequest
 
 	if pushRequest.Full {
 		// Update Proxy with current information.
+		// 如果是全量推送，用当前的信息更新Proxy
 		s.updateProxy(con.proxy, pushRequest)
 	}
 
@@ -697,16 +739,20 @@ func (s *DiscoveryServer) pushConnection(con *Connection, pushEv *Event) error {
 	}
 
 	// Send pushes to all generators
+	// 发送pushes到所有的generators
 	// Each Generator is responsible for determining if the push event requires a push
+	// 每个Generator负责决定是否push event需要一个push
 	for _, w := range orderWatchedResources(con.proxy.WatchedResources) {
 		if !features.EnableFlowControl {
 			// Always send the push if flow control disabled
+			// 如果流控被禁止的话，总是发送push
 			if err := s.pushXds(con, pushRequest.Push, w, pushRequest); err != nil {
 				return err
 			}
 			continue
 		}
 		// If flow control is enabled, we will only push if we got an ACK for the previous response
+		// 如果使能了flow control的话，我们只会push，如果我们从之前的response中获取一个ACK
 		synced, timeout := con.Synced(w.TypeUrl)
 		if !synced && timeout {
 			// We are not synced, but we have been stuck for too long. We will trigger the push anyways to
@@ -717,6 +763,7 @@ func (s *DiscoveryServer) pushConnection(con *Connection, pushEv *Event) error {
 		}
 		if synced || timeout {
 			// Send the push now
+			// 发送push
 			if err := s.pushXds(con, pushRequest.Push, w, pushRequest); err != nil {
 				return err
 			}
@@ -743,9 +790,11 @@ func (s *DiscoveryServer) pushConnection(con *Connection, pushEv *Event) error {
 
 // PushOrder defines the order that updates will be pushed in. Any types not listed here will be pushed in random
 // order after the types listed here
+// PushOrder定义了会被推送的updates，任何不在这里的类型，都会按照随机的顺序进行推送，在这里列举的类型之后
 var PushOrder = []string{v3.ClusterType, v3.EndpointType, v3.ListenerType, v3.RouteType, v3.SecretType}
 
 // KnownOrderedTypeUrls has typeUrls for which we know the order of push.
+// KnownOrderedTypeUrls是我们知道的typeUrls的推送顺序
 var KnownOrderedTypeUrls = map[string]struct{}{
 	v3.ClusterType:  {},
 	v3.EndpointType: {},
@@ -755,15 +804,18 @@ var KnownOrderedTypeUrls = map[string]struct{}{
 }
 
 // orderWatchedResources orders the resources in accordance with known push order.
+// orderWatchedResources按照已知的push order对resources进行排序
 func orderWatchedResources(resources map[string]*model.WatchedResource) []*model.WatchedResource {
 	wr := make([]*model.WatchedResource, 0, len(resources))
 	// first add all known types, in order
+	// 首先添加所有已知的类型，按顺序
 	for _, tp := range PushOrder {
 		if w, f := resources[tp]; f {
 			wr = append(wr, w)
 		}
 	}
 	// Then add any undeclared types
+	// 之后添加未声明的类型
 	for tp, w := range resources {
 		if _, f := KnownOrderedTypeUrls[tp]; !f {
 			wr = append(wr, w)
@@ -858,8 +910,10 @@ func (s *DiscoveryServer) AdsPushAll(version string, req *model.PushRequest) {
 }
 
 // Send a signal to all connections, with a push event.
+// 发送一个信号到所有的连接，伴随着一个push event
 func (s *DiscoveryServer) startPush(req *model.PushRequest) {
 	// Push config changes, iterating over connected envoys.
+	// Push config发生了变更，遍历所有连接的envoys
 	if log.DebugEnabled() {
 		currentlyPending := s.pushQueue.Pending()
 		if currentlyPending != 0 {
@@ -868,6 +922,7 @@ func (s *DiscoveryServer) startPush(req *model.PushRequest) {
 	}
 	req.Start = time.Now()
 	for _, p := range s.AllClients() {
+		// 遍历所有的连接并且将它们加入到pushQueue中
 		s.pushQueue.Enqueue(p, req)
 	}
 }
@@ -893,6 +948,7 @@ func (s *DiscoveryServer) removeCon(conID string) {
 }
 
 // Send with timeout if configured.
+// 发送伴随着超时，如果配置了的话
 func (conn *Connection) send(res *discovery.DiscoveryResponse) error {
 	sendHandler := func() error {
 		start := time.Now()
@@ -910,6 +966,7 @@ func (conn *Connection) send(res *discovery.DiscoveryResponse) error {
 			if conn.proxy.WatchedResources[res.TypeUrl] == nil {
 				conn.proxy.WatchedResources[res.TypeUrl] = &model.WatchedResource{TypeUrl: res.TypeUrl}
 			}
+			// 记录NonceSent和VersionSent
 			conn.proxy.WatchedResources[res.TypeUrl].NonceSent = res.Nonce
 			conn.proxy.WatchedResources[res.TypeUrl].VersionSent = res.VersionInfo
 			conn.proxy.WatchedResources[res.TypeUrl].LastSent = time.Now()

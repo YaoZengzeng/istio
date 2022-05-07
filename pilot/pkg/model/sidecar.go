@@ -61,11 +61,16 @@ var (
 // services. The list of services seen by every sidecar scope (namespace
 // wide or per workload) depends on the imports, the listeners, and other
 // settings.
+// SidecarScope是一个对于Sidecar资源的封装，有着一些预处理的数据用来决定一个给定的
+// sidecar能够访问的一系列services，virtualServices以及destinationRules
 //
 // Every proxy workload of SidecarProxy type will always map to a
 // SidecarScope object. If the proxy's namespace does not have a user
 // specified Sidecar CRD, we will construct one that has a catch all egress
 // listener that imports every public service/virtualService in the mesh.
+// 每个SidecarProxy类型的proxy都会映射到一个SidecarScope对象，如果proxy的namespace
+// 没有一个用户指定的Sidecar CRD，我们会构造一个用来捕获所有的egress listener
+// 包含了网格中所有的public service/virtualService
 type SidecarScope struct {
 	Name string
 	// This is the namespace where the sidecar takes effect,

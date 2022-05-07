@@ -73,6 +73,7 @@ type debounceOptions struct {
 }
 
 // DiscoveryServer is Pilot's gRPC implementation for Envoy's xds APIs
+// DiscoveryServer是Pilot的Envoy的xds APIs的gRPC实现
 type DiscoveryServer struct {
 	// Env is the model environment.
 	Env *model.Environment
@@ -93,6 +94,7 @@ type DiscoveryServer struct {
 
 	// ProxyNeedsPush is a function that determines whether a push can be completely skipped. Individual generators
 	// may also choose to not send any updates.
+	// ProxyNeedsPush是一个函数用来确定一个push是否能完全被跳过，单个的generators可能选择不发送任何的更新
 	ProxyNeedsPush func(proxy *model.Proxy, req *model.PushRequest) bool
 
 	// concurrentPushLimit is a semaphore that limits the amount of concurrent XDS pushes.
@@ -266,6 +268,7 @@ func (s *DiscoveryServer) IsServerReady() bool {
 
 func (s *DiscoveryServer) Start(stopCh <-chan struct{}) {
 	go s.WorkloadEntryController.Run(stopCh)
+	// 对更新进行处理
 	go s.handleUpdates(stopCh)
 	go s.periodicRefreshMetrics(stopCh)
 	go s.sendPushes(stopCh)
@@ -330,6 +333,7 @@ func (s *DiscoveryServer) dropCacheForRequest(req *model.PushRequest) {
 
 // Push is called to push changes on config updates using ADS. This is set in DiscoveryService.Push,
 // to avoid direct dependencies.
+// Push是在配置更新的时候，使用ADS推送更新，它设置在DiscoveryService.Push，来避免直接的依赖
 func (s *DiscoveryServer) Push(req *model.PushRequest) {
 	if !req.Full {
 		req.Push = s.globalPushContext()
@@ -349,6 +353,7 @@ func (s *DiscoveryServer) Push(req *model.PushRequest) {
 	t0 := time.Now()
 
 	versionLocal := time.Now().Format(time.RFC3339) + "/" + strconv.FormatUint(versionNum.Inc(), 10)
+	// 初始化push context
 	push, err := s.initPushContext(req, oldPushContext, versionLocal)
 	if err != nil {
 		return
@@ -394,9 +399,11 @@ func (s *DiscoveryServer) ConfigUpdate(req *model.PushRequest) {
 // Debouncing and push request happens in a separate thread, it uses locks
 // and we want to avoid complications, ConfigUpdate may already hold other locks.
 // handleUpdates processes events from pushChannel
+// handleUpdates处理来自pushChennel的事件
 // It ensures that at minimum minQuiet time has elapsed since the last event before processing it.
 // It also ensures that at most maxDelay is elapsed between receiving an event and processing it.
 func (s *DiscoveryServer) handleUpdates(stopCh <-chan struct{}) {
+	// 调用s.Push推送到所有的connections中
 	debounce(s.pushChannel, stopCh, s.debounceOptions, s.Push, s.CommittedUpdates)
 }
 
@@ -454,11 +461,13 @@ func debounce(ch chan *model.PushRequest, stopCh <-chan struct{}, opts debounceO
 			pushWorker()
 		case r := <-ch:
 			// If reason is not set, record it as an unknown reason
+			// 如果没有设置reason，则记录为unknown reason
 			if len(r.Reason) == 0 {
 				r.Reason = []model.TriggerReason{model.UnknownTrigger}
 			}
 			if !opts.enableEDSDebounce && !r.Full {
 				// trigger push now, just for EDS
+				// 现在触发推送，只针对EDS
 				go func(req *model.PushRequest) {
 					pushFn(req)
 					updateSent.Inc()
@@ -508,6 +517,7 @@ func doSendPushes(stopCh <-chan struct{}, semaphore chan struct{}, queue *PushQu
 			semaphore <- struct{}{}
 
 			// Get the next proxy to push. This will block if there are no updates required.
+			// 获取下一个推送的proxy，这里会阻塞，如果不需要updates
 			client, push, shuttingdown := queue.Dequeue()
 			if shuttingdown {
 				return
@@ -548,6 +558,7 @@ func doSendPushes(stopCh <-chan struct{}, semaphore chan struct{}, queue *PushQu
 // method is technically thread safe (there are no data races), it should not be called in parallel;
 // if it is, then we may start two push context creations (say A, and B), but then write them in
 // reverse order, leaving us with a final version of A, which may be incomplete.
+// initPushContext创建一个全局的push context并且将它存储在环境变量中
 func (s *DiscoveryServer) initPushContext(req *model.PushRequest, oldPushContext *model.PushContext, version string) (*model.PushContext, error) {
 	push := model.NewPushContext()
 	push.PushVersion = version
@@ -577,6 +588,7 @@ func (s *DiscoveryServer) sendPushes(stopCh <-chan struct{}) {
 }
 
 // InitGenerators initializes generators to be used by XdsServer.
+// InitGenerators初始化由XdsServer使用的generators
 func (s *DiscoveryServer) InitGenerators(env *model.Environment, systemNameSpace string) {
 	edsGen := &EdsGenerator{Server: s}
 	s.StatusGen = NewStatusGen(s)

@@ -71,6 +71,7 @@ func (s *DiscoveryServer) findGenerator(typeURL string, con *Connection) model.X
 
 	// XdsResourceGenerator is the default generator for this connection. We want to allow
 	// some types to use custom generators - for example EDS.
+	// XdsResourceGenerator是这个连接默认的generator，我们想要允许一些类型使用自定义的generators - 例如EDS
 	g := con.proxy.XdsResourceGenerator
 	if g == nil {
 		if strings.HasPrefix(typeURL, "istio.io/debug/") {
@@ -86,6 +87,8 @@ func (s *DiscoveryServer) findGenerator(typeURL string, con *Connection) model.X
 // Push an XDS resource for the given connection. Configuration will be generated
 // based on the passed in generator. Based on the updates field, generators may
 // choose to send partial or even no response if there are no changes.
+// 为给定连接推送一个XDS资源，配置会基于传入的generator生成，基于updates字段，generators
+// 可能会发送部分甚至no response，如果没有变更的话
 func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 	w *model.WatchedResource, req *model.PushRequest) error {
 	if w == nil {
@@ -98,6 +101,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 
 	t0 := time.Now()
 
+	// 调用generator申请resource
 	res, logdata, err := gen.Generate(con.proxy, push, w, req)
 	if err != nil || res == nil {
 		// If we have nothing to send, report that we got an ACK for this version.
@@ -112,6 +116,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 		ControlPlane: ControlPlane(),
 		TypeUrl:      w.TypeUrl,
 		// TODO: send different version for incremental eds
+		// 引用push中的PushVersion和LedgerVersion
 		VersionInfo: push.PushVersion,
 		Nonce:       nonce(push.LedgerVersion),
 		Resources:   model.ResourcesToAny(res),

@@ -27,6 +27,7 @@ import (
 type eventHandler func(name string, namespace string)
 
 // Multicluster structure holds the remote kube Controllers and multicluster specific attributes.
+// Multicluster结构维护了remote kube Controllers以及multicluster特定的特性
 type Multicluster struct {
 	remoteKubeControllers map[cluster.ID]*CredentialsController
 	m                     sync.Mutex // protects remoteKubeControllers

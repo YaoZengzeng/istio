@@ -169,10 +169,13 @@ func newGatewayIndex() gatewayIndex {
 }
 
 // PushContext tracks the status of a push - metrics and errors.
+// PushContext追踪一个push的状态 - metrics以及errors
 // Metrics are reset after a push - at the beginning all
+// Metrics在一次push之后被重置
 // values are zero, and when push completes the status is reset.
 // The struct is exposed in a debug endpoint - fields public to allow
 // easy serialization as json.
+// 这个结构以一个debug endpoint的形式暴露 - 字段为public以方便作为json进行序列化
 type PushContext struct {
 	proxyStatusMutex sync.RWMutex
 	// ProxyStatus is keyed by the error code, and holds a map keyed
@@ -229,9 +232,11 @@ type PushContext struct {
 	Mesh *meshconfig.MeshConfig `json:"-"`
 
 	// PushVersion describes the push version this push context was computed for
+	// PushVersion描述了这个push context计算的push version
 	PushVersion string
 
 	// LedgerVersion is the version of the configuration ledger
+	// LedgerVersion是这个configuration ledger的版本
 	LedgerVersion string
 
 	// JwtKeyResolver holds a reference to the JWT key resolver instance.
@@ -360,6 +365,8 @@ type PushRequest struct {
 
 	// Push stores the push context to use for the update. This may initially be nil, as we will
 	// debounce changes before a PushContext is eventually created.
+	// Push存储了用于update的push context，它可能初始的时候为nil，因为我们会对变更进行去抖，在一个PushContext
+	// 被最终创建之前
 	Push *PushContext
 
 	// Start represents the time a push was started. This represents the time of adding to the PushQueue.

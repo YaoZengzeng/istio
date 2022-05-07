@@ -261,15 +261,18 @@ type Proxy struct {
 	Metadata *NodeMetadata
 
 	// the sidecarScope associated with the proxy
+	// 和这个proxy相关的sidecarScope
 	SidecarScope *SidecarScope
 
 	// the sidecarScope associated with the proxy previously
 	PrevSidecarScope *SidecarScope
 
 	// The merged gateways associated with the proxy if this is a Router
+	// 和proxy相关的聚合的gateways，如果这是一个Router
 	MergedGateway *MergedGateway
 
 	// service instances associated with the proxy
+	// 和这个proxy相关的service instances
 	ServiceInstances []*ServiceInstance
 
 	// Istio version associated with the Proxy
@@ -295,9 +298,12 @@ type Proxy struct {
 	// If nil, the default networking/core v2 generator is used. This field can be set
 	// at connect time, based on node metadata, to trigger generation of a different style
 	// of configuration.
+	// XdsResourceGenerator用于为node生成resources，基于PushContext，如果为nil，则会使用默认的networking/core
+	// v2 generator，这个字段可以在连接的时候设置，基于node metadata，来触发不同风格的配置的生成
 	XdsResourceGenerator XdsResourceGenerator
 
 	// WatchedResources contains the list of watched resources for the proxy, keyed by the DiscoveryRequest TypeUrl.
+	// WatchedResources包含了一系列proxy监听的资源，由DiscoveryRequest TypeUrl作为key
 	WatchedResources map[string]*WatchedResource
 
 	// XdsNode is the xDS node identifier
@@ -307,6 +313,7 @@ type Proxy struct {
 }
 
 // WatchedResource tracks an active DiscoveryRequest subscription.
+// WatchedResource追踪一个活跃的DiscoveryRequest订阅
 type WatchedResource struct {
 	// TypeUrl is copied from the DiscoveryRequest.TypeUrl that initiated watching this resource.
 	// nolint
@@ -319,16 +326,22 @@ type WatchedResource struct {
 
 	// VersionSent is the version of the resource included in the last sent response.
 	// It corresponds to the [Cluster/Route/Listener]VersionSent in the XDS package.
+	// VersionSent是包含在上一个发送的response中的resource的version，它对应XDS包中的
+	// [Cluster/Route/Listener]VersionSent
 	VersionSent string
 
 	// NonceSent is the nonce sent in the last sent response. If it is equal with NonceAcked, the
 	// last message has been processed. If empty: we never sent a message of this type.
+	// NonceSent是在上一个发送的response中设置的nonce，如果它和NonceAcked相等，说明最后的message已经被处理了
+	// 如果为空：我们从没有发送过这个类型的message
 	NonceSent string
 
 	// NonceAcked is the last acked message.
+	// NonceAcked是上一个ack的message
 	NonceAcked string
 
 	// NonceNacked is the last nacked message. This is reset following a successful ACK
+	// NonceNacked是最后nacked的message，它会被后续一个成功的ACK给重置
 	NonceNacked string
 
 	// LastSent tracks the time of the generated push, to determine the time it takes the client to ack.
@@ -847,12 +860,15 @@ func (node *Proxy) SetServiceInstances(serviceDiscovery ServiceDiscovery) {
 }
 
 // SetWorkloadLabels will set the node.Metadata.Labels only when it is nil.
+// SetWorkloadLabels会设置node.Metadata.Labels，只有它为nil的时候
 func (node *Proxy) SetWorkloadLabels(env *Environment) {
 	// First get the workload labels from node meta
+	// 首先从node meta中找到workload labels
 	if len(node.Metadata.Labels) > 0 {
 		return
 	}
 	// Fallback to calling GetProxyWorkloadLabels
+	// 回退到调用GetProxyWorkloadLabels
 	l := env.GetProxyWorkloadLabels(node)
 	if len(l) > 0 {
 		node.Metadata.Labels = l[0]
