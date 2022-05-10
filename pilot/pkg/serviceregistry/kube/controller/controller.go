@@ -255,6 +255,7 @@ type Controller struct {
 
 	sync.RWMutex
 	// servicesMap stores hostname ==> service, it is used to reduce convertService calls.
+	// servicesMap存储了hostname到service的映射，它用于减少convertService的调用
 	servicesMap map[host.Name]*model.Service
 	// hostNamesForNamespacedName returns all possible hostnames for the given service name.
 	// If Kubernetes Multi-Cluster Services (MCS) is enabled, this will contain the regular
@@ -268,6 +269,9 @@ type Controller struct {
 	// If Kubernetes Multi-Cluster Services (MCS) is enabled, this will contain the regular
 	// service as well as the MCS service (clusterset.local), if available. Otherwise,
 	// only the regular service will be returned.
+	// servicesForNamespacedName为给定的service name返回所有的services
+	// 如果使能了Kubernetes Multi-Cluster Services，它会包含regular service以及MCS service（clusterset.local）
+	// 如果可用的话，否则，只返回regular service
 	servicesForNamespacedName func(name types.NamespacedName) []*model.Service
 	// nodeSelectorsForServices stores hostname => label selectors that can be used to
 	// refine the set of node port IPs for a service.
@@ -316,6 +320,7 @@ func NewController(kubeClient kubelib.Client, options Options) *Controller {
 		multinetwork: initMultinetwork(),
 	}
 
+	// 如果是能了MultiCluster
 	if features.EnableMCSHost {
 		c.hostNamesForNamespacedName = func(name types.NamespacedName) []host.Name {
 			return []host.Name{
@@ -1165,6 +1170,7 @@ func (c *Controller) WorkloadInstanceHandler(si *model.WorkloadInstance, event m
 
 	// this is from a workload entry. Store it in separate map so that
 	// the InstancesByPort can use these as well as the k8s pods.
+	// 这来自一个workload entry，将它存储到单独的map，这样InstanceByPort可以使用它以及k8s pods
 	c.Lock()
 	switch event {
 	case model.EventDelete:
@@ -1359,6 +1365,7 @@ func (c *Controller) getProxyServiceInstancesByPod(pod *v1.Pod,
 				continue
 			}
 			// find target port
+			// 找到target port
 			portNum, err := FindPort(pod, &port)
 			if err != nil {
 				log.Warnf("Failed to find port for service %s/%s: %v", service.Namespace, service.Name, err)
@@ -1367,6 +1374,8 @@ func (c *Controller) getProxyServiceInstancesByPod(pod *v1.Pod,
 			// Dedupe the target ports here - Service might have configured multiple ports to the same target port,
 			// we will have to create only one ingress listener per port and protocol so that we do not endup
 			// complaining about listener conflicts.
+			// 在这里对target ports进行去重 - Service可能已经配置了多个ports指向同一个target port
+			// 我们需要只为每个port以及protocol创建一个ingress listener，这样我们不会抱怨listener conflicts
 			targetPort := model.Port{
 				Port:     portNum,
 				Protocol: svcPort.Protocol,
@@ -1380,9 +1389,12 @@ func (c *Controller) getProxyServiceInstancesByPod(pod *v1.Pod,
 		builder := NewEndpointBuilder(c, pod)
 		// Iterate over target ports in the same order as defined in service spec, in case of
 		// protocol conflict for a port causes unstable protocol selection for a port.
+		// 按照在service中定义的顺序遍历target ports，万一对于一个port的protocol confflict导致对于
+		// 这个端口不稳定的协议选择 
 		for _, tp := range tpsList {
 			svcPort := tps[tp]
 			// consider multiple IP scenarios
+			// 考虑多ip的场景
 			for _, ip := range proxy.IPAddresses {
 				istioEndpoint := builder.buildIstioEndpoint(ip, int32(tp.Port), svcPort.Name, discoverabilityPolicy)
 				out = append(out, &model.ServiceInstance{

@@ -50,9 +50,11 @@ func cdsNeedsPush(req *model.PushRequest, proxy *model.Proxy) bool {
 	}
 	if !req.Full {
 		// CDS only handles full push
+		// CDS只处理full push
 		return false
 	}
 	// If none set, we will always push
+	// 如果没有设置ConfigsUpdated，则总是push
 	if len(req.ConfigsUpdated) == 0 {
 		return true
 	}
@@ -75,6 +77,7 @@ func (c CdsGenerator) Generate(proxy *model.Proxy, push *model.PushContext, w *m
 	if !cdsNeedsPush(updates, proxy) {
 		return nil, model.DefaultXdsLogDetails, nil
 	}
+	// 构建clusters
 	clusters, logs := c.Server.ConfigGenerator.BuildClusters(proxy, updates)
 	return clusters, logs, nil
 }

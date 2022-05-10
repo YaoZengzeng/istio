@@ -66,6 +66,8 @@ const (
 
 	// DefaultClusterSetLocalDomain is the default domain suffix for Kubernetes Multi-Cluster Services (MCS)
 	// used for load balancing requests against endpoints across the ClusterSet (i.e. mesh).
+	// DefaultClusterSetLocalDomain是默认的domain suffix，对于Kubernetes Multi-Cluster Services（MCS）
+	// 用于跨Cluster进行负载均衡
 	DefaultClusterSetLocalDomain = "clusterset.local"
 
 	// IstioLabel indicates that a workload is part of a named Istio system component.

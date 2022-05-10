@@ -34,6 +34,7 @@ type ConfigGenerator interface {
 	BuildListeners(node *model.Proxy, push *model.PushContext) []*listener.Listener
 
 	// BuildClusters returns the list of clusters for the given proxy. This is the CDS output
+	// BuildClusters为给定的proxy返回一系列的clusters，这是CDS的output
 	BuildClusters(node *model.Proxy, req *model.PushRequest) ([]*discovery.Resource, model.XdsLogDetails)
 
 	// BuildDeltaClusters returns both a list of resources that need to be pushed for a given proxy and a list of resources

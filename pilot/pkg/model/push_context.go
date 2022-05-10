@@ -52,6 +52,7 @@ type Metrics interface {
 var _ Metrics = &PushContext{}
 
 // serviceIndex is an index of all services by various fields for easy access during push.
+// serviceIndex是以各种字段为索引的所有services，用于在push的时候方便访问
 type serviceIndex struct {
 	// privateByNamespace are services that can reachable within the same namespace, with exportTo "."
 	privateByNamespace map[string][]*Service
@@ -67,6 +68,8 @@ type serviceIndex struct {
 	// instancesByPort contains a map of service key and instances by port. It is stored here
 	// to avoid recomputations during push. This caches instanceByPort calls with empty labels.
 	// Call InstancesByPort directly when instances need to be filtered by actual labels.
+	// instancesByPort包含了以service作为key以及通过port获取ServiceInstance，存储它是为了在push的时候
+	// 重新计算
 	instancesByPort map[string]map[int][]*ServiceInstance
 }
 
@@ -785,9 +788,12 @@ func (ps *PushContext) GatewayServices(proxy *Proxy) []*Service {
 }
 
 // Services returns the list of services that are visible to a Proxy in a given config namespace
+// Services返回一系列对于一个给定的namespace内对一个Proxy可见的services
 func (ps *PushContext) Services(proxy *Proxy) []*Service {
 	// If proxy has a sidecar scope that is user supplied, then get the services from the sidecar scope
 	// sidecarScope.config is nil if there is no sidecar scope for the namespace
+	// 如果proxy有一个用户提供的sidecar scope，那么从sidecar scope中获取services，sidecarScope.config为nil
+	// 如果这个namespace没有sidecar scope
 	if proxy != nil && proxy.SidecarScope != nil && proxy.Type == SidecarProxy {
 		return proxy.SidecarScope.services
 	}
@@ -795,6 +801,7 @@ func (ps *PushContext) Services(proxy *Proxy) []*Service {
 	out := make([]*Service, 0)
 
 	// First add private services and explicitly exportedTo services
+	// 首先添加private services以及显示的exportedTo services
 	if proxy == nil {
 		for _, privateServices := range ps.ServiceIndex.privateByNamespace {
 			out = append(out, privateServices...)
@@ -805,6 +812,7 @@ func (ps *PushContext) Services(proxy *Proxy) []*Service {
 	}
 
 	// Second add public services
+	// 之后，添加public services
 	out = append(out, ps.ServiceIndex.public...)
 
 	return out
@@ -1086,6 +1094,8 @@ func (ps *PushContext) IsClusterLocal(service *Service) bool {
 // InitContext will initialize the data structures used for code generation.
 // This should be called before starting the push, from the thread creating
 // the push context.
+// InitContext会初始化数据结构用于code generation，它应该在开始push之前被调用
+// 从创建push context的线程中
 func (ps *PushContext) InitContext(env *Environment, oldPushContext *PushContext, pushReq *PushRequest) error {
 	// Acquire a lock to ensure we don't concurrently initialize the same PushContext.
 	// If this does happen, one thread will block then exit early from InitDone=true
@@ -1104,6 +1114,7 @@ func (ps *PushContext) InitContext(env *Environment, oldPushContext *PushContext
 	ps.initDefaultExportMaps()
 
 	// create new or incremental update
+	// 创建新的或者incremental的更新
 	if pushReq == nil || oldPushContext == nil || !oldPushContext.InitDone.Load() || len(pushReq.ConfigsUpdated) == 0 {
 		if err := ps.createNewContext(env); err != nil {
 			return err
@@ -1123,6 +1134,7 @@ func (ps *PushContext) InitContext(env *Environment, oldPushContext *PushContext
 }
 
 func (ps *PushContext) createNewContext(env *Environment) error {
+	// 初始化service registry
 	if err := ps.initServiceRegistry(env); err != nil {
 		return err
 	}
@@ -1186,6 +1198,7 @@ func (ps *PushContext) updateContext(
 	for conf := range pushReq.ConfigsUpdated {
 		switch conf.Kind {
 		case gvk.ServiceEntry:
+			// service是否发生了变更
 			servicesChanged = true
 		case gvk.DestinationRule:
 			destinationRulesChanged = true
@@ -1322,12 +1335,14 @@ func (ps *PushContext) updateContext(
 
 // Caches list of services in the registry, and creates a map
 // of hostname to service
+// 缓存registry中的一系列services，并且创建一个hostname到map的缓存
 func (ps *PushContext) initServiceRegistry(env *Environment) error {
 	services, err := env.Services()
 	if err != nil {
 		return err
 	}
 	// Sort the services in order of creation.
+	// 按照创建的时间对services进行排序
 	allServices := SortServicesByCreationTime(services)
 	for _, s := range allServices {
 		svcKey := s.Key()
@@ -1877,6 +1892,7 @@ func (ps *PushContext) initEnvoyFilters(env *Environment) error {
 }
 
 // EnvoyFilters return the merged EnvoyFilterWrapper of a proxy
+// EnvoyFilters返回一个proxy的merged EnvoyFilterWrapper
 func (ps *PushContext) EnvoyFilters(proxy *Proxy) *EnvoyFilterWrapper {
 	// this should never happen
 	if proxy == nil {

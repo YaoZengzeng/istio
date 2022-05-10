@@ -76,15 +76,19 @@ func getDefaultCircuitBreakerThresholds() *cluster.CircuitBreakers_Thresholds {
 // BuildClusters returns the list of clusters for the given proxy. This is the CDS output
 // For outbound: Cluster for each service/subset hostname or cidr with SNI set to service hostname
 // Cluster type based on resolution
+// 对于outbound：Cluster对于每个service/subset hostname或者有着SNI的cidr设置到service hostname
 // For inbound (sidecar only): Cluster for each inbound endpoint port and for each service port
+// 对于inbound（只适用于sidecar）：对于每个inbound endpoint port以及对于每个service port的Cluster
 func (configgen *ConfigGeneratorImpl) BuildClusters(proxy *model.Proxy, req *model.PushRequest) ([]*discovery.Resource, model.XdsLogDetails) {
 	// In Sotw, we care about all services.
+	// 对于Sotw，我们关心所有的services
 	var services []*model.Service
 	if features.FilterGatewayClusterConfig && proxy.Type == model.Router {
 		services = req.Push.GatewayServices(proxy)
 	} else {
 		services = req.Push.Services(proxy)
 	}
+	// 基于services构建cluster
 	return configgen.buildClusters(proxy, req, services)
 }
 
@@ -134,6 +138,7 @@ func isClusterForServiceRemoved(cluster string, hostName string, svc *model.Serv
 }
 
 // buildClusters builds clusters for the proxy with the services passed.
+// buildClusters用传入的services为proxy构建clusters
 func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *model.PushRequest,
 	services []*model.Service) ([]*discovery.Resource, model.XdsLogDetails) {
 	clusters := make([]*cluster.Cluster, 0)
@@ -145,18 +150,22 @@ func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *mod
 	switch proxy.Type {
 	case model.SidecarProxy:
 		// Setup outbound clusters
+		// 设置outbound clusters
 		outboundPatcher := clusterPatcher{efw: envoyFilterPatches, pctx: networking.EnvoyFilter_SIDECAR_OUTBOUND}
 		ob, cs := configgen.buildOutboundClusters(cb, proxy, outboundPatcher, services)
 		cacheStats = cacheStats.merge(cs)
 		resources = append(resources, ob...)
 		// Add a blackhole and passthrough cluster for catching traffic to unresolved routes
+		// 添加一个blackhole以及passthrough cluster用于对unresolved routes的追踪
 		clusters = outboundPatcher.conditionallyAppend(clusters, nil, cb.buildBlackHoleCluster(), cb.buildDefaultPassthroughCluster())
 		clusters = append(clusters, outboundPatcher.insertedClusters()...)
 
 		// Setup inbound clusters
+		// 设置inbound clusters
 		inboundPatcher := clusterPatcher{efw: envoyFilterPatches, pctx: networking.EnvoyFilter_SIDECAR_INBOUND}
 		clusters = append(clusters, configgen.buildInboundClusters(cb, proxy, instances, inboundPatcher)...)
 		// Pass through clusters for inbound traffic. These cluster bind loopback-ish src address to access node local service.
+		// 对于inbound流量的pass through clusters，这些cluster绑定loopback-ish源地址来访问node local service
 		clusters = inboundPatcher.conditionallyAppend(clusters, nil, cb.buildInboundPassthroughClusters()...)
 		clusters = append(clusters, inboundPatcher.insertedClusters()...)
 	default: // Gateways
@@ -165,6 +174,7 @@ func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *mod
 		cacheStats = cacheStats.merge(cs)
 		resources = append(resources, ob...)
 		// Gateways do not require the default passthrough cluster as they do not have original dst listeners.
+		// Gateways不需要默认的passthrough cluster，因为我们没有original dst listeners
 		clusters = patcher.conditionallyAppend(clusters, nil, cb.buildBlackHoleCluster())
 		if proxy.Type == model.Router && proxy.MergedGateway != nil && proxy.MergedGateway.ContainsAutoPassthroughGateways {
 			clusters = append(clusters, configgen.buildOutboundSniDnatClusters(proxy, req, patcher)...)
@@ -234,6 +244,7 @@ func buildClusterKey(service *model.Service, port *model.Port, cb *ClusterBuilde
 }
 
 // buildOutboundClusters generates all outbound (including subsets) clusters for a given proxy.
+// buildOutboundClusters为一个给定的proxy生成所有outbound（包括subsets） clsuters
 func (configgen *ConfigGeneratorImpl) buildOutboundClusters(cb *ClusterBuilder, proxy *model.Proxy, cp clusterPatcher,
 	services []*model.Service) ([]*discovery.Resource, cacheStats) {
 	resources := make([]*discovery.Resource, 0)
@@ -242,8 +253,10 @@ func (configgen *ConfigGeneratorImpl) buildOutboundClusters(cb *ClusterBuilder, 
 	for _, service := range services {
 		for _, port := range service.Ports {
 			if port.Protocol == protocol.UDP {
+				// 对端口协议为UDP的，不作处理
 				continue
 			}
+			// 构建cluster key
 			clusterKey := buildClusterKey(service, port, cb, proxy, efKeys)
 			cached, allFound := cb.getAllCachedSubsetClusters(*clusterKey)
 			if allFound && !features.EnableUnsafeAssertions {
@@ -255,9 +268,11 @@ func (configgen *ConfigGeneratorImpl) buildOutboundClusters(cb *ClusterBuilder, 
 			}
 
 			// We have a cache miss, so we will re-generate the cluster and later store it in the cache.
+			// 我们有一个cache miss，这样我们需要重新生成cluster并且只有再存储到cache中
 			lbEndpoints := cb.buildLocalityLbEndpoints(clusterKey.networkView, service, port.Port, nil)
 
 			// create default cluster
+			// 创建默认的cluster
 			discoveryType := convertResolution(cb.proxyType, service)
 			defaultCluster := cb.buildDefaultCluster(clusterKey.clusterName, discoveryType, lbEndpoints, model.TrafficDirectionOutbound, port, service, nil)
 			if defaultCluster == nil {
@@ -269,6 +284,7 @@ func (configgen *ConfigGeneratorImpl) buildOutboundClusters(cb *ClusterBuilder, 
 					string(service.Hostname), "", port, &service.Attributes)
 			}
 
+			// 构建subset clusters
 			subsetClusters := cb.applyDestinationRule(defaultCluster, DefaultClusterMode, service, port,
 				clusterKey.networkView, clusterKey.destinationRule, clusterKey.serviceAccounts)
 
@@ -399,8 +415,12 @@ func (configgen *ConfigGeneratorImpl) buildInboundClusters(cb *ClusterBuilder, p
 	// The inbound clusters for a node depends on whether the node has a SidecarScope with inbound listeners
 	// or not. If the node has a sidecarscope with ingress listeners, we only return clusters corresponding
 	// to those listeners i.e. clusters made out of the defaultEndpoint field.
+	// 对于一个node的inbound clusters，取决于node是否有一个有着inbound listeners的SidecarScope，如果node有一个
+	// 有着ingress listeners的sidecarscope，我们只会返回和这些listeners相关的clusters
 	// If the node has no sidecarScope and has interception mode set to NONE, then we should skip the inbound
 	// clusters, because there would be no corresponding inbound listeners
+	// 如果node没有sidecarScope并且interception模式设置为NONE，那么我们应该跳过inbound clusters，因为他们没有对应的
+	// inbound listeners
 	sidecarScope := proxy.SidecarScope
 	noneMode := proxy.GetInterceptionMode() == model.InterceptionNone
 
@@ -418,9 +438,12 @@ func (configgen *ConfigGeneratorImpl) buildInboundClusters(cb *ClusterBuilder, p
 		clustersToBuild := make(map[int][]*model.ServiceInstance)
 		for _, instance := range instances {
 			// For service instances with the same port,
+			// 对于有着同样的端口的service instances
 			// we still need to capture all the instances on this port, as its required to populate telemetry metadata
 			// The first instance will be used as the "primary" instance; this means if we have an conflicts between
 			// Services the first one wins
+			// 我们还是需要获取这个端口的所有instances，因为需要填充telemery metadata，第一个instance会被作为"primary" instance
+			// 这意味着如果我们在service之间有冲突，第一个赢
 			ep := int(instance.Endpoint.EndpointPort)
 			clustersToBuild[ep] = append(clustersToBuild[ep], instance)
 		}
@@ -430,10 +453,13 @@ func (configgen *ConfigGeneratorImpl) buildInboundClusters(cb *ClusterBuilder, p
 			bind = ""
 		}
 		// For each workload port, we will construct a cluster
+		// 对于每个workload port，我们会构造一个cluster
 		for epPort, instances := range clustersToBuild {
 			// The inbound cluster port equals to endpoint port.
+			// inbound cluster端口等于endpoint port
 			localCluster := cb.buildInboundClusterForPortOrUDS(epPort, bind, proxy, instances[0], instances)
 			// If inbound cluster match has service, we should see if it matches with any host name across all instances.
+			// 如果inboud cluster match有service，我们应该看他是否跨所有的instances匹配任何的host name
 			hosts := make([]host.Name, 0, len(instances))
 			for _, si := range instances {
 				hosts = append(hosts, si.Service.Hostname)
@@ -567,6 +593,7 @@ type ClusterMode string
 
 const (
 	// SniDnatClusterMode indicates cluster is being built for SNI dnat mode
+	// SniDnatClusterMode表明cluster用于构建SNI dnat模式
 	SniDnatClusterMode ClusterMode = "sni-dnat"
 	// DefaultClusterMode indicates usual cluster with mTLS et al
 	DefaultClusterMode ClusterMode = "outbound"

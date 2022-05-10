@@ -27,6 +27,7 @@ import (
 
 // Support generation of 'ApiListener' LDS responses, used for native support of gRPC.
 // The same response can also be used by other apps using XDS directly.
+// 支持LDS responses的'ApiListener'的生成，用于对gRPC的原生支持
 
 // GRPC proposal:
 // https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md
@@ -41,6 +42,7 @@ import (
 // using the generic structures. "Classical" CDS/LDS/RDS/EDS use separate logic -
 // this is used for the API-based LDS and generic messages.
 
+// 主要用于对proxyless的支持
 var log = istiolog.RegisterScope("grpcgen", "xDS Generator for Proxyless gRPC", 0)
 
 type GrpcConfigGenerator struct{}

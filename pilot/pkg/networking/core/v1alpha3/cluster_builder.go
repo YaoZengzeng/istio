@@ -83,9 +83,11 @@ var passthroughHttpProtocolOptions = util.MessageToAny(&http.HttpProtocolOptions
 })
 
 // MutableCluster wraps Cluster object along with options.
+// MutableCluster用options封装Cluster对象
 type MutableCluster struct {
 	cluster *cluster.Cluster
 	// httpProtocolOptions stores the HttpProtocolOptions which will be marshaled when build is called.
+	// httpProtocolOptions存储了HttpProtocolOptions对象，它会被序列化，当build被调用的时候
 	httpProtocolOptions *http.HttpProtocolOptions
 }
 
@@ -100,6 +102,7 @@ type metadataCerts struct {
 }
 
 // ClusterBuilder interface provides an abstraction for building Envoy Clusters.
+// ClusterBuilder接口提供了抽象用于构建Envoy Clusters
 type ClusterBuilder struct {
 	// Proxy related information used to build clusters.
 	serviceInstances  []*model.ServiceInstance // Service instances of Proxy.
@@ -235,6 +238,7 @@ func (cb *ClusterBuilder) buildSubsetCluster(opts buildClusterOpts, destRule *co
 
 // applyDestinationRule applies the destination rule if it exists for the Service. It returns the subset clusters if any created as it
 // applies the destination rule.
+// applyDestinationRule应用destination rule，如果它对Service存在，它返回subset clusters，如果通过应用destination rule创建了的话
 func (cb *ClusterBuilder) applyDestinationRule(mc *MutableCluster, clusterMode ClusterMode, service *model.Service,
 	port *model.Port, proxyNetworkView map[network.ID]bool, destRule *config.Config, serviceAccounts []string) []*cluster.Cluster {
 	destinationRule := CastDestinationRule(destRule)
@@ -339,6 +343,7 @@ func MergeTrafficPolicy(original, subsetPolicy *networking.TrafficPolicy, port *
 }
 
 // buildDefaultCluster builds the default cluster and also applies default traffic policy.
+// buildDefaultCluster构建默认的cluster同时应用默认的traffic policy
 func (cb *ClusterBuilder) buildDefaultCluster(name string, discoveryType cluster.Cluster_DiscoveryType,
 	localityLbEndpoints []*endpoint.LocalityLbEndpoints, direction model.TrafficDirection,
 	port *model.Port, service *model.Service, allInstances []*model.ServiceInstance) *MutableCluster {
@@ -375,6 +380,8 @@ func (cb *ClusterBuilder) buildDefaultCluster(name string, discoveryType cluster
 
 	// For inbound clusters, the default traffic policy is used. For outbound clusters, the default traffic policy
 	// will be applied, which would be overridden by traffic policy specified in destination rule, if any.
+	// 对于inbound clusters，默认的traffic policy会被使用，对于outbound clusters，默认的traffic policy会被应用
+	// 不过他会被在destination rule中指定的traffic policy覆盖，如果有的话
 	opts := buildClusterOpts{
 		mesh:             cb.req.Push.Mesh,
 		mutable:          ec,
@@ -491,6 +498,8 @@ func (t clusterCache) Cacheable() bool {
 // requires a single protocol per port, and the DestinationRule issue is slated to move to Sidecar.
 // Note: clusterPort and instance.Endpoint.EndpointPort are identical for standard Services; however,
 // Sidecar.Ingress allows these to be different.
+// buildInboundClusterForPortOrUDS构建单个的inbound listener，这个cluster会被绑定到`inbound|clusterPort||`
+// 并且发送流量到<bind>:<instance.Endpoint.EndpointPort>，一个workload对于每个port会有一个inbound cluster
 func (cb *ClusterBuilder) buildInboundClusterForPortOrUDS(clusterPort int, bind string,
 	proxy *model.Proxy, instance *model.ServiceInstance, allInstance []*model.ServiceInstance) *MutableCluster {
 	clusterName := model.BuildInboundSubsetKey(clusterPort)
@@ -527,6 +536,8 @@ func (cb *ClusterBuilder) buildInboundClusterForPortOrUDS(clusterPort int, bind 
 	// When users specify circuit breakers, they need to be set on the receiver end
 	// (server side) as well as client side, so that the server has enough capacity
 	// (not the defaults) to handle the increased traffic volume
+	// 当用户指定circuit breakers，他们需要在receiver端和client端设置，这样server有足够的capacity
+	// 来处理增加的traffic流量
 	// TODO: This is not foolproof - if instance is part of multiple services listening on same port,
 	// choice of inbound cluster is arbitrary. So the connection pool settings may not apply cleanly.
 	cfg := cb.req.Push.DestinationRule(proxy, instance.Service)
@@ -537,6 +548,7 @@ func (cb *ClusterBuilder) buildInboundClusterForPortOrUDS(clusterPort int, bind 
 			util.AddConfigInfoMetadata(localCluster.cluster.Metadata, cfg.Meta)
 		}
 	}
+	// 应用traffic policy
 	cb.applyTrafficPolicy(opts)
 
 	if bind != LocalhostAddress && bind != LocalhostIPv6Address {
@@ -775,11 +787,13 @@ func (cb *ClusterBuilder) setH2Options(mc *MutableCluster) {
 func (cb *ClusterBuilder) applyTrafficPolicy(opts buildClusterOpts) {
 	connectionPool, outlierDetection, loadBalancer, tls := selectTrafficPolicyComponents(opts.policy)
 	// Connection pool settings are applicable for both inbound and outbound clusters.
+	// 连接池配置同时适配于inbound和outbound clusters
 	if connectionPool == nil {
 		connectionPool = &networking.ConnectionPoolSettings{}
 	}
 	cb.applyConnectionPool(opts.mesh, opts.mutable, connectionPool)
 	if opts.direction != model.TrafficDirectionInbound {
+		// 应用h2 upgrade
 		cb.applyH2Upgrade(opts, connectionPool)
 		applyOutlierDetection(opts.mutable.cluster, outlierDetection)
 		applyLoadBalancer(opts.mutable.cluster, loadBalancer, opts.port, cb.locality, cb.proxyLabels, opts.mesh)
@@ -787,6 +801,7 @@ func (cb *ClusterBuilder) applyTrafficPolicy(opts buildClusterOpts) {
 			autoMTLSEnabled := opts.mesh.GetEnableAutoMtls().Value
 			tls, mtlsCtxType := cb.buildAutoMtlsSettings(tls, opts.serviceAccounts, opts.istioMtlsSni,
 				autoMTLSEnabled, opts.meshExternal, opts.serviceMTLSMode)
+			// 构建upstream tls settings
 			cb.applyUpstreamTLSSettings(&opts, tls, mtlsCtxType)
 		}
 	}

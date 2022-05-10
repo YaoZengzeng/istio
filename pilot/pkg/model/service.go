@@ -568,6 +568,7 @@ type ServiceDiscovery interface {
 	NetworkGatewaysWatcher
 
 	// Services list declarations of all services in the system
+	// Services列举了系统中所有services的声明
 	Services() ([]*Service, error)
 
 	// GetService retrieves a service by host name if it exists

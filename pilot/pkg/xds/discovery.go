@@ -118,7 +118,9 @@ type DiscoveryServer struct {
 	EndpointShardsByService map[string]map[string]*EndpointShards
 
 	// pushChannel is the buffer used for debouncing.
+	// pushChannel是用来去抖的缓存
 	// after debouncing the pushRequest will be sent to pushQueue
+	// 在去抖之后，pushRequest会被发送给pushQueue
 	pushChannel chan *model.PushRequest
 
 	// mutex used for protecting Environment.PushContext
@@ -342,6 +344,7 @@ func (s *DiscoveryServer) Push(req *model.PushRequest) {
 		return
 	}
 	// Reset the status during the push.
+	// 在push的时候重置status
 	oldPushContext := s.globalPushContext()
 	if oldPushContext != nil {
 		oldPushContext.OnConfigChange()
@@ -381,6 +384,7 @@ func versionInfo() string {
 }
 
 // Returns the global push context.
+// 返回全局的push context
 func (s *DiscoveryServer) globalPushContext() *model.PushContext {
 	s.updateMutex.RLock()
 	defer s.updateMutex.RUnlock()
@@ -560,6 +564,7 @@ func doSendPushes(stopCh <-chan struct{}, semaphore chan struct{}, queue *PushQu
 // reverse order, leaving us with a final version of A, which may be incomplete.
 // initPushContext创建一个全局的push context并且将它存储在环境变量中
 func (s *DiscoveryServer) initPushContext(req *model.PushRequest, oldPushContext *model.PushContext, version string) (*model.PushContext, error) {
+	// 构建一个新的push context
 	push := model.NewPushContext()
 	push.PushVersion = version
 	push.JwtKeyResolver = s.JwtKeyResolver
@@ -570,6 +575,7 @@ func (s *DiscoveryServer) initPushContext(req *model.PushRequest, oldPushContext
 		return nil, err
 	}
 
+	// 更新service shards
 	if err := s.UpdateServiceShards(push); err != nil {
 		return nil, err
 	}

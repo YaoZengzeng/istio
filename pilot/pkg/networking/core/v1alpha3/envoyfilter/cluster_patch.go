@@ -30,6 +30,7 @@ import (
 )
 
 // ApplyClusterMerge processes the MERGE operation and merges the supplied configuration to the matched clusters.
+// ApplyClusterMerge处理MERGE操作并且合并提供的配置到匹配的clusters
 func ApplyClusterMerge(pctx networking.EnvoyFilter_PatchContext, efw *model.EnvoyFilterWrapper,
 	c *cluster.Cluster, hosts []host.Name) (out *cluster.Cluster) {
 	defer runtime.HandleCrash(runtime.LogPanic, func(interface{}) {
@@ -122,6 +123,7 @@ func mergeTransportSocketCluster(c *cluster.Cluster, cp *model.EnvoyFilterConfig
 }
 
 // ShouldKeepCluster checks if there is a REMOVE patch on the cluster, returns false if there is on so that it is removed.
+// ShouldKeepCluster检查对于cluster是否有一个REMOVE的patch，返回false，如果有的话，这样我们可以将它移除
 func ShouldKeepCluster(pctx networking.EnvoyFilter_PatchContext, efw *model.EnvoyFilterWrapper, c *cluster.Cluster, hosts []host.Name) bool {
 	if efw == nil {
 		return true

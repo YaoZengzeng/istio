@@ -53,6 +53,7 @@ import (
 var _ mesh.Holder = &Environment{}
 
 // Environment provides an aggregate environmental API for Pilot
+// Environment为Pilot提供了一个集成的environmental API
 type Environment struct {
 	// Discovery interface for listing services and instances.
 	ServiceDiscovery
