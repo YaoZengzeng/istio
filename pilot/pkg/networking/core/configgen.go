@@ -31,6 +31,8 @@ type ConfigGenerator interface {
 	// BuildListeners returns the list of inbound/outbound listeners for the given proxy. This is the LDS output
 	// Internally, the computation will be optimized to ensure that listeners are computed only
 	// once and shared across multiple invocations of this function.
+	// BuildListeners为给定的proxy返回一系列的inbound/outbound listeners，这是LDS的输出
+	// 内部实现来说，计算会被优化为确保listeners只会计算一次，并且在这个函数的多次调用间共享
 	BuildListeners(node *model.Proxy, push *model.PushContext) []*listener.Listener
 
 	// BuildClusters returns the list of clusters for the given proxy. This is the CDS output

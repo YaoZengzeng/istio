@@ -432,6 +432,7 @@ type IstioEndpoint struct {
 
 	// EndpointPort is the port where the workload is listening, can be different
 	// from the service port.
+	// EndpointPort是workload监听的端口，可以和service port不同
 	EndpointPort uint32
 
 	// The load balancing weight associated with this endpoint.
@@ -682,6 +683,7 @@ func BuildSubsetKey(direction TrafficDirection, subsetName string, hostname host
 }
 
 // BuildInboundSubsetKey generates a unique string referencing service instances with port.
+// BuildInboundSubsetKey生成一个唯一的字符串，引用有着端口的service instances
 func BuildInboundSubsetKey(port int) string {
 	return BuildSubsetKey(TrafficDirectionInbound, "", "", port)
 }

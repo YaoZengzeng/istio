@@ -50,9 +50,13 @@ var dummyServiceInstance = &model.ServiceInstance{
 }
 
 // A stateful listener builder
+// 一个有状态的listener builder
 // Support the below intentions
+// 支持如下操作
 // 1. Use separate inbound capture listener(:15006) and outbound capture listener(:15001)
+// 1. 使用独立的inbound capture listener（:15006）以及outbound capture listener（:15001）
 // 2. The above listeners use bind_to_port sub listeners or filter chains.
+// 2. 上面的listeners使用bind_to_port sub listeners或者filter chains
 type ListenerBuilder struct {
 	node              *model.Proxy
 	push              *model.PushContext
@@ -113,8 +117,10 @@ func reduceInboundListenerToFilterChains(listeners []*listener.Listener) ([]*lis
 	chains := make([]*listener.FilterChain, 0)
 	for _, l := range listeners {
 		// default bindToPort is true and these listener should be skipped
+		// 默认的bindToPort为true，这些listener应该被跳过
 		if isBindtoPort(l) {
 			// A listener on real port should not be intercepted by virtual inbound listener
+			// 一个监听在真实端口的listener不应被virtual inbound listener拦截
 			continue
 		}
 		for _, c := range l.FilterChains {
@@ -123,6 +129,8 @@ func reduceInboundListenerToFilterChains(listeners []*listener.Listener) ([]*lis
 			chains = append(chains, chain)
 			// Aggregate the inspector options. If any listener on the port needs inspector, we should add it
 			// Generally there is 1 listener per port anyways.
+			// 聚合inspector options，如果端口上任何的listener需要inspector，我们应该添加它
+			// 一般每个端口都要一个listener
 			port := int(l.Address.GetSocketAddress().GetPortValue())
 			if port > 0 {
 				prev := inspectorsMap[port]
@@ -174,6 +182,7 @@ func (lb *ListenerBuilder) aggregateVirtualInboundListener(passthroughInspectors
 		return filterChains[i].Name < filterChains[j].Name
 	})
 
+	// 将listener转换为filterchain并且添加到virtual inbound listener中
 	lb.virtualInboundListener.FilterChains = append(lb.virtualInboundListener.FilterChains, filterChains...)
 
 	tlsInspectors := mergeInspectors(inspectors, passthroughInspectors)
@@ -355,11 +364,13 @@ func (lb *ListenerBuilder) buildVirtualOutboundListener(configgen *ConfigGenerat
 		isTransparentProxy = proto.BoolTrue
 	}
 
+	// 构建一个blockhole filterchain，来接受所有非法流量
 	filterChains := buildOutboundCatchAllNetworkFilterChains(configgen, lb.node, lb.push)
 
 	actualWildcard, _ := getActualWildcardAndLocalHost(lb.node)
 
 	// add an extra listener that binds to the port that is the recipient of the iptables redirect
+	// 添加一个额外的listener，绑定到端口，是iptables转发的接收者
 	ipTablesListener := &listener.Listener{
 		Name:             model.VirtualOutboundListenerName,
 		Address:          util.BuildAddress(actualWildcard, uint32(lb.push.Mesh.ProxyListenPort)),
@@ -383,9 +394,11 @@ func (lb *ListenerBuilder) buildVirtualInboundListener(configgen *ConfigGenerato
 
 	actualWildcard, _ := getActualWildcardAndLocalHost(lb.node)
 	// add an extra listener that binds to the port that is the recipient of the iptables redirect
+	// 添加一个额外的listener，绑定到端口，是iptables转发的接收者
 	filterChains, passthroughInspector, usesQUIC := buildInboundCatchAllFilterChains(configgen, lb.node, lb.push)
 
 	// exact balance used in Envoy is only supported over TCP connections
+	// 在Envoy中exact balance只在TCP连接中使用
 	var connectionBalance *listener.Listener_ConnectionBalanceConfig
 	if !usesQUIC && bool(lb.node.Metadata.InboundListenerExactBalance) {
 		connectionBalance = &listener.Listener_ConnectionBalanceConfig{
@@ -394,15 +407,18 @@ func (lb *ListenerBuilder) buildVirtualInboundListener(configgen *ConfigGenerato
 			},
 		}
 	}
+	// 构建virtualInboundListener
 	lb.virtualInboundListener = &listener.Listener{
 		Name:                    model.VirtualInboundListenerName,
 		Address:                 util.BuildAddress(actualWildcard, ProxyInboundListenPort),
 		Transparent:             isTransparentProxy,
 		UseOriginalDst:          proto.BoolTrue,
 		TrafficDirection:        core.TrafficDirection_INBOUND,
+		// 最喀什是一个callall的filterchain
 		FilterChains:            filterChains,
 		ConnectionBalanceConfig: connectionBalance,
 	}
+	// 设置listener的access log
 	accessLogBuilder.setListenerAccessLog(lb.push, lb.node, lb.virtualInboundListener)
 	lb.aggregateVirtualInboundListener(passthroughInspector)
 
@@ -604,6 +620,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundFilterchains(in *plugin.InputP
 
 	// unless the PeerAuthentication is set to "DISABLE",
 	// TLS settings won't take effect
+	// 除非PeerAuthentication设置为"DISABLE"，TLS设置不会生效
 	hasMTLs := true
 
 	mtlsConfigs := getMtlsSettings(configgen, in, passthrough)
@@ -670,6 +687,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundFilterchains(in *plugin.InputP
 		fcOpt.filterChain = opt.fc
 		switch opt.fc.ListenerProtocol {
 		case istionetworking.ListenerProtocolHTTP:
+			// 构建http listener的options
 			fcOpt.httpOpts = configgen.buildSidecarInboundHTTPListenerOptsForPortOrUDS(in.Node, in, clusterName)
 			fcOpt.filterChain.TCP = append(
 				buildMetadataExchangeNetworkFilters(in.Push, istionetworking.ListenerClassSidecarInbound, in.Node.IstioVersion),

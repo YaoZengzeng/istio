@@ -52,6 +52,7 @@ import (
 
 const (
 	// BlackHoleCluster to catch traffic from routes with unresolved clusters. Traffic arriving here goes nowhere.
+	// BlackHoleCluster捕获所有路由到unresolved clusters的流量，到达这里的流量goes nowhere
 	BlackHoleCluster = istionetworking.BlackHoleCluster
 	// BlackHole is the name of the virtual host and route name used to block all traffic
 	BlackHole = istionetworking.BlackHole

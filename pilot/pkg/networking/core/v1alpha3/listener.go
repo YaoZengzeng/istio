@@ -95,6 +95,8 @@ var (
 	// These are sniffed by the HTTP Inspector in the outbound listener
 	// We need to forward these ALPNs to upstream so that the upstream can
 	// properly use a HTTP or TCP listener
+	// 这些都是由outbound listener的HTTP Inspector探测的，我们可以将这些ALPNs转发到
+	// upstream，这样upstream可以使用一个HTTP或者TCP listener处理
 	plaintextHTTPALPNs = func() []string {
 		if features.HTTP10 {
 			// If HTTP 1.0 is enabled, we will match it
@@ -113,12 +115,14 @@ var (
 )
 
 // BuildListeners produces a list of listeners and referenced clusters for all proxies
+// BuildListeners产生一系列的listeners以及引用的clusters，为所有的proxies
 func (configgen *ConfigGeneratorImpl) BuildListeners(node *model.Proxy,
 	push *model.PushContext) []*listener.Listener {
 	builder := NewListenerBuilder(node, push)
 
 	switch node.Type {
-	case model.SidecarProxy:
+	// NOTE: construct buildNodeListeners if necessary.
+	case model.SidecarProxy, model.Node:
 		builder = configgen.buildSidecarListeners(builder)
 	case model.Router:
 		builder = configgen.buildGatewayListeners(builder)
@@ -235,6 +239,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarListeners(builder *ListenerBui
 
 // buildSidecarInboundListeners creates listeners for the server-side (inbound)
 // configuration for co-located service proxyInstances.
+// buildSidecarInboundListeners为服务端（inbound）配置构建listeners，用于co-located service proxyInstances
 func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 	node *model.Proxy,
 	push *model.PushContext) []*listener.Listener {
@@ -244,6 +249,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 	sidecarScope := node.SidecarScope
 	noneMode := node.GetInterceptionMode() == model.InterceptionNone
 	// No user supplied sidecar scope or the user supplied one has no ingress listeners.
+	// 没有用户提供的sidecar scope或者用户提供的没有ingress listeners
 	if !sidecarScope.HasIngressListener() {
 		// Construct inbound listeners in the usual way by looking at the ports of the service instances
 		// attached to the proxy
@@ -261,6 +267,8 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 		// If there is no ingress listener, for each service instance, the listener port protocol is determined
 		// by the service port protocol. If user doesn't specify the service port protocol, the listener will
 		// be generated using protocol sniffing.
+		// 如果没有ingress listener，每个service实例，listener端口的协议由service端口的协议决定，如果用户没有指定service端口协议
+		// listener会使用protocol sniffing生成listener
 		// For example, the set of service instances
 		//      --> Endpoint
 		//              Address:Port 172.16.0.1:1111
@@ -273,12 +281,15 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 		//              ServicePort 9999|Unknown
 		//
 		//	Pilot will generate three listeners, the last one will use protocol sniffing.
+		//  Pilot会生成三个listeners，最后一个会使用协议探测
 		//
 		for _, instance := range node.ServiceInstances {
 			endpoint := instance.Endpoint
 			// Inbound listeners will be aggregated into a single virtual listener (port 15006)
 			// As a result, we don't need to worry about binding to the endpoint IP; we already know
 			// all traffic for these listeners is inbound.
+			// Inbound listeners会合并到单个的virtual listener（端口号为15006），因此，我们不需要绑定一个endpoint IP
+			// 我们总是知道对于这些listener，所有的流量都是inbound
 			// TODO: directly build filter chains rather than translating listeners to filter chains
 			wildcard, _ := getActualWildcardAndLocalHost(node)
 			bind := wildcard
@@ -425,6 +436,7 @@ func enableHTTP10(enableFlag string) bool {
 
 // buildSidecarInboundListenerForPortOrUDS creates a single listener on the server-side (inbound)
 // for a given port or unix domain socket
+// buildSidecarInboundListenerForPortOrUDS在server端（inbound）创建一个listener为一个给定的端口或者unix domain socket
 func (configgen *ConfigGeneratorImpl) buildSidecarInboundListenerForPortOrUDS(listenerOpts buildListenerOpts,
 	pluginParams *plugin.InputParams, listenerMap map[int]*inboundListenerEntry) *listener.Listener {
 	// Local service instances can be accessed through one of four addresses:
@@ -436,32 +448,41 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListenerForPortOrUDS(li
 	listenerOpts.class = istionetworking.ListenerClassSidecarInbound
 
 	if old, exists := listenerMap[listenerOpts.port.Port]; exists {
+		// 和已有listener的protocol和hostname不一致
 		if old.protocol != listenerOpts.port.Protocol && old.instanceHostname != pluginParams.ServiceInstance.Service.Hostname {
 			// For sidecar specified listeners, the caller is expected to supply a dummy service instance
 			// with the right port and a hostname constructed from the sidecar config's name+namespace
+			// 对于sidecar指定的listeners，调用者期望提供一个dummy service instance，有着正确的端口和hostname
+			// 从sidecar config的name+namespace构建出来
 			pluginParams.Push.AddMetric(model.ProxyStatusConflictInboundListener, pluginParams.Node.ID, pluginParams.Node.ID,
 				fmt.Sprintf("Conflicting inbound listener:%d. existing: %s, incoming: %s", listenerOpts.port.Port,
 					old.instanceHostname, pluginParams.ServiceInstance.Service.Hostname))
 			return nil
 		}
 		// This can happen if two services select the same pod with same port and protocol - we should skip building listener again.
+		// 可能会有两个service选择同样的端口和同样的protocol - 我们应该跳过再次构建listener
 		if old.instanceHostname != pluginParams.ServiceInstance.Service.Hostname {
+			// 跳过构建listener，因为已经为它构建了host
 			log.Debugf("skipping inbound listener:%d as we have already build it for existing host: %s, new host: %s",
 				listenerOpts.port.Port,
 				old.instanceHostname, pluginParams.ServiceInstance.Service.Hostname)
 		}
 		// Skip building listener for the same port
+		// 跳过为同样的端口构建listener
 		return nil
 	}
 	if listenerOpts.protocol == istionetworking.ListenerProtocolAuto {
+		// 如果protocol是auto，则需要添加http inspector
 		listenerOpts.needHTTPInspector = true
 	}
 	// Setup filter chain options and call plugins
+	// 构建filter chain options并且调用plugins
 	clusterName := model.BuildInboundSubsetKey(int(pluginParams.ServiceInstance.Endpoint.EndpointPort))
 	fcOpts := configgen.buildInboundFilterchains(pluginParams, listenerOpts, "", clusterName, false)
 	listenerOpts.filterChainOpts = fcOpts
 
 	// Buildup the complete listener
+	// 构建完整的listener
 	// TODO: Currently, we build filter chains, then convert them to listener.Listeners then
 	// aggregate them back to filter chains in the virtual listener. This is complex and inefficient.
 	// We should instead just directly construct the filter chains. We do still need the ability to
@@ -481,6 +502,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListenerForPortOrUDS(li
 		return nil
 	}
 
+	// 端口到hostname以及protocol的映射
 	listenerMap[listenerOpts.port.Port] = &inboundListenerEntry{
 		instanceHostname: pluginParams.ServiceInstance.Service.Hostname,
 		protocol:         listenerOpts.port.Protocol,
@@ -544,6 +566,8 @@ func (c outboundListenerConflict) addMetric(metrics model.Metrics) {
 
 // buildSidecarOutboundListeners generates http and tcp listeners for
 // outbound connections from the proxy based on the sidecar scope associated with the proxy.
+// buildSidecarOutboundListeners为outbound connections生成http以及tcp listeners
+// 同时也考虑和proxy相关的sidecar scope
 func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.Proxy,
 	push *model.PushContext) []*listener.Listener {
 	noneMode := node.GetInterceptionMode() == model.InterceptionNone
@@ -680,6 +704,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 			}
 
 			// Build ListenerOpts and PluginParams once and reuse across all Services to avoid unnecessary allocations.
+			// 构建一次ListenerOpts以及PluginParams并且跨所有Services使用，来避免不必要的分配
 			listenerOpts := buildListenerOpts{
 				push:       push,
 				proxy:      node,
@@ -732,6 +757,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 						}
 					} else {
 						// Standard logic for headless and non headless services
+						// 标准的逻辑用于headless和非headless services的构建
 						configgen.buildSidecarOutboundListenerForPortOrUDS(listenerOpts, listenerMap, virtualServices, actualWildcard)
 					}
 				}
@@ -740,6 +766,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 	}
 
 	// Now validate all the listeners. Collate the tcp listeners first and then the HTTP listeners
+	// 现在验证所有的listeners，首先整理tcp listeners，再整理HTTP listener
 	// TODO: This is going to be bad for caching as the order of listeners in tcpListeners or httpListeners is not
 	// guaranteed.
 	for _, l := range listenerMap {
@@ -751,6 +778,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(node *model.
 	}
 	tcpListeners = append(tcpListeners, httpListeners...)
 	// Build pass through filter chains now that all the non-passthrough filter chains are ready.
+	// 构建pass through filter chains，现在所有的non-passthrough filter chains都已经ready
 	for _, listener := range tcpListeners {
 		configgen.appendListenerFallthroughRouteForCompleteListener(listener, node, push)
 	}
@@ -1020,6 +1048,9 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundTCPListenerOptsForPort
 // if one doesn't already exist. HTTP listeners on same port are ignored
 // (as vhosts are shipped through RDS).  TCP listeners on same port are
 // allowed only if they have different CIDR matches.
+// buildSidecarOutboundListenerForPortOrUDS构建单个的listener并且添加到caller提供的listenerMap
+// Listeners在不存在的时候就会被添加，在同一端口的HTTP listeners会被忽略（因为vhosts被包含在RDS）
+// 在同一端口的TCP listener是被允许的，如果它们有不同的CIDR匹配
 func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListenerForPortOrUDS(listenerOpts buildListenerOpts,
 	listenerMap map[string]*outboundListenerEntry, virtualServices []config.Config, actualWildcard string) {
 	var destinationCIDR string
@@ -1046,6 +1077,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListenerForPortOrUDS(l
 	} else {
 		switch listenerProtocol {
 		case istionetworking.ListenerProtocolHTTP:
+			// 对于监听在HTTP的端口
 			if ret, opts = configgen.buildSidecarOutboundHTTPListenerOptsForPortOrUDS(&listenerMapKey,
 				&currentListenerEntry, &listenerOpts, listenerMap, actualWildcard); !ret {
 				return
@@ -1165,6 +1197,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListenerForPortOrUDS(l
 
 	// Lets build the new listener with the filter chains. In the end, we will
 	// merge the filter chains with any existing listener on the same port/bind point
+	// 用filter chains构建新的listener，最后，我们会将filter chains聚合，用任何有着同样的port/bind的listener
 	l := buildListener(listenerOpts, core.TrafficDirection_OUTBOUND)
 
 	mutable := &MutableListener{
@@ -1180,6 +1213,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListenerForPortOrUDS(l
 	}
 
 	for _, p := range configgen.Plugins {
+		// 遍历plugins，构建outbound listener
 		if err := p.OnOutboundListener(pluginParams, &mutable.MutableObjects); err != nil {
 			log.Warn(err.Error())
 		}
@@ -1294,6 +1328,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListenerForPortOrUDS(l
 }
 
 // httpListenerOpts are options for an HTTP listener
+// httpListenerOpts是一个HTTP listener的选择
 type httpListenerOpts struct {
 	routeConfig *route.RouteConfiguration
 	rds         string
@@ -1313,6 +1348,7 @@ type httpListenerOpts struct {
 }
 
 // filterChainOpts describes a filter chain: a set of filters with the same TLS context
+// filterChainOpts描述了了一个filter chain：一系列的filters，有着同样的TLS context
 type filterChainOpts struct {
 	filterChainName  string
 	sniHosts         []string
@@ -1327,6 +1363,7 @@ type filterChainOpts struct {
 }
 
 // buildListenerOpts are the options required to build a Listener
+// buildListenerOpts是构建一个Listener所需的options
 type buildListenerOpts struct {
 	// nolint: maligned
 	push              *model.PushContext

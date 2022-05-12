@@ -43,6 +43,7 @@ const (
 	// ListenerProtocolHTTP is an HTTP listener.
 	ListenerProtocolHTTP
 	// ListenerProtocolAuto enables auto protocol detection
+	// ListenerProtocolAuto使能对于协议的自动检测
 	ListenerProtocolAuto
 )
 

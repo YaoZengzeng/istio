@@ -391,6 +391,7 @@ func (configgen *ConfigGeneratorImpl) buildOutboundSniDnatClusters(proxy *model.
 
 func buildInboundLocalityLbEndpoints(bind string, port uint32) []*endpoint.LocalityLbEndpoints {
 	if bind == "" {
+		// bind为空，则直接返回nil
 		return nil
 	}
 	address := util.BuildAddress(bind, port)
@@ -840,6 +841,7 @@ func addTelemetryMetadata(opts buildClusterOpts, service *model.Service, directi
 	svcMetaList := im.Fields["services"].GetListValue()
 
 	// Add service related metadata. This will be consumed by telemetry v2 filter for metric labels.
+	// 添加service相关的元数据，他会被telemtry v2 filter使用用于metric labels
 	if direction == model.TrafficDirectionInbound {
 		// For inbound cluster, add all services on the cluster port
 		have := make(map[host.Name]bool)
@@ -859,6 +861,7 @@ func addTelemetryMetadata(opts buildClusterOpts, service *model.Service, directi
 		}
 	} else if direction == model.TrafficDirectionOutbound {
 		// For outbound cluster, add telemetry metadata based on the service that the cluster is built for.
+		// 对于outbound cluster，添加telemetry元数据，基于cluster所构建的service
 		svcMetaList.Values = append(svcMetaList.Values, buildServiceMetadata(service))
 	}
 }

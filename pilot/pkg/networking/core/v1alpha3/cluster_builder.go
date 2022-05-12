@@ -397,9 +397,11 @@ func (cb *ClusterBuilder) buildDefaultCluster(name string, discoveryType cluster
 	// decides whether the cluster corresponds to a service external to mesh or not.
 	if direction == model.TrafficDirectionInbound {
 		// Inbound cluster always corresponds to service in the mesh.
+		// Inbound cluster总是对应网格中的service
 		opts.meshExternal = false
 	} else if service != nil {
 		// otherwise, read this information from service object.
+		// 否则从service对象读取信息
 		opts.meshExternal = service.MeshExternal
 	}
 
@@ -504,8 +506,10 @@ func (cb *ClusterBuilder) buildInboundClusterForPortOrUDS(clusterPort int, bind 
 	proxy *model.Proxy, instance *model.ServiceInstance, allInstance []*model.ServiceInstance) *MutableCluster {
 	clusterName := model.BuildInboundSubsetKey(clusterPort)
 	localityLbEndpoints := buildInboundLocalityLbEndpoints(bind, instance.Endpoint.EndpointPort)
+	// cluster类型为ORIGINAL_DST，直接使用原来的目的地址和目标端口
 	clusterType := cluster.Cluster_ORIGINAL_DST
 	if len(localityLbEndpoints) > 0 {
+		// 如果有locality lb endpoints，则cluster类型改为STATIC
 		clusterType = cluster.Cluster_STATIC
 	}
 	localCluster := cb.buildDefaultCluster(clusterName, clusterType, localityLbEndpoints,
@@ -1197,6 +1201,7 @@ func (cb *ClusterBuilder) setUpstreamProtocol(mc *MutableCluster, port *model.Po
 		// Use downstream protocol. If the incoming traffic use HTTP 1.1, the
 		// upstream cluster will use HTTP 1.1, if incoming traffic use HTTP2,
 		// the upstream cluster will use HTTP2.
+		// 使用downstream protocol，如果来的流量使用HTTP 1.1，则upstream使用HTTP 1.1
 		cb.setUseDownstreamProtocol(mc)
 	}
 }

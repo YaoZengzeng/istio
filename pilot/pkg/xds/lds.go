@@ -68,6 +68,7 @@ func (l LdsGenerator) Generate(proxy *model.Proxy, push *model.PushContext, w *m
 	if !ldsNeedsPush(proxy, req) {
 		return nil, model.DefaultXdsLogDetails, nil
 	}
+	// 构建listeners
 	listeners := l.Server.ConfigGenerator.BuildListeners(proxy, push)
 	resources := model.Resources{}
 	for _, c := range listeners {

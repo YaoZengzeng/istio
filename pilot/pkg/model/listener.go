@@ -27,6 +27,7 @@ const (
 	// VirtualOutboundBlackholeFilterChainName is the name of the filter chain to blackhole undesired traffic
 	VirtualOutboundBlackholeFilterChainName = "virtualOutbound-blackhole"
 	// VirtualInboundBlackholeFilterChainName is the name of the filter chain to blackhole undesired traffic
+	// VirtualInboundBlackholeFilterChainName是filter chain的名字，用来将undesired traffic导入blackhole
 	VirtualInboundBlackholeFilterChainName = "virtualInbound-blackhole"
 
 	// VirtualInboundListenerName is the name for traffic capture listener

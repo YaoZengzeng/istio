@@ -503,6 +503,7 @@ var (
 	EnableInboundPassthrough = env.RegisterBoolVar(
 		"PILOT_ENABLE_INBOUND_PASSTHROUGH",
 		true,
+		// 如果使能的话，inbound clusters会被配置为ORIGINAL_DST clusters，当禁止时，请求会被发往localhost
 		"If enabled, inbound clusters will be configured as ORIGINAL_DST clusters. When disabled, "+
 			"requests are always sent to localhost. The primary implication of this is that when enabled, binding to POD_IP "+
 			"will work while localhost will not; when disable, bind to POD_IP will not work, while localhost will. "+
