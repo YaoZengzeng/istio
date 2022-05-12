@@ -46,6 +46,7 @@ var citadelClientLog = log.RegisterScope("citadelclient", "citadel client debugg
 
 type CitadelClient struct {
 	// It means enable tls connection to Citadel if this is not nil.
+	// 这意味着使能到Citadel到tls连接，如果这不是nil
 	tlsOpts   *TLSOptions
 	client    pb.IstioCertificateServiceClient
 	conn      *grpc.ClientConn
@@ -94,6 +95,7 @@ func (c *CitadelClient) CSRSign(csrPEM []byte, certValidTTLInSec int64) ([]strin
 			},
 		},
 	}
+	// 构建IstioCertificateRequest
 	req := &pb.IstioCertificateRequest{
 		Csr:              string(csrPEM),
 		ValidityDuration: certValidTTLInSec,

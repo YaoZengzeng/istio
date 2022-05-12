@@ -343,6 +343,8 @@ var _ model.XdsResourceGenerator = &SecretGen{}
 func NewSecretGen(sc credscontroller.MulticlusterController, cache model.XdsCache, configCluster cluster.ID) *SecretGen {
 	// TODO: Currently we only have a single credentials controller (Kubernetes). In the future, we will need a mapping
 	// of resource type to secret controller (ie kubernetes:// -> KubernetesController, vault:// -> VaultController)
+	// 当前我们只支持单个的credentials controller (即Kubernetes)，以后，我们会有一个resource type到secret controller之间的映射
+	// （例如kubernetes::// 到KubernetesController，vault到VaultController）
 	return &SecretGen{
 		secrets:       sc,
 		cache:         cache,

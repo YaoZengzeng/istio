@@ -78,6 +78,7 @@ type ClusterHandler interface {
 }
 
 // Controller is the controller implementation for Secret resources
+// Controller是Secret资源的controller实现
 type Controller struct {
 	namespace          string
 	localClusterID     cluster.ID

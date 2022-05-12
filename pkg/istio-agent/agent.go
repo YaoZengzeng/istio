@@ -110,9 +110,11 @@ type Agent struct {
 	secretCache *cache.SecretManagerClient
 
 	// Used when proxying envoy xds via istio-agent is enabled.
+	// 当通过istio-agent代理envoy xds使能的时候被使用
 	xdsProxy *XdsProxy
 
 	// local DNS Server that processes DNS requests locally and forwards to upstream DNS if needed.
+	// local DNS Server在本地处理DNS请求并且转发到upstream，如果需要的话
 	localDNSServer *dnsClient.LocalDNSServer
 
 	// Signals true completion (e.g. with delayed graceful termination of Envoy)
@@ -200,6 +202,8 @@ type AgentOptions struct {
 // NewAgent hosts the functionality for local SDS and XDS. This consists of the local SDS server and
 // associated clients to sign certificates (when not using files), and the local XDS proxy (including
 // health checking for VMs and DNS proxying).
+// NewAgent维护了功能用于local SDS以及XDS，它由local SDS server以及相关的用于签发证书的clients组成，以及本地的
+// XDS proxy（包括对于VMs以及DNS Proxying的健康检查）
 func NewAgent(proxyConfig *mesh.ProxyConfig, agentOpts *AgentOptions, sopts *security.Options,
 	eopts envoy.ProxyConfig) *Agent {
 	return &Agent{
@@ -402,14 +406,17 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 		return nil, fmt.Errorf("failed to start local DNS server: %v", err)
 	}
 
+	// 构建secret cache
 	a.secretCache, err = a.newSecretManager()
 	if err != nil {
 		return nil, fmt.Errorf("failed to start workload secret manager %v", err)
 	}
 
 	a.sdsServer = sds.NewServer(a.secOpts, a.secretCache)
+	// 添加secret cache的callback
 	a.secretCache.SetUpdateCallback(a.sdsServer.UpdateCallback)
 
+	// 初始化xds proxy
 	a.xdsProxy, err = initXdsProxy(a)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start xds proxy: %v", err)
@@ -454,6 +461,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 			}
 
 			// This is a blocking call for graceful termination.
+			// 这是一个阻塞调用用于优雅终止
 			a.envoyAgent.Run(ctx)
 		}()
 	} else if a.WaitForSigterm() {
@@ -650,6 +658,7 @@ func getKeyCertInner(certPath string) (string, string) {
 }
 
 // newSecretManager creates the SecretManager for workload secrets
+// newSecretManager为workload secrets创建SecretManager
 func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	// If proxy is using file mounted certs, we do not have to connect to CA.
 	if a.secOpts.FileMountedCerts {
@@ -680,6 +689,7 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	}
 
 	// Using citadel CA
+	// 使用citadel CA
 	var tlsOpts *citadel.TLSOptions
 	var err error
 	// Special case: if Istiod runs on a secure network, on the default port, don't use TLS
@@ -705,6 +715,7 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	}
 
 	// Will use TLS unless the reserved 15010 port is used ( istiod on an ipsec/secure VPC)
+	// 会使用TLS，除非保留的15010被使用（istiod在一个ipsec/secure VPC）
 	// rootCert may be nil - in which case the system roots are used, and the CA is expected to have public key
 	// Otherwise assume the injection has mounted /etc/certs/root-cert.pem
 	caClient, err := citadel.NewCitadelClient(a.secOpts, tlsOpts)

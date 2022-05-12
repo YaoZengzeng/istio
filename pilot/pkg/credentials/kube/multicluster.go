@@ -48,6 +48,7 @@ func NewMulticluster(localCluster cluster.ID) *Multicluster {
 
 func (m *Multicluster) ClusterAdded(cluster *multicluster.Cluster, _ <-chan struct{}) error {
 	log.Infof("initializing Kubernetes credential reader for cluster %v", cluster.ID)
+	// 构建credentials controoler
 	sc := NewCredentialsController(cluster.Client, cluster.ID)
 	m.m.Lock()
 	m.remoteKubeControllers[cluster.ID] = sc
@@ -97,6 +98,7 @@ func (m *Multicluster) ForCluster(clusterID cluster.ID) (credentials.Controller,
 
 func (m *Multicluster) AddEventHandler(f eventHandler) {
 	m.eventHandlers = append(m.eventHandlers, f)
+	// 添加event handler
 	for _, c := range m.remoteKubeControllers {
 		c.AddEventHandler(f)
 	}

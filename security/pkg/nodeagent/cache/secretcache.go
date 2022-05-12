@@ -63,6 +63,9 @@ const (
 // storage backends. Istiod is in charge of determining whether the agent (ie SecretManagerClient) or
 // Istiod will serve an SDS response, by selecting the appropriate cluster in the SDS configuration
 // it serves.
+// 需要注意的是存储在外部的证书会被直接发送给Istiod；agent内部的SecretManagerClient的权限很低并且不能读取Kubernetes
+// 的Secrets或者其他storage backends，Istiod负责决定agent（例如SecretManagerClient）或者Istiod是否能服务
+// 一个SDS response，通过在SDS配置中选择合适的cluster
 //
 // SecretManagerClient supports two modes of retrieving certificate (potentially at the same time):
 // * File based certificates. If certs are mounted under well-known path /etc/certs/{key,cert,root-cert.pem},
@@ -86,6 +89,7 @@ type SecretManagerClient struct {
 	configOptions *security.Options
 
 	// callback function to invoke when detecting secret change.
+	// 当检测到secret变更的时候调用的回调函数
 	notifyCallback func(resourceName string)
 
 	// Cache of workload certificate and root certificate. File based certs are never cached, as
@@ -114,6 +118,7 @@ type SecretManagerClient struct {
 	configTrustBundle []byte
 
 	// queue maintains all certificate rotation events that need to be triggered when they are about to expire
+	// queue追踪了所有的证书轮转事件，当它们到期时需要触发
 	queue queue.Delayed
 	stop  chan struct{}
 
@@ -164,6 +169,7 @@ type FileCert struct {
 }
 
 // NewSecretManagerClient creates a new SecretManagerClient.
+// NewSecretManagerClient创建一个新的SecretManagerClient
 // Only ever used for secretcache_test.go? Everywhere else it is made directly
 func NewSecretManagerClient(caClient security.Client, options *security.Options) (*SecretManagerClient, error) {
 	watcher, err := fsnotify.NewWatcher()
@@ -244,6 +250,7 @@ func (sc *SecretManagerClient) getCachedSecret(resourceName string) (secret *sec
 }
 
 // GenerateSecret passes the cached secret to SDS.StreamSecrets and SDS.FetchSecret.
+// GenerateSecret传入缓存的secret到SDS.StreamSecrets和SDS.FetchSecret
 func (sc *SecretManagerClient) GenerateSecret(resourceName string) (secret *security.SecretItem, err error) {
 	cacheLog.Debugf("generate secret %q", resourceName)
 	// Setup the call to store generated secret to disk
@@ -296,18 +303,21 @@ func (sc *SecretManagerClient) GenerateSecret(resourceName string) (secret *secu
 	}
 
 	// send request to CA to get new workload certificate
+	// 发送请求到CA并且获取新的workload certificate
 	ns, err = sc.generateNewSecret(resourceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate workload certificate: %v", err)
 	}
 
 	// Store the new secret in the secretCache and trigger the periodic rotation for workload certificate
+	// 存储新的secret到secretCache并且触发对于workload certificate的阶段性重载
 	sc.registerSecret(*ns)
 
 	if resourceName == security.RootCertReqResourceName {
 		ns.RootCert = sc.mergeTrustAnchorBytes(ns.RootCert)
 	} else {
 		// If periodic cert refresh resulted in discovery of a new root, trigger a ROOTCA request to refresh trust anchor
+		// 如果阶段性的cert refresh导致对于一个新的root的发现，触发一个ROOTCA请求来刷新trust anchor
 		oldRoot := sc.cache.GetRoot()
 		if !bytes.Equal(oldRoot, ns.RootCert) {
 			cacheLog.Info("Root cert has changed, start rotating root cert")
@@ -566,6 +576,7 @@ func (sc *SecretManagerClient) generateNewSecret(resourceName string) (*security
 	}
 
 	// Generate the cert/key, send CSR to CA.
+	// 生成证书/密钥，发送CSR到CA
 	csrPEM, keyPEM, err := pkiutil.GenCSR(options)
 	if err != nil {
 		cacheLog.Errorf("%s failed to generate key and certificate for CSR: %v", logPrefix, err)
@@ -574,6 +585,7 @@ func (sc *SecretManagerClient) generateNewSecret(resourceName string) (*security
 
 	numOutgoingRequests.With(RequestType.Value(monitoring.CSR)).Increment()
 	timeBeforeCSR := time.Now()
+	// 指定Secret TTL的大小
 	certChainPEM, err := sc.caClient.CSRSign(csrPEM, int64(sc.configOptions.SecretTTL.Seconds()))
 	if err == nil {
 		trustBundlePEM, err = sc.caClient.GetRootCertBundle()
@@ -627,6 +639,7 @@ func (sc *SecretManagerClient) rotateTime(secret security.SecretItem) time.Durat
 }
 
 func (sc *SecretManagerClient) registerSecret(item security.SecretItem) {
+	// 获取轮转时间
 	delay := sc.rotateTime(item)
 	item.ResourceName = security.WorkloadKeyCertResourceName
 	// In case there are two calls to GenerateSecret at once, we don't want both to be concurrently registered
@@ -639,8 +652,10 @@ func (sc *SecretManagerClient) registerSecret(item security.SecretItem) {
 	sc.queue.PushDelayed(func() error {
 		resourceLog(item.ResourceName).Debugf("rotating certificate")
 		// Clear the cache so the next call generates a fresh certificate
+		// 清除缓存，这样下一次调用会产生一个新的certificate
 		sc.cache.SetWorkload(nil)
 
+		// 调用callback，推送到proxy
 		sc.CallUpdateCallback(item.ResourceName)
 		return nil
 	}, delay)

@@ -82,6 +82,7 @@ func (q *pq) Peek() interface{} {
 }
 
 // Delayed implements queue such that tasks are executed after a specified delay.
+// Delayed实现了队列，tasks会在一定的延时之后被执行
 type Delayed interface {
 	Instance
 	PushDelayed(t Task, delay time.Duration)

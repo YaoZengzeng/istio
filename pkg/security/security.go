@@ -267,6 +267,8 @@ type StsRequestParameters struct {
 // The Agent will create a key pair and a CSR, and use an implementation of this
 // interface to get back a signed certificate. There is no guarantee that the SAN
 // in the request will be returned - server may replace it.
+// Client接口定义了需要的clients用来和CA进行交互获取CSR
+// Agent会创建一个key pair以及一个CSR，使用这个接口的一个实现来获取一个signed certificate
 type Client interface {
 	CSRSign(csrPEM []byte, certValidTTLInSec int64) ([]string, error)
 	Close()
@@ -275,13 +277,17 @@ type Client interface {
 }
 
 // SecretManager defines secrets management interface which is used by SDS.
+// SecretManager定义了secrets管理的接口，由SDS使用
 type SecretManager interface {
 	// GenerateSecret generates new secret for the given resource.
+	// GenerateSecret为给定的资源创建新的secret
 	//
 	// The current implementation also watched the generated secret and trigger a callback when it is
 	// near expiry. It will constructs the SAN based on the token's 'sub' claim, expected to be in
 	// the K8S format. No other JWTs are currently supported due to client logic. If JWT is
 	// missing/invalid, the resourceName is used.
+	// 当前的实现同时监听生成的secret并且触发一个callback，当它接近过期的时候，它会基于token的'sub' claim构建
+	// SAN，期望以K8S的格式，没有其他的JWTs在当前的client逻辑中支持，如果JWT丢失/非法，会使用resourceName
 	GenerateSecret(resourceName string) (*SecretItem, error)
 }
 
@@ -292,6 +298,7 @@ type TokenExchanger interface {
 }
 
 // SecretItem is the cached item in in-memory secret store.
+// SecretItem是一个在内存中的secret store的缓存项
 type SecretItem struct {
 	CertificateChain []byte
 	PrivateKey       []byte
@@ -300,6 +307,8 @@ type SecretItem struct {
 
 	// ResourceName passed from envoy SDS discovery request.
 	// "ROOTCA" for root cert request, "default" for key/cert request.
+	// ResourceName来自于envoy的SDS discovery request
+	// "ROOTCA"用于请求根证书，"default"用于key/cert的请求
 	ResourceName string
 
 	CreatedTime time.Time

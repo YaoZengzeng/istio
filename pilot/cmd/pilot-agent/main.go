@@ -153,6 +153,7 @@ var (
 			go cmd.WaitSignalFunc(cancel)
 
 			// Start in process SDS, dns server, xds proxy, and Envoy.
+			// 启动在进程中的SDS, dns server, xds proxy以及Envoy
 			wait, err := agent.Run(ctx)
 			if err != nil {
 				return err
