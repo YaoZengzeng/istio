@@ -92,7 +92,9 @@ type MutableCluster struct {
 }
 
 // metadataCerts hosts client certificate related metadata specified in proxy metadata.
+// metadataCerts维护了在proxy metadata中指定的客户端证书相关的元数据
 type metadataCerts struct {
+	// 指定的都是到证书的路径
 	// tlsClientCertChain is the absolute path to client cert-chain file
 	tlsClientCertChain string
 	// tlsClientKey is the absolute path to client private key file
@@ -105,8 +107,9 @@ type metadataCerts struct {
 // ClusterBuilder接口提供了抽象用于构建Envoy Clusters
 type ClusterBuilder struct {
 	// Proxy related information used to build clusters.
+	// Proxy相关的信息用于构建clusters
 	serviceInstances  []*model.ServiceInstance // Service instances of Proxy.
-	metadataCerts     *metadataCerts           // Client certificates specified in metadata.
+	metadataCerts     *metadataCerts           // Client certificates specified in metadata. 在元数据中指定的Client证书
 	clusterID         string                   // Cluster in which proxy is running.
 	proxyID           string                   // Identifier that uniquely identifies a proxy.
 	proxyVersion      string                   // Version of Proxy.
@@ -795,6 +798,7 @@ func (cb *ClusterBuilder) applyTrafficPolicy(opts buildClusterOpts) {
 	if connectionPool == nil {
 		connectionPool = &networking.ConnectionPoolSettings{}
 	}
+	// 应用连接池
 	cb.applyConnectionPool(opts.mesh, opts.mutable, connectionPool)
 	if opts.direction != model.TrafficDirectionInbound {
 		// 应用h2 upgrade
@@ -811,6 +815,7 @@ func (cb *ClusterBuilder) applyTrafficPolicy(opts buildClusterOpts) {
 	}
 
 	if opts.mutable.cluster.GetType() == cluster.Cluster_ORIGINAL_DST {
+		// 如果cluster的类型为ORIGINAL_DST，则LbPolicy为cluster provided
 		opts.mutable.cluster.LbPolicy = cluster.Cluster_CLUSTER_PROVIDED
 	}
 }
@@ -996,6 +1001,7 @@ func (cb *ClusterBuilder) applyUpstreamTLSSettings(opts *buildClusterOpts, tls *
 	}
 
 	if tlsContext != nil {
+		// 配置transport socket
 		c.cluster.TransportSocket = &core.TransportSocket{
 			Name:       util.EnvoyTLSSocketName,
 			ConfigType: &core.TransportSocket_TypedConfig{TypedConfig: util.MessageToAny(tlsContext)},
@@ -1004,8 +1010,11 @@ func (cb *ClusterBuilder) applyUpstreamTLSSettings(opts *buildClusterOpts, tls *
 
 	// For headless service, discover type will be `Cluster_ORIGINAL_DST`
 	// Apply auto mtls to clusters excluding these kind of headless service
+	// 对于headless service，discover类型为`Cluster_ORIGINAL_DST`，应用mtls到那些除了
+	// 这些headless service的clusters
 	if c.cluster.GetType() != cluster.Cluster_ORIGINAL_DST {
 		// convert to transport socket matcher if the mode was auto detected
+		// 转换transport socket matcher，如果模式为auto detected
 		if tls.Mode == networking.ClientTLSSettings_ISTIO_MUTUAL && mtlsCtxType == autoDetected {
 			transportSocket := c.cluster.TransportSocket
 			c.cluster.TransportSocket = nil
@@ -1026,6 +1035,7 @@ func (cb *ClusterBuilder) buildUpstreamClusterTLSContext(opts *buildClusterOpts,
 
 	// Hack to avoid egress sds cluster config generation for sidecar when
 	// CredentialName is set in DestinationRule
+	// 避免为sidecar生成egress sds cluster配置，当CredentialName在DestinationRule中被设置的时候
 	if tls.CredentialName != "" && cb.sidecarProxy() {
 		if tls.Mode == networking.ClientTLSSettings_SIMPLE || tls.Mode == networking.ClientTLSSettings_MUTUAL {
 			return nil, nil
@@ -1036,6 +1046,7 @@ func (cb *ClusterBuilder) buildUpstreamClusterTLSContext(opts *buildClusterOpts,
 
 	switch tls.Mode {
 	case networking.ClientTLSSettings_DISABLE:
+		// 禁止tls的话，直接将tlsContext设置为nil
 		tlsContext = nil
 	case networking.ClientTLSSettings_ISTIO_MUTUAL:
 		tlsContext = &auth.UpstreamTlsContext{
@@ -1082,6 +1093,8 @@ func (cb *ClusterBuilder) buildUpstreamClusterTLSContext(opts *buildClusterOpts,
 			}
 			// If  credential name is specified at Destination Rule config and originating node is egress gateway, create
 			// SDS config for egress gateway to fetch key/cert at gateway agent.
+			// 如果在DestinationRule配置中指定了credential name并且originating node是egress gateway，创建sds配置用于egress gateway
+			// 来在gateway agent获取key/cert
 			authn_model.ApplyCustomSDSToClientCommonTLSContext(tlsContext.CommonTlsContext, tls)
 		} else {
 			// If CredentialName is not set fallback to files specified in DR.
@@ -1152,6 +1165,7 @@ func (cb *ClusterBuilder) buildUpstreamClusterTLSContext(opts *buildClusterOpts,
 
 		if cb.IsHttp2Cluster(c) {
 			// This is HTTP/2 cluster, advertise it with ALPN.
+			// 这是一个HTTP/2集群，建议使用ALPN
 			tlsContext.CommonTlsContext.AlpnProtocols = util.ALPNH2Only
 		}
 	}

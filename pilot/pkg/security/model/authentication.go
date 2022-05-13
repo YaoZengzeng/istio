@@ -34,9 +34,11 @@ const (
 	SDSClusterName = "sds-grpc"
 
 	// SDSDefaultResourceName is the default name in sdsconfig, used for fetching normal key/cert.
+	// SDSDefaultResourceName是sdsconfig中的默认名字，用于获取normal key/cert
 	SDSDefaultResourceName = "default"
 
 	// SDSRootResourceName is the sdsconfig name for root CA, used for fetching root cert.
+	// SDSRootResourceName是root CA的sdsconfig名字，用于获取root cert
 	SDSRootResourceName = "ROOTCA"
 
 	// K8sSAJwtFileName is the token volume mount file name for k8s jwt token.

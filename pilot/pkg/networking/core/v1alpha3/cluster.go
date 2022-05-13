@@ -45,6 +45,8 @@ import (
 
 // defaultTransportSocketMatch applies to endpoints that have no security.istio.io/tlsMode label
 // or those whose label value does not match "istio"
+// defaultTransportSocketMatch应用到没有security.istio.io/tlsMode label或者那些label值不匹配
+// "istio"的endpoints
 var defaultTransportSocketMatch = &cluster.Cluster_TransportSocketMatch{
 	Name:  "tlsMode-disabled",
 	Match: &structpb.Struct{},
@@ -571,6 +573,7 @@ func convertResolution(proxyType model.NodeType, service *model.Service) cluster
 }
 
 // SelectTrafficPolicyComponents returns the components of TrafficPolicy that should be used for given port.
+// SelectTrafficPolicyComponents返回给定的端口应该使用的TrafficPolicy的组件
 func selectTrafficPolicyComponents(policy *networking.TrafficPolicy) (
 	*networking.ConnectionPoolSettings, *networking.OutlierDetection, *networking.LoadBalancerSettings, *networking.ClientTLSSettings) {
 	if policy == nil {
@@ -590,6 +593,7 @@ func selectTrafficPolicyComponents(policy *networking.TrafficPolicy) (
 }
 
 // ClusterMode defines whether the cluster is being built for SNI-DNATing (sni passthrough) or not
+// ClusterMode表明cluster是否用于构建SNI-DNATing
 type ClusterMode string
 
 const (
@@ -608,14 +612,19 @@ type buildClusterOpts struct {
 	serviceAccounts  []string
 	serviceInstances []*model.ServiceInstance
 	// Used for traffic across multiple Istio clusters
+	// 用于流量跨越多个Istio clusters
 	// the ingress gateway in a remote cluster will use this value to route
 	// traffic to the appropriate service
+	// 在remote cluster中的ingress gateway会使用这个值来路由流量到合适的service
 	istioMtlsSni string
 	// This is used when the sidecar is sending simple TLS traffic
 	// to endpoints. This is different from the previous SNI
 	// because usually in this case the traffic is going to a
 	// non-sidecar workload that can only understand the service's
 	// hostname in the SNI.
+	// 当sidecar发送简单的TLS流量到endpoints的时候使用，它和上一个SNI不同
+	// 因为通常在这种情况下，流量是发送到一个non-sidecar workload，只能从
+	// SNI理解service的hostname
 	simpleTLSSni    string
 	clusterMode     ClusterMode
 	direction       model.TrafficDirection
