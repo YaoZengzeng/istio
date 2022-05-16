@@ -28,6 +28,7 @@ import (
 )
 
 // EndpointBuilder is a stateful IstioEndpoint builder with metadata used to build IstioEndpoint
+// EndpointBuilder是一个有状态的IstioEndpoint builder，有着元数据用来构建IstioEndpoint
 type EndpointBuilder struct {
 	controller controllerInterface
 

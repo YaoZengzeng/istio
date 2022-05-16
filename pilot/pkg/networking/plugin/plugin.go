@@ -29,6 +29,7 @@ const (
 	// Authz is the name of the authorization plugin (ALLOW/DENY/AUDIT action) passed through the command line
 	Authz = "authz"
 	// MetadataExchange is the name of the telemetry plugin passed through the command line
+	// MetadataExchange是传递给命令行的telemetry plugin的名字
 	MetadataExchange = "metadata_exchange"
 )
 

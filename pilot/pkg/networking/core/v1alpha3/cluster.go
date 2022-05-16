@@ -354,6 +354,7 @@ func (p clusterPatcher) hasPatches() bool {
 
 // SniDnat clusters do not have any TLS setting, as they simply forward traffic to upstream
 // All SniDnat clusters are internal services in the mesh.
+// SniDnat没有任何的TLS配置，因为它只是简单地转发流量到upstream，所有SniDnat cluster都是网格内部的服务
 // TODO enable cache - there is no blockers here, skipped to simplify the original caching implementation
 func (configgen *ConfigGeneratorImpl) buildOutboundSniDnatClusters(proxy *model.Proxy, req *model.PushRequest,
 	cp clusterPatcher) []*cluster.Cluster {
@@ -382,6 +383,7 @@ func (configgen *ConfigGeneratorImpl) buildOutboundSniDnatClusters(proxy *model.
 			if defaultCluster == nil {
 				continue
 			}
+			// 施加DestinationRule，cluster类型为SniDnatClusterMode
 			subsetClusters := cb.applyDestinationRule(defaultCluster, SniDnatClusterMode, service, port, networkView, destRule, nil)
 			clusters = cp.conditionallyAppend(clusters, nil, defaultCluster.build())
 			clusters = cp.conditionallyAppend(clusters, nil, subsetClusters...)

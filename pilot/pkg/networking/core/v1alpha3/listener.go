@@ -1377,6 +1377,7 @@ type buildListenerOpts struct {
 	class             istionetworking.ListenerClass
 	service           *model.Service
 	protocol          istionetworking.ListenerProtocol
+	// 用来决定这是一个tcp listener还是quic listener
 	transport         istionetworking.TransportProtocol
 	tlsSettings       *networking.ServerTLSSettings
 }
@@ -1489,6 +1490,8 @@ func buildHTTPConnectionManager(listenerOpts buildListenerOpts, httpOpts *httpLi
 // buildListener builds and initializes a Listener proto based on the provided opts. It does not set any filters.
 // Optionally for HTTP filters with TLS enabled, HTTP/3 can be supported by generating QUIC Mirror filters for the
 // same port (it is fine as QUIC uses UDP)
+// buildListener构建并且初始化一个Listener proto，基于提供的opts，它不设置任何的filters
+// 对于使能TLS的HTTP filters是可选的 ，HTTP/3可以通过生成QUIC Mirror filters，为同一个端口，而被支持（这是OK的，因为QUIC使用UDP）
 func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirection) *listener.Listener {
 	filterChains := make([]*listener.FilterChain, 0, len(opts.filterChainOpts))
 	listenerFiltersMap := make(map[string]bool)
@@ -1496,6 +1499,8 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 
 	// add a TLS inspector if we need to detect ServerName or ALPN
 	// (this is not applicable for QUIC listeners)
+	// 添加一个TLS inspector，如果我们需要检测ServerName或者ALPN
+	// 这对QUIC listener是不适用的
 	needTLSInspector := false
 	if opts.transport == istionetworking.TransportProtocolTCP {
 		for _, chain := range opts.filterChainOpts {
@@ -1509,6 +1514,7 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 
 	if opts.proxy.GetInterceptionMode() == model.InterceptionTproxy && trafficDirection == core.TrafficDirection_INBOUND {
 		listenerFiltersMap[wellknown.OriginalSource] = true
+		// 如果是TPROXY mode则需要添加original src的listener filters
 		listenerFilters = append(listenerFilters, xdsfilters.OriginalSrc)
 	}
 
@@ -1520,6 +1526,8 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 	// needed, since we are explicitly setting transport protocol in every single
 	// match. We can do this for outbound as well, at which point this could be
 	// removed, but have not yet
+	// 我们需要一个TLS inspector，当http inspector只在outbound的时候需要，这是因为如果我们在match中设置ALPN
+	// 而没有设置transport_protocol=raw_buffer，Envoy会自动注入一个tls inspector
 	if opts.transport == istionetworking.TransportProtocolTCP &&
 		(needTLSInspector || (opts.class == istionetworking.ListenerClassSidecarOutbound && opts.needHTTPInspector)) {
 		listenerFiltersMap[wellknown.TlsInspector] = true
@@ -1527,6 +1535,7 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 	}
 
 	// TODO: For now we assume that only HTTP/3 is used over QUIC. Revisit this in the future
+	// 我们现在假设只有HTTP/3是基于QUIC的
 	if opts.needHTTPInspector && opts.transport == istionetworking.TransportProtocolTCP {
 		listenerFiltersMap[wellknown.HttpInspector] = true
 		listenerFilters = append(listenerFilters, xdsfilters.HTTPInspector)
@@ -1580,11 +1589,13 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 		}
 		var transportSocket *core.TransportSocket
 		switch opts.transport {
+		// 构建transport socket
 		case istionetworking.TransportProtocolTCP:
 			transportSocket = buildDownstreamTLSTransportSocket(chain.tlsContext)
 		case istionetworking.TransportProtocolQUIC:
 			transportSocket = buildDownstreamQUICTransportSocket(chain.tlsContext)
 		}
+		// 构建filter chain
 		filterChains = append(filterChains, &listener.FilterChain{
 			FilterChainMatch: match,
 			TransportSocket:  transportSocket,
@@ -1593,6 +1604,7 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 
 	var res *listener.Listener
 	switch opts.transport {
+	// 根据使用的transport socket的不同
 	case istionetworking.TransportProtocolTCP:
 		var bindToPort *wrappers.BoolValue
 		var connectionBalance *listener.Listener_ConnectionBalanceConfig

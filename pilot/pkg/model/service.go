@@ -172,6 +172,7 @@ const (
 	IstioMutualTLSModeLabel = "istio"
 
 	// IstioCanonicalServiceLabelName is the name of label for the Istio Canonical Service for a workload instance.
+	// IstioCanonicalServiceLabelName是label的名字用于Istio Canonical Service，用于一个workload实例
 	IstioCanonicalServiceLabelName = "service.istio.io/canonical-name"
 
 	// IstioCanonicalServiceRevisionLabelName is the name of label for the Istio Canonical Service revision for a workload instance.
@@ -181,6 +182,8 @@ const (
 // Port represents a network port where a service is listening for
 // connections. The port should be annotated with the type of protocol
 // used by the port.
+// Port代表一个network port，一个service用于监听连接，这个port应该被注释这个端口使用
+// 的协议的类型
 type Port struct {
 	// Name ascribes a human readable name for the port object. When a
 	// service has multiple ports, the name field is mandatory
@@ -189,6 +192,7 @@ type Port struct {
 	// Port number where the service can be reached. Does not necessarily
 	// map to the corresponding port numbers for the instances behind the
 	// service.
+	// service可以被访问的端口，不一定映射到service背后的实例的对应端口
 	Port int `json:"port"`
 
 	// Protocol to be used for the port.
@@ -419,6 +423,7 @@ type IstioEndpoint struct {
 
 	// EnvoyEndpoint is a cached LbEndpoint, converted from the data, to
 	// avoid recomputation
+	// EnvoyEndpoint是一个缓存的LbEndpoint，转换自data，来避免重新计算
 	EnvoyEndpoint *endpoint.LbEndpoint
 
 	// ServiceAccount holds the associated service account.

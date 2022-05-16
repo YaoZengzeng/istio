@@ -61,6 +61,7 @@ func GetTunnelBuilderType(_ string, proxy *model.Proxy, _ *model.PushContext) ne
 
 type EndpointBuilder struct {
 	// These fields define the primary key for an endpoint, and can be used as a cache key
+	// 这些字段定义了一个endpoint的primary key，可以用于作为cache key
 	clusterName     string
 	network         network.ID
 	networkView     map[network.ID]bool
@@ -119,6 +120,7 @@ func (b EndpointBuilder) DestinationRule() *networkingapi.DestinationRule {
 }
 
 // Key provides the eds cache key and should include any information that could change the way endpoints are generated.
+// Key提供了eds cache key并且应该包含任何能够改变endpoints生成方法的信息
 func (b EndpointBuilder) Key() string {
 	params := []string{
 		b.clusterName,
@@ -146,6 +148,7 @@ func (b EndpointBuilder) Key() string {
 		params = append(params, nv...)
 	}
 	hash := md5.New()
+	// 对params做哈希
 	for _, param := range params {
 		hash.Write([]byte(param))
 	}
@@ -262,6 +265,7 @@ func (e *LocLbEndpointsAndOptions) AssertInvarianceInTest() {
 }
 
 // build LocalityLbEndpoints for a cluster from existing EndpointShards.
+// 为一个cluster构建LocalityLbEndpoints从已经存在的EndpointShards中
 func (b *EndpointBuilder) buildLocalityLbEndpointsFromShards(
 	shards *EndpointShards,
 	svcPort *model.Port,
@@ -272,6 +276,7 @@ func (b *EndpointBuilder) buildLocalityLbEndpointsFromShards(
 
 	// Determine whether or not the target service is considered local to the cluster
 	// and should, therefore, not be accessed from outside the cluster.
+	// 确定target service是否是被认为为cluster本地的并且是否应该被cluster外部访问
 	isClusterLocal := b.clusterLocal
 
 	shards.mutex.Lock()
@@ -396,6 +401,7 @@ func (b *EndpointBuilder) createClusterLoadAssignment(llbOpts []*LocLbEndpointsA
 }
 
 // buildEnvoyLbEndpoint packs the endpoint based on istio info.
+// buildEnvoyLbEndpoint基于istio信息对endpoint进行打包
 func buildEnvoyLbEndpoint(e *model.IstioEndpoint) *endpoint.LbEndpoint {
 	addr := util.BuildAddress(e.Address, e.EndpointPort)
 
@@ -411,6 +417,7 @@ func buildEnvoyLbEndpoint(e *model.IstioEndpoint) *endpoint.LbEndpoint {
 	}
 
 	// Istio telemetry depends on the metadata value being set for endpoints in the mesh.
+	// Istio的telemetry依赖在网格中为endpoints设置的metadata值
 	// Istio endpoint level tls transport socket configuration depends on this logic
 	// Do not remove pilot/pkg/xds/fake.go
 	ep.Metadata = util.BuildLbEndpointMetadata(e.Network, e.TLSMode, e.WorkloadName, e.Namespace, e.Locality.ClusterID, e.Labels)

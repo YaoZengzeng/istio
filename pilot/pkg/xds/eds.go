@@ -386,6 +386,7 @@ func (s *DiscoveryServer) generateEndpoints(b EndpointBuilder) *endpoint.Cluster
 
 // EdsGenerator implements the new Generate method for EDS, using the in-memory, optimized endpoint
 // storage in DiscoveryServer.
+// EdsGenerator实现了对于EDS新的Generate方法，使用内存中的，优化的endpoint存储，在DiscoveryServer中
 type EdsGenerator struct {
 	Server *DiscoveryServer
 }
@@ -511,6 +512,7 @@ func shouldUseDeltaEds(req *model.PushRequest) bool {
 	return false
 }
 
+// EdsGenerator真正构建endpoints
 func (eds *EdsGenerator) buildEndpoints(proxy *model.Proxy,
 	push *model.PushContext,
 	req *model.PushRequest,
@@ -523,21 +525,27 @@ func (eds *EdsGenerator) buildEndpoints(proxy *model.Proxy,
 	empty := 0
 	cached := 0
 	regenerated := 0
+	// 遍历resources
 	for _, clusterName := range w.ResourceNames {
 		if edsUpdatedServices != nil {
 			_, _, hostname, _ := model.ParseSubsetKey(clusterName)
 			if _, ok := edsUpdatedServices[string(hostname)]; !ok {
 				// Cluster was not updated, skip recomputing. This happens when we get an incremental update for a
 				// specific Hostname. On connect or for full push edsUpdatedServices will be empty.
+				// Cluster没有更新，跳过recomputing，这会在我们拿到一个特定的hostname的incremental update的时候发生
+				// 在刚连接或者full push的时候，edsUpdatedService为空
 				continue
 			}
 		}
+		// 构建endpoint builder
 		builder := NewEndpointBuilder(clusterName, proxy, push)
 		if marshalledEndpoint, f := eds.Server.Cache.Get(builder); f && !features.EnableUnsafeAssertions {
 			// We skip cache if assertions are enabled, so that the cache will assert our eviction logic is correct
+			// 如果使能assertions的话，我们跳过缓存，这样缓存就会断言我们的驱逐逻辑是正确的
 			resources = append(resources, marshalledEndpoint)
 			cached++
 		} else {
+			// 否则调用DiscoveryServer生成endpoints
 			l := eds.Server.generateEndpoints(builder)
 			if l == nil {
 				continue
@@ -547,11 +555,13 @@ func (eds *EdsGenerator) buildEndpoints(proxy *model.Proxy,
 			if len(l.Endpoints) == 0 {
 				empty++
 			}
+			// 构建resource
 			resource := &discovery.Resource{
 				Name:     l.ClusterName,
 				Resource: util.MessageToAny(l),
 			}
 			resources = append(resources, resource)
+			// 加入到缓存中
 			eds.Server.Cache.Add(builder, req, resource)
 		}
 	}

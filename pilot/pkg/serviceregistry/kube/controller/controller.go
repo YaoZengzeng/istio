@@ -209,6 +209,7 @@ type kubernetesNode struct {
 }
 
 // controllerInterface is a simplified interface for the Controller used for testing.
+// controllerInterface是对于Controller简化的接口用于测试
 type controllerInterface interface {
 	getPodLocality(pod *v1.Pod) string
 	Network(endpointIP string, labels labels.Instance) network.ID

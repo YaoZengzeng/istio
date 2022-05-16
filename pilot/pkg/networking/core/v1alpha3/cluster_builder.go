@@ -129,6 +129,7 @@ type ClusterBuilder struct {
 }
 
 // NewClusterBuilder builds an instance of ClusterBuilder.
+// NewClusterBuilder构建一个ClusterBuilder的实例
 func NewClusterBuilder(proxy *model.Proxy, req *model.PushRequest, cache model.XdsCache) *ClusterBuilder {
 	cb := &ClusterBuilder{
 		serviceInstances:  proxy.ServiceInstances,
@@ -148,6 +149,7 @@ func NewClusterBuilder(proxy *model.Proxy, req *model.PushRequest, cache model.X
 		cache:             cache,
 	}
 	if proxy.Metadata != nil {
+		// 如果proxy的metadata中配置了tls client cert chain
 		if proxy.Metadata.TLSClientCertChain != "" {
 			cb.metadataCerts = &metadataCerts{
 				tlsClientCertChain: proxy.Metadata.TLSClientCertChain,
@@ -224,6 +226,7 @@ func (cb *ClusterBuilder) buildSubsetCluster(opts buildClusterOpts, destRule *co
 	// If subset has a traffic policy, apply it so that it overrides the destination rule traffic policy.
 	opts.policy = MergeTrafficPolicy(opts.policy, subset.TrafficPolicy, opts.port)
 	// Apply traffic policy for the subset cluster.
+	// 为subset cluster应用traffic policy
 	cb.applyTrafficPolicy(opts)
 
 	maybeApplyEdsConfig(subsetCluster.cluster)
@@ -246,6 +249,7 @@ func (cb *ClusterBuilder) applyDestinationRule(mc *MutableCluster, clusterMode C
 	port *model.Port, proxyNetworkView map[network.ID]bool, destRule *config.Config, serviceAccounts []string) []*cluster.Cluster {
 	destinationRule := CastDestinationRule(destRule)
 	// merge applicable port level traffic policy settings
+	// 合并合适的端口级别的流量策略设置
 	trafficPolicy := MergeTrafficPolicy(nil, destinationRule.GetTrafficPolicy(), port)
 	opts := buildClusterOpts{
 		mesh:             cb.req.Push.Mesh,
@@ -282,6 +286,7 @@ func (cb *ClusterBuilder) applyDestinationRule(mc *MutableCluster, clusterMode C
 	}
 	subsetClusters := make([]*cluster.Cluster, 0)
 	for _, subset := range destinationRule.GetSubsets() {
+		// 从destinationRule中获取subsets
 		subsetCluster := cb.buildSubsetCluster(opts, destRule, subset, service, proxyNetworkView)
 		if subsetCluster != nil {
 			subsetClusters = append(subsetClusters, subsetCluster)
@@ -297,6 +302,7 @@ func (cb *ClusterBuilder) applyMetadataExchange(pc *model.PushContext, c *cluste
 }
 
 // MergeTrafficPolicy returns the merged TrafficPolicy for a destination-level and subset-level policy on a given port.
+// MergeTrafficPolicy返回合并的TrafficPolicy，为一个destination级别和subset级别的policy，在一个给定的端口
 func MergeTrafficPolicy(original, subsetPolicy *networking.TrafficPolicy, port *model.Port) *networking.TrafficPolicy {
 	if subsetPolicy == nil {
 		return original

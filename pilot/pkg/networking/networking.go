@@ -96,8 +96,10 @@ type TransportProtocol uint8
 
 const (
 	// TransportProtocolTCP is a TCP listener
+	// TransportProtocolTCP是一个TCP listener
 	TransportProtocolTCP = iota
 	// TransportProtocolQUIC is a QUIC listener
+	// TransportProtocolQUIC是一个QUIC listener
 	TransportProtocolQUIC
 )
 

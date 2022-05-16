@@ -85,6 +85,7 @@ type MergedGateway struct {
 
 	// ContainsAutoPassthroughGateways determines if there are any type AUTO_PASSTHROUGH Gateways, requiring additional
 	// clusters to be sent to the workload
+	// ContainsAutoPassthroughGateways确定是否有任何类型为AUTO_PASSTHROUGH的Gateways，需要额外的clusters被发送到workload
 	ContainsAutoPassthroughGateways bool
 
 	// PortMap defines a mapping of targetPorts to the set of Service ports that reference them
@@ -129,6 +130,7 @@ func RecordRejectedConfig(gatewayName string) {
 const DisableGatewayPortTranslationLabel = "experimental.istio.io/disable-gateway-port-translation"
 
 // MergeGateways combines multiple gateways targeting the same workload into a single logical Gateway.
+// MergeGateways合并多个相同workload的gateways到单个的logical Gateway
 // Note that today any Servers in the combined gateways listening on the same port must have the same protocol.
 // If servers with different protocols attempt to listen on the same port, one of the protocols will be chosen at random.
 func MergeGateways(gateways []gatewayWithInstances, proxy *Proxy, ps *PushContext) *MergedGateway {

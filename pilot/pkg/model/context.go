@@ -171,6 +171,7 @@ func (e *Environment) SetLedger(l ledger.Ledger) {
 }
 
 // Resources is an alias for array of marshaled resources.
+// Resources是一个marshaled resources数组的别名
 type Resources = []*discovery.Resource
 
 // DeletedResources is an alias for array of strings that represent removed resources in delta.
@@ -644,9 +645,12 @@ func (m NodeMetadata) ProxyConfigOrDefault(def *meshconfig.ProxyConfig) *meshcon
 }
 
 // GetNetworkView returns the networks that the proxy requested.
+// GetNetworkView返回proxy请求的networks
 // When sending EDS/CDS-with-dns-endpoints, Pilot will only send
 // endpoints corresponding to the networks that the proxy wants to see.
 // If not set, we assume that the proxy wants to see endpoints in any network.
+// 当发送EDS/有着dns-endpoints的CDS时，Pilot会只发送proxy想要看到的networks的对应的endpoints
+// 如果没有设置，我们假设proxy想要看到任何network的endpoints
 func (node *Proxy) GetNetworkView() map[network.ID]bool {
 	if node == nil || node.Metadata == nil {
 		return nil
@@ -1070,6 +1074,7 @@ const (
 
 	// InterceptionRedirect implies traffic intercepted by IPtables with REDIRECT mode
 	// This is our default mode
+	// REDIRECT mode是默认模式
 	InterceptionRedirect TrafficInterceptionMode = "REDIRECT"
 )
 

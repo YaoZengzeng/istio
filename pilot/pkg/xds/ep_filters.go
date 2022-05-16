@@ -34,15 +34,19 @@ import (
 // of the connected sidecar. The filter will filter out all endpoints which are not present within the
 // sidecar network and add a gateway endpoint to remote networks that have endpoints
 // (if gateway exists and its IP is an IP and not a dns name).
+// EndpointsByNetworkFilter是一个network filter函数用来支持对EDS的水平切分 - 基于连接的sidecar的network对endpoints进行过滤
+// filter会过滤掉所有不再sidecar network中的endpoints并且添加一个gateway endpoint到有endpoints的remote networks
 // Information for the mesh networks is provided as a MeshNetwork config map.
 func (b *EndpointBuilder) EndpointsByNetworkFilter(endpoints []*LocLbEndpointsAndOptions) []*LocLbEndpointsAndOptions {
 	if !b.push.NetworkManager().IsMultiNetworkEnabled() {
 		// Multi-network is not configured (this is the case by default). Just access all endpoints directly.
+		// 没有配置多网络
 		return endpoints
 	}
 
 	// A new array of endpoints to be returned that will have both local and
 	// remote gateways (if any)
+	// 一个endpoints的数组用来返回，包含local以及remote gateways
 	filtered := make([]*LocLbEndpointsAndOptions, 0)
 
 	// Scale all weights by the lcm of gateways per network and gateways per cluster.

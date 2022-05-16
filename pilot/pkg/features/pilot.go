@@ -455,6 +455,7 @@ var (
 
 	MetadataExchange = env.RegisterBoolVar("PILOT_ENABLE_METADATA_EXCHANGE", true,
 		"If true, pilot will add metadata exchange filters, which will be consumed by telemetry filter.",
+		// 如果为true，pilot会添加metadata exchange filters，它会被telemetry filter消费
 	).Get()
 
 	WorkloadEntryAutoRegistration = env.RegisterBoolVar("PILOT_ENABLE_WORKLOAD_ENTRY_AUTOREGISTRATION", true,

@@ -120,6 +120,7 @@ type CacheToken uint64
 
 // XdsCache interface defines a store for caching XDS responses.
 // All operations are thread safe.
+// XdsCache接口定义了一个store用于缓存XDS responses，所有的操作都是线程安全的
 type XdsCache interface {
 	// Add adds the given XdsCacheEntry with the value for the given pushContext to the cache.
 	// If the cache has been updated to a newer push context, the write will be dropped silently.
@@ -128,6 +129,7 @@ type XdsCache interface {
 	Add(entry XdsCacheEntry, pushRequest *PushRequest, value *discovery.Resource)
 	// Get retrieves the cached value if it exists. The boolean indicates
 	// whether the entry exists in the cache.
+	// Get获取缓存的值，如果存在的话，布尔值表示entry是否存在于缓存中
 	Get(entry XdsCacheEntry) (*discovery.Resource, bool)
 	// Clear removes the cache entries that are dependent on the configs passed.
 	Clear(map[ConfigKey]struct{})

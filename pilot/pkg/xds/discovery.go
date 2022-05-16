@@ -153,6 +153,7 @@ type DiscoveryServer struct {
 	instanceID string
 
 	// Cache for XDS resources
+	// 用于缓存XDS资源
 	Cache model.XdsCache
 
 	// JwtKeyResolver holds a reference to the JWT key resolver instance.
@@ -169,6 +170,8 @@ type DiscoveryServer struct {
 // EndpointShards holds the set of endpoint shards of a service. Registries update
 // individual shards incrementally. The shards are aggregated and split into
 // clusters when a push for the specific cluster is needed.
+// EndpointShards维护一个service的一系列endpoint shards，Registries增量式的更新单个的shards
+// shards会被聚合并且分割为clusters，当需要推送到特定的cluster
 type EndpointShards struct {
 	// mutex protecting below map.
 	mutex sync.RWMutex
@@ -176,6 +179,8 @@ type EndpointShards struct {
 	// Shards is used to track the shards. EDS updates are grouped by shard.
 	// Current implementation uses the registry name as key - in multicluster this is the
 	// name of the k8s cluster, derived from the config (secret).
+	// Shards用来追踪shards，EDS更新按照shard聚合，当前的实现使用registry name作为key - 在multicluster中
+	// 这是k8s cluster的名字，从config(secret)中获取
 	Shards map[model.ShardKey][]*model.IstioEndpoint
 
 	// ServiceAccounts has the concatenation of all service accounts seen so far in endpoints.
