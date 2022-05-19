@@ -525,6 +525,7 @@ func GetNodeMetaData(options MetadataOptions) (*model.Node, error) {
 	if options.StsPort != 0 {
 		meta.StsPort = strconv.Itoa(options.StsPort)
 	}
+	// metadata中包含status port和prometheus port
 	meta.EnvoyStatusPort = options.EnvoyStatusPort
 	meta.EnvoyPrometheusPort = options.EnvoyPrometheusPort
 

@@ -87,6 +87,7 @@ func SetupSecurityOptions(proxyConfig *meshconfig.ProxyConfig, secOpt *security.
 		jwtPath = constants.TrustworthyJWTPath
 	case jwt.PolicyFirstParty:
 		log.Info("JWT policy is first-party-jwt")
+		// 
 		jwtPath = securityModel.K8sSAJwtFileName
 	default:
 		log.Info("Using existing certs")

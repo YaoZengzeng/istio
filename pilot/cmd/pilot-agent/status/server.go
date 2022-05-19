@@ -116,6 +116,7 @@ type Options struct {
 	// KubeAppProbers is a json with Kubernetes application prober config encoded.
 	KubeAppProbers      string
 	NodeType            model.NodeType
+	// status端口，admin端口
 	StatusPort          uint16
 	AdminPort           uint16
 	IPv6                bool
@@ -135,8 +136,10 @@ type Server struct {
 	appProbersDestination string
 	appKubeProbers        KubeAppProbers
 	appProbeClient        map[string]*http.Client
+	// 状态端口
 	statusPort            uint16
 	lastProbeSuccessful   bool
+	// status端口
 	envoyStatsPort        int
 	fetchDNS              func() *dnsProto.NameTable
 	upstreamLocalAddress  *net.TCPAddr

@@ -54,6 +54,7 @@ func ConstructProxyConfig(meshConfigFile, serviceCluster, proxyConfigEnv string,
 	if err != nil {
 		return nil, err
 	}
+	// 设置proxy config
 	proxyConfig := mesh.DefaultProxyConfig()
 	if meshConfig.DefaultConfig != nil {
 		proxyConfig = *meshConfig.DefaultConfig

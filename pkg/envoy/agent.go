@@ -34,6 +34,7 @@ const errOutOfMemory = "signal: killed"
 var activeConnectionCheckDelay = 1 * time.Second
 
 // NewAgent creates a new proxy agent for the proxy start-up and clean-up functions.
+// NewAgent创建一个新的proxy agent用于proxy的start-up以及clean-up函数
 func NewAgent(proxy Proxy, terminationDrainDuration, minDrainDuration time.Duration, localhost string,
 	adminPort, statusPort, prometheusPort int, exitOnZeroActiveConnections bool) *Agent {
 	knownIstioListeners := sets.NewSet(
@@ -50,6 +51,7 @@ func NewAgent(proxy Proxy, terminationDrainDuration, minDrainDuration time.Durat
 		terminationDrainDuration:    terminationDrainDuration,
 		minDrainDuration:            minDrainDuration,
 		exitOnZeroActiveConnections: exitOnZeroActiveConnections,
+		// 指定admin, status以及prometheus端口
 		adminPort:                   adminPort,
 		statusPort:                  statusPort,
 		prometheusPort:              prometheusPort,
@@ -105,6 +107,7 @@ type exitStatus struct {
 }
 
 // Run starts the envoy and waits until it terminates.
+// Run启动envoy并且等待它终结
 func (a *Agent) Run(ctx context.Context) {
 	log.Info("Starting proxy agent")
 	go a.runWait(0, a.abortCh)

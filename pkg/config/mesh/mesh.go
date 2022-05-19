@@ -42,6 +42,7 @@ func DefaultProxyConfig() meshconfig.ProxyConfig {
 		DrainDuration:            types.DurationProto(45 * time.Second),
 		ParentShutdownDuration:   types.DurationProto(60 * time.Second),
 		TerminationDrainDuration: types.DurationProto(5 * time.Second),
+		// admin的端口
 		ProxyAdminPort:           15000,
 		Concurrency:              &types.Int32Value{Value: 2},
 		ControlPlaneAuthPolicy:   meshconfig.AuthenticationPolicy_MUTUAL_TLS,
@@ -57,6 +58,7 @@ func DefaultProxyConfig() meshconfig.ProxyConfig {
 		// Code defaults
 		BinaryPath:     constants.BinaryPathFilename,
 		StatNameLength: 189,
+		// status的端口
 		StatusPort:     15020,
 	}
 }
@@ -96,6 +98,7 @@ func DefaultMeshConfig() meshconfig.MeshConfig {
 		DefaultConfig: &proxyConfig,
 
 		RootNamespace:                  constants.IstioSystemNamespace,
+		// outbound的监听端口为15001
 		ProxyListenPort:                15001,
 		ConnectTimeout:                 types.DurationProto(10 * time.Second),
 		DefaultServiceExportTo:         []string{"*"},

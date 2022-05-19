@@ -80,6 +80,7 @@ const (
 
 const (
 	// ProxyInboundListenPort is the port on which all inbound traffic to the pod/vm will be captured to
+	// ProxyInboundListenPort是所有到pod/vm的Inbound流量被抓取的端口
 	// TODO: allow configuration through mesh config
 	ProxyInboundListenPort = 15006
 )

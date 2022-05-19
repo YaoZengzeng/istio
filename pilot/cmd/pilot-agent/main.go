@@ -143,6 +143,7 @@ var (
 			defer cancel()
 
 			// If a status port was provided, start handling status probes.
+			// 如果提供了一个status port，开始处理status probes
 			if proxyConfig.StatusPort > 0 {
 				if err := initStatusServer(ctx, proxy, proxyConfig, agentOptions.EnvoyPrometheusPort, agent); err != nil {
 					return err

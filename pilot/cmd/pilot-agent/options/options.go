@@ -102,9 +102,11 @@ var (
 		"allow agent pull wasm plugin from insecure registries, for example: 'localhost:5000,docker-registry:5000'").Get()
 
 	// Ability of istio-agent to retrieve bootstrap via XDS
+	// 允许istio-agent通过XDS获取boostrap
 	enableBootstrapXdsEnv = env.RegisterBoolVar("BOOTSTRAP_XDS_AGENT", false,
 		"If set to true, agent retrieves the bootstrap configuration prior to starting Envoy").Get()
 
+	// 通过环境变量改变status port和prometheus port
 	envoyStatusPortEnv = env.RegisterIntVar("ENVOY_STATUS_PORT", 15021,
 		"Envoy health status port value").Get()
 	envoyPrometheusPortEnv = env.RegisterIntVar("ENVOY_PROMETHEUS_PORT", 15090,

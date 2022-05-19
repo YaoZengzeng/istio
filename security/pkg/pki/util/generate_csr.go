@@ -58,6 +58,7 @@ func GenCSR(options CertOptions) ([]byte, []byte, error) {
 			return nil, nil, fmt.Errorf("requested key size does not meet the minimum requied size of %d (requested: %d)", minimumRsaKeySize, options.RSAKeySize)
 		}
 
+		// 生成private key
 		priv, err = rsa.GenerateKey(rand.Reader, options.RSAKeySize)
 		if err != nil {
 			return nil, nil, fmt.Errorf("RSA key generation failed (%v)", err)
@@ -78,6 +79,7 @@ func GenCSR(options CertOptions) ([]byte, []byte, error) {
 }
 
 // GenCSRTemplate generates a certificateRequest template with the given options.
+// GenCSRTemplate用给定的options创建一个certificateRequest template
 func GenCSRTemplate(options CertOptions) (*x509.CertificateRequest, error) {
 	template := &x509.CertificateRequest{
 		Subject: pkix.Name{

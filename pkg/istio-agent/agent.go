@@ -174,10 +174,12 @@ type AgentOptions struct {
 
 	// Envoy status port (that circles back to the agent status port). Really belongs to the proxy config.
 	// Cannot be eradicated because mistakes have been made.
+	// Envoy的status port（回转到agent的status port）
 	EnvoyStatusPort int
 
 	// Envoy prometheus port that circles back to its admin port for prom endpoint. Really belongs to the
 	// proxy config.
+	// Envoy的prometheus port，回转到它的admin端口的prom endpoint
 	EnvoyPrometheusPort int
 
 	MinimumDrainDuration time.Duration
@@ -432,6 +434,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 	}
 
 	if a.cfg.GRPCBootstrapPath != "" {
+		// 构建GRPC Bootstrap
 		if err := a.generateGRPCBootstrap(); err != nil {
 			return nil, fmt.Errorf("failed generating gRPC XDS bootstrap: %v", err)
 		}

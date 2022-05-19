@@ -85,6 +85,9 @@ func (t *TokenProvider) RequireTransportSecurity() bool {
 // token is missing (for example, on a VM that has rebooted, causing the token to be removed from
 // volatile memory), we can still proceed and allow other authentication methods to potentially
 // handle the request, such as mTLS.
+// GetToken获取一个token来关联到一个request，返回""，nil会导致没有header被添加，而非nil的错误会阻塞请求，如果
+// 没有找到选中的token，不会有error返回，导致没有authorization header被设置，这确保及时没有JWT token，我们也可以
+// 处理并且允许其他的authentication methods能潜在地处理请求，例如mTLS
 func (t *TokenProvider) GetToken() (string, error) {
 	if !t.forCA {
 		return t.GetTokenForXDS()
