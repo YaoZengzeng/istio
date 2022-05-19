@@ -199,6 +199,7 @@ type XdsUpdates = map[ConfigKey]struct{}
 
 // XdsLogDetails contains additional metadata that is captured by Generators and used by xds processors
 // like Ads and Delta to uniformly log.
+// XdsLogDetails包含Generators捕获的额外的元数据并且由xds processors，像Ads以及Delta使用来统一进行日志
 type XdsLogDetails struct {
 	Incremental    bool
 	AdditionalInfo string

@@ -35,6 +35,8 @@ import (
 const (
 	// GatewaySdsCaSuffix is the suffix of the sds resource name for root CA. All resource
 	// names for gateway root certs end with "-cacert".
+	// GatewaySdsCaSuffix是对于root CA的sds resource name的后缀，所有gateway root certs的资源名
+	// 都以"-cacert"结尾
 	GatewaySdsCaSuffix = "-cacert"
 )
 
@@ -73,6 +75,7 @@ func needsUpdate(proxy *model.Proxy, updates model.XdsUpdates) bool {
 
 // parseResources parses a list of resource names to SecretResource types, for a given proxy.
 // Invalid resource names are ignored
+// parseResources解析一系列的resource names到SecretResource类型，对于一个给定的proxy，非法的resource names会被忽略
 func (s *SecretGen) parseResources(names []string, proxy *model.Proxy) []SecretResource {
 	res := make([]SecretResource, 0, len(names))
 	for _, resource := range names {
@@ -93,6 +96,7 @@ func (s *SecretGen) Generate(proxy *model.Proxy, push *model.PushContext, w *mod
 		log.Warnf("proxy %s is not authorized to receive credscontroller. Ensure you are connecting over TLS port and are authenticated.", proxy.ID)
 		return nil, model.DefaultXdsLogDetails, nil
 	}
+	// 对于SecretGen，只能由model.Router调用
 	if req == nil || !needsUpdate(proxy, req.ConfigsUpdated) {
 		return nil, model.DefaultXdsLogDetails, nil
 	}
@@ -102,8 +106,10 @@ func (s *SecretGen) Generate(proxy *model.Proxy, push *model.PushContext, w *mod
 	}
 
 	// TODO: For the new gateway-api, we should always search the config namespace and stop reading across all clusters
+	// 对于新的gateway-api，我们应该只搜索config namespace并且停止跨所有的clusters进行读取
 	proxyClusterSecrets, err := s.secrets.ForCluster(proxy.Metadata.ClusterID)
 	if err != nil {
+		// 来自未知cluster的proxy，不能获取证书
 		log.Warnf("proxy %s is from an unknown cluster, cannot retrieve certificates: %v", proxy.ID, err)
 		pilotSDSCertificateErrors.Increment()
 		return nil, model.DefaultXdsLogDetails, nil
@@ -118,6 +124,8 @@ func (s *SecretGen) Generate(proxy *model.Proxy, push *model.PushContext, w *mod
 	// Filter down to resources we can access. We do not return an error if they attempt to access a Secret
 	// they cannot; instead we just exclude it. This ensures that a single bad reference does not break the whole
 	// SDS flow. The pilotSDSCertificateErrors metric and logs handle visibility into invalid references.
+	// 过滤掉我们不能访问的资源，我们不需要返回错误，如果它们试着访问一个它们不能访问的Secret，相反我们应该排除它
+	// 这确保单个的bad reference不会破坏整个SDS flow
 	resources := filterAuthorizedResources(s.parseResources(w.ResourceNames, proxy), proxy, proxyClusterSecrets)
 
 	results := model.Resources{}
@@ -176,6 +184,7 @@ func (s *SecretGen) Generate(proxy *model.Proxy, push *model.PushContext, w *mod
 }
 
 // filterAuthorizedResources takes a list of SecretResource and filters out resources that proxy cannot access
+// filterAuthorizedResources对一系列的SecretResource过滤出proxy不能访问的
 func filterAuthorizedResources(resources []SecretResource, proxy *model.Proxy, secrets credscontroller.Controller) []SecretResource {
 	var authzResult *bool
 	var authzError error
@@ -240,6 +249,7 @@ func filterAuthorizedResources(resources []SecretResource, proxy *model.Proxy, s
 		pilotSDSCertificateErrors.Increment()
 	}
 
+	// 返回允许的resources
 	return allowedResources
 }
 
@@ -334,6 +344,7 @@ func relatedConfigs(k model.ConfigKey) []model.ConfigKey {
 type SecretGen struct {
 	secrets credscontroller.MulticlusterController
 	// Cache for XDS resources
+	// 缓存XDS资源
 	cache         model.XdsCache
 	configCluster cluster.ID
 }

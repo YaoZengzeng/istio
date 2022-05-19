@@ -59,6 +59,7 @@ func NewXdsServer(stop chan struct{}, gen model.XdsResourceGenerator) *xds.Disco
 	}
 	s.DiscoveryServer.ProxyNeedsPush = func(proxy *model.Proxy, req *model.PushRequest) bool {
 		// Empty changes means "all"
+		// 空的配置意味着"all"
 		if len(req.ConfigsUpdated) == 0 {
 			return true
 		}
@@ -85,11 +86,13 @@ func NewXdsServer(stop chan struct{}, gen model.XdsResourceGenerator) *xds.Disco
 }
 
 // newSDSService creates Secret Discovery Service which implements envoy SDS API.
+// newSDSService创建Secret Discovery Service，实现了envoy的SDS API
 func newSDSService(st security.SecretManager, options *security.Options) *sdsservice {
 	ret := &sdsservice{
 		st:   st,
 		stop: make(chan struct{}),
 	}
+	// 构建xds server
 	ret.XdsServer = NewXdsServer(ret.stop, ret)
 
 	ret.rootCaPath = options.CARootPath
@@ -102,6 +105,8 @@ func newSDSService(st security.SecretManager, options *security.Options) *sdsser
 	// case we always write a certificate. A workload can technically run without any mTLS/CA
 	// configured, in which case this will fail; if it becomes noisy we should disable the entire SDS
 	// server in these cases.
+	// 提前生成workload certificates来提高启动的延时并且确保对于OUTPUT_CERTS，我们总是写入一个证书，一个workload
+	// 技术上来说可以在没有mTLS/CA配置的情况下运行，这种情况下会fail，如果这太过noisy，我们应该关闭整个SDS
 	go func() {
 		b := backoff.NewExponentialBackOff()
 		b.MaxElapsedTime = 0
@@ -159,6 +164,7 @@ func (s *sdsservice) generate(resourceNames []string) (model.Resources, error) {
 
 // Generate implements the XDS Generator interface. This allows the XDS server to dispatch requests
 // for SecretTypeV3 to our server to generate the Envoy response.
+// Generate实现了XDS Generator接口，这允许XDS server来分发SecretTypeV3的请求到我们的server来生成Envoy response
 func (s *sdsservice) Generate(_ *model.Proxy, _ *model.PushContext, w *model.WatchedResource,
 	updates *model.PushRequest) (model.Resources, model.XdsLogDetails, error) {
 	// updates.Full indicates we should do a complete push of all updated resources
@@ -172,6 +178,7 @@ func (s *sdsservice) Generate(_ *model.Proxy, _ *model.PushContext, w *model.Wat
 	watched := sets.NewSet(w.ResourceNames...)
 	for i := range updates.ConfigsUpdated {
 		if i.Kind == gvk.Secret && watched.Contains(i.Name) {
+			// 如果更新的secret中包含要监听的resource name
 			names = append(names, i.Name)
 		}
 	}

@@ -39,6 +39,7 @@ import (
 const minimumRsaKeySize = 2048
 
 // GenCSR generates a X.509 certificate sign request and private key with the given options.
+// GenCSR生成一个X.509的csr以及private key，用给定的options
 func GenCSR(options CertOptions) ([]byte, []byte, error) {
 	var priv interface{}
 	var err error

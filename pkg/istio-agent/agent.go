@@ -257,6 +257,7 @@ func (a *Agent) generateNodeMetadata() (*model.Node, error) {
 	})
 }
 
+// 初始化Envoy Agent
 func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 	node, err := a.generateNodeMetadata()
 	if err != nil {
@@ -275,10 +276,12 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 	} else {
 		out, err := bootstrap.New(bootstrap.Config{
 			Node: node,
+		   // 这个函数只有在这里被调用
 		}).CreateFileForEpoch(0)
 		if err != nil {
 			return fmt.Errorf("failed to generate bootstrap config: %v", err)
 		}
+		// 配置文件的路径
 		a.envoyOpts.ConfigPath = out
 		a.envoyOpts.ConfigCleanup = true
 	}
@@ -413,7 +416,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 	}
 
 	a.sdsServer = sds.NewServer(a.secOpts, a.secretCache)
-	// 添加secret cache的callback
+	// 添加secret cache的callback，当对应的资源需要更新时，调用a.sdsServer.UpdateCallabck
 	a.secretCache.SetUpdateCallback(a.sdsServer.UpdateCallback)
 
 	// 初始化xds proxy
@@ -661,6 +664,7 @@ func getKeyCertInner(certPath string) (string, string) {
 // newSecretManager为workload secrets创建SecretManager
 func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	// If proxy is using file mounted certs, we do not have to connect to CA.
+	// 如果proxy使用以文件挂载的certs，我们不需要连接到CA
 	if a.secOpts.FileMountedCerts {
 		log.Info("Workload is using file mounted certificates. Skipping connecting to CA")
 		return cache.NewSecretManagerClient(nil, a.secOpts)

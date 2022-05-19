@@ -46,6 +46,7 @@ type CertificateAuthority interface {
 
 // Server implements IstioCAService and IstioCertificateService and provides the services on the
 // specified port.
+// Server实现了IstioCAService以及IstioCertificateService并且在特定的端口提供services
 type Server struct {
 	monitoring     monitoringMetrics
 	Authenticators []security.Authenticator
@@ -65,6 +66,8 @@ func getConnectionAddress(ctx context.Context) string {
 // CreateCertificate handles an incoming certificate signing request (CSR). It does
 // authentication and authorization. Upon validated, signs a certificate that:
 // the SAN is the identity of the caller in authentication result.
+// CreateCertificate处理一个incoming CSR，它进行认证和鉴权，知道确认合法，签署一个证书：SAN是调用者的标识符，在
+// authentication result中，subject public key是CSR中的public key
 // the subject public key is the public key in the CSR.
 // the validity duration is the ValidityDuration in request, or default value if the given duration is invalid.
 // it is signed by the CA signing key.
@@ -91,6 +94,7 @@ func (s *Server) CreateCertificate(ctx context.Context, request *pb.IstioCertifi
 	var cert []byte
 	var respCertChain []string
 	if certSigner == "" {
+		// 得到证书
 		cert, signErr = s.ca.Sign([]byte(request.Csr), certOpts)
 	} else {
 		respCertChain, signErr = s.ca.SignWithCertChain([]byte(request.Csr), certOpts)
@@ -101,6 +105,7 @@ func (s *Server) CreateCertificate(ctx context.Context, request *pb.IstioCertifi
 		return nil, status.Errorf(signErr.(*caerror.Error).HTTPErrorCode(), "CSR signing error (%v)", signErr.(*caerror.Error))
 	}
 	if certSigner == "" {
+		// 构建response cert chain
 		respCertChain = []string{string(cert)}
 		if len(certChainBytes) != 0 {
 			respCertChain = append(respCertChain, string(certChainBytes))
@@ -158,6 +163,8 @@ func New(ca CertificateAuthority, ttl time.Duration,
 
 // authenticate goes through a list of authenticators (provided client cert, k8s jwt, and ID token)
 // and authenticates if one of them is valid.
+// authenticate遍历一系列的authenticators（提供的client cert, k8s jwt以及ID token）并且认证如果其中一个
+// 是合法的
 func Authenticate(ctx context.Context, auth []security.Authenticator) *security.Caller {
 	// TODO: apply different authenticators in specific order / according to configuration.
 	var errMsg string

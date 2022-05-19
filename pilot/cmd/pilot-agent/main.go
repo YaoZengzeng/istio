@@ -105,6 +105,7 @@ var (
 				log.Infof("Effective config: %s", out)
 			}
 
+			// 构建security options
 			secOpts, err := options.NewSecurityOptions(proxyConfig, stsPort, tokenManagerPlugin)
 			if err != nil {
 				return err
@@ -114,6 +115,7 @@ var (
 			// listen on STS port for STS requests. For STS, see
 			// https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
 			// STS is used for stackdriver or other Envoy services using google gRPC.
+			// STS用于stackdriver获取其他使用gRPC服务的Envoy services
 			if stsPort > 0 {
 				stsServer, err := initStsServer(proxy, secOpts.TokenManager)
 				if err != nil {

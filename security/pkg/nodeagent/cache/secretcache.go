@@ -46,10 +46,13 @@ var (
 
 const (
 	// The size of a private key for a leaf certificate.
+	// 对于一个leaf certificate的私钥的大小
 	keySize = 2048
 
 	// firstRetryBackOffInMilliSec is the initial backoff time interval when hitting
 	// non-retryable error in CSR request or while there is an error in reading file mounts.
+	// firstRetryBackOffInMilliSec是初始的回退的时间间隔，当遇到不可恢复的错误的时候，在一个CSR请求
+	// 或者在读取file mounts的时候遇到错误
 	firstRetryBackOffInMilliSec = 50
 )
 
@@ -86,6 +89,7 @@ type SecretManagerClient struct {
 	caClient security.Client
 
 	// configOptions includes all configurable params for the cache.
+	// configOptions包含了所有的配置参数用于缓存
 	configOptions *security.Options
 
 	// callback function to invoke when detecting secret change.
@@ -94,6 +98,7 @@ type SecretManagerClient struct {
 
 	// Cache of workload certificate and root certificate. File based certs are never cached, as
 	// lookup is cheap.
+	// 缓存workload证书以及root证书，基于文件的证书不用缓存，因为lookup很简单
 	cache secretCache
 
 	// generateMutex ensures we do not send concurrent requests to generate a certificate
@@ -101,6 +106,8 @@ type SecretManagerClient struct {
 
 	// The paths for an existing certificate chain, key and root cert files. Istio agent will
 	// use them as the source of secrets if they exist.
+	// 一个已经存在的certificate chain，key以及root cert files的路径，Istio agent会使用它们
+	// 作为source of secrets，如果它们存在的话
 	existingCertificateFile security.SdsCertificateConfig
 
 	// certWatcher watches the certificates for changes and triggers a notification to proxy.
@@ -160,6 +167,7 @@ func (s *secretCache) SetWorkload(value *security.SecretItem) {
 	s.workload = value
 }
 
+// SecretManagerClient实现了SecretManager接口
 var _ security.SecretManager = &SecretManagerClient{}
 
 // FileCert stores a reference to a certificate on disk
@@ -220,10 +228,12 @@ func (sc *SecretManagerClient) CallUpdateCallback(resourceName string) {
 }
 
 // getCachedSecret: retrieve cached Secret Item (workload-certificate/workload-root) from secretManager client
+// getCachedSecret: 从secretManager client获取缓存的Secret Item（workload证书/workload根证书）
 func (sc *SecretManagerClient) getCachedSecret(resourceName string) (secret *security.SecretItem) {
 	var rootCertBundle []byte
 	var ns *security.SecretItem
 
+	// 从缓存中获取workload
 	if c := sc.cache.GetWorkload(); c != nil {
 		if resourceName == security.RootCertReqResourceName {
 			rootCertBundle = sc.mergeTrustAnchorBytes(c.RootCert)
@@ -254,6 +264,7 @@ func (sc *SecretManagerClient) getCachedSecret(resourceName string) (secret *sec
 func (sc *SecretManagerClient) GenerateSecret(resourceName string) (secret *security.SecretItem, err error) {
 	cacheLog.Debugf("generate secret %q", resourceName)
 	// Setup the call to store generated secret to disk
+	// 设置调用来将生成的secret写到磁盘中
 	defer func() {
 		if secret == nil || err != nil {
 			return
@@ -276,6 +287,7 @@ func (sc *SecretManagerClient) GenerateSecret(resourceName string) (secret *secu
 	}()
 
 	// First try to generate secret from file.
+	// 首先尝试从文件获取secret
 	if sdsFromFile, ns, err := sc.generateFileSecret(resourceName); sdsFromFile {
 		if err != nil {
 			return nil, err
@@ -293,6 +305,7 @@ func (sc *SecretManagerClient) GenerateSecret(resourceName string) (secret *secu
 	defer sc.generateMutex.Unlock()
 
 	// Now that we got the lock, look at cache again before sending request to avoid overwhelming CA
+	// 现在我们有了lock，再次查看缓存，在发送请求之前，为了避免压垮CA
 	ns = sc.getCachedSecret(resourceName)
 	if ns != nil {
 		return ns, nil
@@ -322,7 +335,9 @@ func (sc *SecretManagerClient) GenerateSecret(resourceName string) (secret *secu
 		if !bytes.Equal(oldRoot, ns.RootCert) {
 			cacheLog.Info("Root cert has changed, start rotating root cert")
 			// We store the oldRoot only for comparison and not for serving
+			// 我们存储oldRoot只用于比较而不服务
 			sc.cache.SetRoot(ns.RootCert)
+			// 再进行推送
 			sc.CallUpdateCallback(security.RootCertReqResourceName)
 		}
 	}
@@ -563,6 +578,7 @@ func (sc *SecretManagerClient) generateNewSecret(resourceName string) (*security
 
 	csrHostName := &spiffe.Identity{
 		TrustDomain:    sc.configOptions.TrustDomain,
+		// 指定namespace和service account
 		Namespace:      sc.configOptions.WorkloadNamespace,
 		ServiceAccount: sc.configOptions.ServiceAccount,
 	}
@@ -747,11 +763,13 @@ func (sc *SecretManagerClient) UpdateConfigTrustBundle(trustBundle []byte) error
 	}
 	sc.configTrustBundle = trustBundle
 	sc.configTrustBundleMutex.Unlock()
+	// 更新ROOTCA
 	sc.CallUpdateCallback(security.RootCertReqResourceName)
 	return nil
 }
 
 // mergeTrustAnchorBytes: Merge cert bytes with the cached TrustAnchors.
+// mergeTrustAnchorBytes: 将缓存的TrustAnchors和cert bytes进行合并
 func (sc *SecretManagerClient) mergeTrustAnchorBytes(caCerts []byte) []byte {
 	return sc.mergeConfigTrustBundle(pkiutil.PemCertBytestoString(caCerts))
 }

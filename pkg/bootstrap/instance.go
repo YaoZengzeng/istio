@@ -38,11 +38,14 @@ const (
 var overrideVar = env.RegisterStringVar("ISTIO_BOOTSTRAP", "", "")
 
 // Instance of a configured Envoy bootstrap writer.
+// 一个配置的Envoy bootstrap writer的实例
 type Instance interface {
 	// WriteTo writes the content of the Envoy bootstrap to the given writer.
+	// WriteTo将Envoy bootstrap的内容写入给定的writer
 	WriteTo(templateFile string, w io.Writer) error
 
 	// CreateFileForEpoch generates an Envoy bootstrap file for a particular epoch.
+	// CreateFileForEpoch为一个特定的epoch创建一个Envoy bootstrap文件
 	CreateFileForEpoch(epoch int) (string, error)
 }
 

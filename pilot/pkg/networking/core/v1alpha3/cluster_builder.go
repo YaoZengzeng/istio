@@ -1104,6 +1104,7 @@ func (cb *ClusterBuilder) buildUpstreamClusterTLSContext(opts *buildClusterOpts,
 			authn_model.ApplyCustomSDSToClientCommonTLSContext(tlsContext.CommonTlsContext, tls)
 		} else {
 			// If CredentialName is not set fallback to files specified in DR.
+			// 如果没有设置CredentialName，回退到使用在DR中指定的文件
 			res := security.SdsCertificateConfig{
 				CaCertificatePath: tls.CaCertificates,
 			}

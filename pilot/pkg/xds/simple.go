@@ -63,6 +63,7 @@ type SimpleServer struct {
 
 // Creates an basic, functional discovery server, using the same code as Istiod, but
 // backed by an in-memory config and endpoint stores.
+// 创建一个基本的，功能可用的discovery server，使用和Istiod相同的代码，但是基于一个in-memory的config以及endpoint stores
 //
 // Can be used in tests, or as a minimal XDS discovery server with no dependency on K8S or
 // the complex bootstrap used by Istiod. A memory registry and memory config store are used to

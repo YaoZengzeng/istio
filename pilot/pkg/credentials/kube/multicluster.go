@@ -48,7 +48,7 @@ func NewMulticluster(localCluster cluster.ID) *Multicluster {
 
 func (m *Multicluster) ClusterAdded(cluster *multicluster.Cluster, _ <-chan struct{}) error {
 	log.Infof("initializing Kubernetes credential reader for cluster %v", cluster.ID)
-	// 构建credentials controoler
+	// 构建credentials controoler，将cluster.Client传入
 	sc := NewCredentialsController(cluster.Client, cluster.ID)
 	m.m.Lock()
 	m.remoteKubeControllers[cluster.ID] = sc
@@ -115,6 +115,7 @@ var _ credentials.Controller = &AggregateController{}
 
 func (a *AggregateController) GetKeyAndCert(name, namespace string) (key []byte, cert []byte, err error) {
 	// Search through all clusters, find first non-empty result
+	// 遍历所有的clusters，找到第一个非空的结果
 	var firstError error
 	for _, c := range a.controllers {
 		k, c, err := c.GetKeyAndCert(name, namespace)

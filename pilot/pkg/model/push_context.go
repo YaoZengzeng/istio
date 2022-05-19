@@ -649,6 +649,7 @@ func init() {
 }
 
 // NewPushContext creates a new PushContext structure to track push status.
+// NewPushContext创建一个新的PushContext结构来对push状态进行追踪
 func NewPushContext() *PushContext {
 	return &PushContext{
 		ServiceIndex:            newServiceIndex(),

@@ -132,6 +132,7 @@ func (configgen *ConfigGeneratorImpl) BuildListeners(node *model.Proxy,
 	return builder.getListeners()
 }
 
+// 构建listener的tls context
 func (configgen *ConfigGeneratorImpl) BuildListenerTLSContext(serverTLSSettings *networking.ServerTLSSettings,
 	proxy *model.Proxy, transportProtocol istionetworking.TransportProtocol) *auth.DownstreamTlsContext {
 	alpnByTransport := util.ALPNHttp

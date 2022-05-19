@@ -70,6 +70,7 @@ type Config struct {
 }
 
 // newTemplateParams creates a new template configuration for the given configuration.
+// newTemplateParams为给定配置创建一个新的template配置
 func (cfg Config) toTemplateParams() (map[string]interface{}, error) {
 	opts := make([]option.Instance, 0)
 
@@ -129,6 +130,7 @@ func (cfg Config) toTemplateParams() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	// 扩展opts
 	opts = append(opts, proxyOpts...)
 
 	// TODO: allow reading a file with additional metadata (for example if created with
@@ -335,6 +337,7 @@ func getProxyConfigOptions(metadata *model.BootstrapNodeMetadata) ([]option.Inst
 		option.StatsdAddress(config.StatsdUdpAddress))
 
 	// Add tracing options.
+	// 添加tracing相关的选项
 	if config.Tracing != nil {
 		isH2 := false
 		switch tracer := config.Tracing.Tracer.(type) {
@@ -379,6 +382,7 @@ func getProxyConfigOptions(metadata *model.BootstrapNodeMetadata) ([]option.Inst
 	}
 
 	// Add options for Envoy metrics.
+	// 添加Envoy相关的选项
 	if config.EnvoyMetricsService != nil && config.EnvoyMetricsService.Address != "" {
 		opts = append(opts, option.EnvoyMetricsServiceAddress(config.EnvoyMetricsService.Address),
 			option.EnvoyMetricsServiceTLS(config.EnvoyMetricsService.TlsSettings, metadata),
@@ -388,6 +392,7 @@ func getProxyConfigOptions(metadata *model.BootstrapNodeMetadata) ([]option.Inst
 	}
 
 	// Add options for Envoy access log.
+	// 添加Envoy access log相关的选项
 	if config.EnvoyAccessLogService != nil && config.EnvoyAccessLogService.Address != "" {
 		opts = append(opts, option.EnvoyAccessLogServiceAddress(config.EnvoyAccessLogService.Address),
 			option.EnvoyAccessLogServiceTLS(config.EnvoyAccessLogService.TlsSettings, metadata),

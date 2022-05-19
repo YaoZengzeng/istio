@@ -93,6 +93,7 @@ func (a *KubeJWTAuthenticator) AuthenticateRequest(req *http.Request) (*security
 
 // Authenticate authenticates the call using the K8s JWT from the context.
 // The returned Caller.Identities is in SPIFFE format.
+// Authenticate使用从context中获取的K8s JWT对调用进行认证，返回的Caller.Identities是以SPIFFE格式的
 func (a *KubeJWTAuthenticator) Authenticate(ctx context.Context) (*security.Caller, error) {
 	targetJWT, err := security.ExtractBearerToken(ctx)
 	if err != nil {

@@ -110,6 +110,7 @@ func init() {
 type readinessProbe func() (bool, error)
 
 // Server contains the runtime configuration for the Pilot discovery service.
+// Server包含了Pilot的discovery service的运行时配置
 type Server struct {
 	XDSServer *xds.DiscoveryServer
 
@@ -189,6 +190,7 @@ type Server struct {
 }
 
 // NewServer creates a new Server instance based on the provided arguments.
+// NewServer基于提供的参数创建一个新的Server实例
 func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	e := &model.Environment{
 		PushContext:  model.NewPushContext(),
@@ -202,6 +204,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	e.ServiceDiscovery = ac
 
 	s := &Server{
+		// 获取cluster id
 		clusterID:               getClusterID(args),
 		environment:             e,
 		fileWatcher:             filewatcher.NewWatcher(),
@@ -219,6 +222,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 		fn(s)
 	}
 	// Initialize workload Trust Bundle before XDS Server
+	// 在XDS Server之前初始化workload Trust Bundle
 	e.TrustBundle = s.workloadTrustBundle
 	s.XDSServer = xds.NewDiscoveryServer(e, args.Plugins, args.PodName, args.Namespace, args.RegistryOptions.KubeOptions.ClusterAliases)
 
@@ -255,6 +259,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 		caOpts.ExternalCASigner = k8sSigner
 	}
 	// CA signing certificate must be created first if needed.
+	// CA signing certificate必须被首先创建，如果需要的话
 	if err := s.maybeCreateCA(caOpts); err != nil {
 		return nil, err
 	}
@@ -263,6 +268,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 		return nil, err
 	}
 
+	// 初始化Generators
 	s.XDSServer.InitGenerators(e, args.Namespace)
 
 	// Initialize workloadTrustBundle after CA has been initialized
@@ -277,6 +283,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	}
 
 	// Create Istiod certs and setup watches.
+	// 创建Istiod的证书并且设置watches
 	if err := s.initIstiodCerts(args, string(istiodHost)); err != nil {
 		return nil, err
 	}
@@ -290,6 +297,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	// common https server for webhooks (e.g. injection, validation)
 	if s.kubeClient != nil {
 		s.initSecureWebhookServer(args)
+		// 初始化sidecar injector
 		wh, err = s.initSidecarInjector(args)
 		if err != nil {
 			return nil, fmt.Errorf("error initializing sidecar injector: %v", err)
@@ -315,6 +323,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 
 	s.initDiscoveryService(args)
 
+	// 初始化sds server
 	s.initSDSServer()
 
 	// Notice that the order of authenticators matters, since at runtime
@@ -525,6 +534,7 @@ func (s *Server) initSDSServer() {
 		// 构建credential controller
 		creds := kubecredentials.NewMulticluster(s.clusterID)
 		creds.AddEventHandler(func(name string, namespace string) {
+			// 添加事件处理函数，即secret有更新的时候，进行推送
 			s.XDSServer.ConfigUpdate(&model.PushRequest{
 				Full: false,
 				ConfigsUpdated: map[model.ConfigKey]struct{}{

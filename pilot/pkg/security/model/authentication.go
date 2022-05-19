@@ -78,6 +78,8 @@ var SDSAdsConfig = &core.ConfigSource{
 // from certificates referenced by credentialName in DestinationRule or Gateway.
 // Currently this is served by a local SDS server, but in the future replaced by
 // Istiod SDS server.
+// ConstructSdsSecretConfigForCredential构建SDS secret配置用于通过引用在DestinationRule或者Gateway
+// 中的credentialName来构建SDS secret
 func ConstructSdsSecretConfigForCredential(name string) *tls.SdsSecretConfig {
 	if name == "" {
 		return nil
@@ -85,6 +87,7 @@ func ConstructSdsSecretConfigForCredential(name string) *tls.SdsSecretConfig {
 
 	return &tls.SdsSecretConfig{
 		Name:      credentials.ToResourceName(name),
+		// 基于ADS的sds配置
 		SdsConfig: SDSAdsConfig,
 	}
 }
@@ -136,6 +139,7 @@ var (
 )
 
 // ConstructSdsSecretConfig constructs SDS Secret Configuration for workload proxy.
+// ConstructSdsSecretConfig为workload proxy构建SDS Secret配置
 func ConstructSdsSecretConfig(name string) *tls.SdsSecretConfig {
 	if name == "" {
 		return nil
@@ -215,15 +219,19 @@ func ApplyToCommonTLSContext(tlsContext *tls.CommonTlsContext, proxy *model.Prox
 
 // ApplyCustomSDSToClientCommonTLSContext applies the customized sds to CommonTlsContext
 // Used for building upstream TLS context for egress gateway's TLS/mTLS origination
+// ApplyCustomSDSToClientCommonTLSContext应用自定义的sds到CommonTlsContext，用于构建upstream TLS context
+// 对于egress gateway的TLS/mTLS origination
 func ApplyCustomSDSToClientCommonTLSContext(tlsContext *tls.CommonTlsContext, tlsOpts *networking.ClientTLSSettings) {
 	if tlsOpts.Mode == networking.ClientTLSSettings_MUTUAL {
 		// create SDS config for gateway to fetch key/cert from agent.
+		// 创建SDS配置用于gateway从agent获取key/cert
 		tlsContext.TlsCertificateSdsSecretConfigs = []*tls.SdsSecretConfig{
 			ConstructSdsSecretConfigForCredential(tlsOpts.CredentialName),
 		}
 	}
 	// create SDS config for gateway to fetch certificate validation context
 	// at gateway agent.
+	// 创建SDS配置用于gateway从gateway agent获取certificate validation context
 	defaultValidationContext := &tls.CertificateValidationContext{
 		MatchSubjectAltNames: util.StringToExactMatch(tlsOpts.SubjectAltNames),
 	}
@@ -237,6 +245,8 @@ func ApplyCustomSDSToClientCommonTLSContext(tlsContext *tls.CommonTlsContext, tl
 
 // ApplyCredentialSDSToServerCommonTLSContext applies the credentialName sds (Gateway/DestinationRule) to CommonTlsContext
 // Used for building both gateway/sidecar TLS context
+// ConstructSdsSecretConfigForCredential应用将credentialName sds (Gateway/DestinationRule)到CommonTlsContext
+// 用于构建gateway/sidecar TLS context
 func ApplyCredentialSDSToServerCommonTLSContext(tlsContext *tls.CommonTlsContext, tlsOpts *networking.ServerTLSSettings) {
 	// create SDS config for gateway/sidecar to fetch key/cert from agent.
 	tlsContext.TlsCertificateSdsSecretConfigs = []*tls.SdsSecretConfig{

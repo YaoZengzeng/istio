@@ -127,6 +127,7 @@ func tlsContextConvert(tls *networkingAPI.ClientTLSSettings, sniName string, met
 		tlsContext.CommonTlsContext.AlpnProtocols = util.ALPNH2Only
 		tlsContext.Sni = tls.Sni
 	case networkingAPI.ClientTLSSettings_ISTIO_MUTUAL:
+		// 构建tlsContext
 		tlsContext.CommonTlsContext.TlsCertificateSdsSecretConfigs = append(tlsContext.CommonTlsContext.TlsCertificateSdsSecretConfigs,
 			authn_model.ConstructSdsSecretConfig(authn_model.SDSDefaultResourceName))
 

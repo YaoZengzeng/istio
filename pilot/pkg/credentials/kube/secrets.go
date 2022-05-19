@@ -43,10 +43,13 @@ import (
 
 const (
 	// The ID/name for the certificate chain in kubernetes generic secret.
+	// k8s的secret中包含的certificate chain的名字
 	GenericScrtCert = "cert"
 	// The ID/name for the private key in kubernetes generic secret.
+	// k8s的secret中包含的generic secret的私钥的名字
 	GenericScrtKey = "key"
 	// The ID/name for the CA certificate in kubernetes generic secret.
+	// k8s的secret中包含的CA证书的名字
 	GenericScrtCaCert = "cacert"
 
 	// The ID/name for the certificate chain in kubernetes tls secret.
@@ -62,6 +65,7 @@ const (
 )
 
 type CredentialsController struct {
+	// 包含了secrets以及service account的信息
 	secrets informersv1.SecretInformer
 	sar     authorizationv1client.SubjectAccessReviewInterface
 
@@ -201,6 +205,7 @@ func (s *CredentialsController) GetKeyAndCert(name, namespace string) (key []byt
 		return nil, nil, fmt.Errorf("secret %v/%v not found", namespace, name)
 	}
 
+	// 抽取出key以及cert
 	return extractKeyAndCert(k8sSecret)
 }
 
@@ -239,6 +244,7 @@ func hasValue(d map[string][]byte, keys ...string) bool {
 }
 
 // extractKeyAndCert extracts server key, certificate
+// extractKeyAndCert抽取出server的key以及证书
 func extractKeyAndCert(scrt *v1.Secret) (key, cert []byte, err error) {
 	if hasValue(scrt.Data, GenericScrtCert, GenericScrtKey) {
 		return scrt.Data[GenericScrtKey], scrt.Data[GenericScrtCert], nil

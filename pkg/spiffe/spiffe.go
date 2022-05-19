@@ -82,6 +82,7 @@ func ParseIdentity(s string) (Identity, error) {
 }
 
 func (i Identity) String() string {
+	// trustDomain + ns + sa
 	return URIPrefix + i.TrustDomain + "/ns/" + i.Namespace + "/sa/" + i.ServiceAccount
 }
 

@@ -44,6 +44,7 @@ func NewSecurityOptions(proxyConfig *meshconfig.ProxyConfig, stsPort int, tokenM
 		ClusterID:                      clusterIDVar.Get(),
 		FileMountedCerts:               fileMountedCertsEnv,
 		WorkloadNamespace:              PodNamespaceVar.Get(),
+		// 从环境变量中获取ServiceAccount
 		ServiceAccount:                 serviceAccountVar.Get(),
 		XdsAuthProvider:                xdsAuthProvider.Get(),
 		TrustDomain:                    trustDomainEnv,

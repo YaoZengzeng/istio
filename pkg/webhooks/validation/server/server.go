@@ -105,6 +105,7 @@ type Webhook struct {
 }
 
 // New creates a new instance of the admission webhook server.
+// New创建admission webhook server的一个新实例
 func New(o Options) (*Webhook, error) {
 	if o.Mux == nil {
 		scope.Error("mux not set correctly")

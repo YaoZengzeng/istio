@@ -61,6 +61,7 @@ func NodeID(value string) Instance {
 
 func NodeType(value string) Instance {
 	ntype := strings.Split(value, "~")[0]
+	// 从id的第一个部分获取node type
 	return newOption("nodeType", ntype)
 }
 

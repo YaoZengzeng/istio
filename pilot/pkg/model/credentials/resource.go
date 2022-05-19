@@ -33,6 +33,7 @@ const (
 )
 
 // SecretResource defines a reference to a secret
+// SecretResource定义了到一个secret的引用
 type SecretResource struct {
 	// Type is the type of secret. One of KubernetesSecretType or KubernetesGatewaySecretType
 	Type string

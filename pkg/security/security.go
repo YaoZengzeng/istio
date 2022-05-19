@@ -111,6 +111,7 @@ const (
 
 // Options provides all of the configuration parameters for secret discovery service
 // and CA configuration. Used in both Istiod and Agent.
+// Options提供了所有的配置参数用于secret的发现服务以及CA配置，同时在Isitod和Agent中使用
 // TODO: ProxyConfig should have most of those, and be passed to all components
 // (as source of truth)
 type Options struct {
@@ -127,10 +128,12 @@ type Options struct {
 	CAProviderName string
 
 	// TrustDomain corresponds to the trust root of a system.
+	// TrustDomain对应到一个系统的trust root
 	// https://github.com/spiffe/spiffe/blob/master/standards/SPIFFE-ID.md#21-trust-domain
 	TrustDomain string
 
 	// Whether to generate PKCS#8 private keys.
+	// 是否生成PKCS#8 private keys
 	Pkcs8Keys bool
 
 	// Location of JWTPath to connect to CA.
@@ -222,9 +225,11 @@ type Options struct {
 }
 
 // TokenManager contains methods for generating token.
+// TokenManager包含方法用于生成token
 type TokenManager interface {
 	// GenerateToken takes STS request parameters and generates token. Returns
 	// StsResponseParameters in JSON.
+	// GenerateToken将STS request作为参数并且生成token，以JSON的形式返回StsResponseParameters
 	GenerateToken(parameters StsRequestParameters) ([]byte, error)
 	// DumpTokenStatus dumps status of all generated tokens and returns status in JSON.
 	DumpTokenStatus() ([]byte, error)
@@ -294,6 +299,7 @@ type SecretManager interface {
 // TokenExchanger provides common interfaces so that authentication providers could choose to implement their specific logic.
 type TokenExchanger interface {
 	// ExchangeToken provides a common interface to exchange an existing token for a new one.
+	// ExchangeToken提供了一个通用的接口用于一个已经存在的token交换一个新的
 	ExchangeToken(serviceAccountToken string) (string, error)
 }
 
