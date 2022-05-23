@@ -28,7 +28,9 @@ type Instance interface {
 	WaitForConfigs(defaultNamespace string, configs string) error
 
 	// Invoke invokes an istioctl command and returns the output and exception.
+	// Invoke调用一个istioctl命令并且返回output以及exception
 	// stdout and stderr will be returned as different strings
+	// stdout和stderr会作为不同的strings返回
 	Invoke(args []string) (string, string, error)
 
 	// InvokeOrFail calls Invoke and fails tests if it returns en err

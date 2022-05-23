@@ -58,6 +58,8 @@ type Builder interface {
 
 	// Build and initialize all Echo Instances. Upon returning, the Instance pointers
 	// are assigned and all Instances are ready to communicate with each other.
+	// 构建并且初始化所有的Echo实例，等到返回的时候，Instance指针被赋值并且所有的Instances已经准备好
+	// 进行交付
 	Build() (Instances, error)
 	BuildOrFail(t test.Failer) Instances
 }

@@ -53,6 +53,7 @@ const (
 )
 
 // Config defines the options for creating an Echo component.
+// Config定义了创建一个Echo组件的options
 // nolint: maligned
 type Config struct {
 	// Namespace of the echo Instance. If not provided, a default namespace "apps" is used.

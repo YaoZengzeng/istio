@@ -103,6 +103,7 @@ type Suite interface {
 	// RequireMaxVersion validates the environment meets a maximum version
 	RequireMaxVersion(minorVersion uint) Suite
 	// Setup runs enqueues the given setup function to run before test execution.
+	// Setup将给定的setup函数入队，在运行test execution之前
 	Setup(fn resource.SetupFn) Suite
 	// Run the suite. This method calls os.Exit and does not return.
 	Run()
