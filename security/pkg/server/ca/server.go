@@ -35,6 +35,7 @@ import (
 var serverCaLog = log.RegisterScope("serverca", "Citadel server log", 0)
 
 // CertificateAuthority contains methods to be supported by a CA.
+// CertificateAuthority包含了的方法用于支持一个CA
 type CertificateAuthority interface {
 	// Sign generates a certificate for a workload or CA, from the given CSR and cert opts.
 	Sign(csrPEM []byte, opts ca.CertOpts) ([]byte, error)
@@ -146,6 +147,7 @@ func (s *Server) Register(grpcServer *grpc.Server) {
 }
 
 // New creates a new instance of `IstioCAServiceServer`
+// New创建一个`IstioCAServiceServer`的一个新实例
 func New(ca CertificateAuthority, ttl time.Duration,
 	authenticators []security.Authenticator) (*Server, error) {
 	certBundle := ca.GetCAKeyCertBundle()

@@ -90,11 +90,14 @@ var (
 	// Require3PToken disables the use of K8S 1P tokens. Note that 1P tokens can be used to request
 	// 3P TOKENS. A 1P token is the token automatically mounted by Kubelet and used for authentication with
 	// the Apiserver.
+	// Require3PToken禁止使用K8S的1P tokens，注意1P tokens可以用来请求3P TOKENS，一个1P token是自动挂载到Kubelet
+	// 的token，可以用来和Apiserver进行交互
 	Require3PToken = env.RegisterBoolVar("REQUIRE_3P_TOKEN", false,
 		"Reject k8s default tokens, without audience. If false, default K8S token will be accepted")
 
 	// TokenAudiences specifies a list of audiences for SDS trustworthy JWT. This is to make sure that the CSR requests
 	// contain the JWTs intended for Citadel.
+	// TokenAudiences指定一系列的audiences，对于SDS trustworthy JWT，这可以用来确保CSR请求包含用于Citadel的JWTs
 	TokenAudiences = strings.Split(env.RegisterStringVar("TOKEN_AUDIENCES", "istio-ca",
 		"A list of comma separated audiences to check in the JWT token before issuing a certificate. "+
 			"The token is accepted if it matches with one of the audiences").Get(), ",")
@@ -185,7 +188,9 @@ type Options struct {
 	// authentication provider specific plugins, will exchange the token
 	// For example exchange long lived refresh with access tokens.
 	// Used by the secret fetcher when signing CSRs.
+	// authentication provider特定的插件，会交换令牌，例如用long lived交换access tokens
 	// Optional; if not present the token will be used directly
+	// 如果不存在，则会直接使用token
 	TokenExchanger TokenExchanger
 
 	// credential fetcher.
@@ -234,6 +239,7 @@ type TokenManager interface {
 	// DumpTokenStatus dumps status of all generated tokens and returns status in JSON.
 	DumpTokenStatus() ([]byte, error)
 	// GetMetadata returns the metadata headers related to the token
+	// GetMetadata返回和这个token相关的metadata headers
 	GetMetadata(forCA bool, xdsAuthProvider, token string) (map[string]string, error)
 }
 

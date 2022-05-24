@@ -50,6 +50,7 @@ type CitadelClient struct {
 	tlsOpts   *TLSOptions
 	client    pb.IstioCertificateServiceClient
 	conn      *grpc.ClientConn
+	// 包含一个token provider
 	provider  *caclient.TokenProvider
 	opts      *security.Options
 	usingMtls *atomic.Bool
@@ -62,6 +63,7 @@ type TLSOptions struct {
 }
 
 // NewCitadelClient create a CA client for Citadel.
+// NewCitadelClient为Citadel创建一个CA client
 func NewCitadelClient(opts *security.Options, tlsOpts *TLSOptions) (*CitadelClient, error) {
 	c := &CitadelClient{
 		tlsOpts:   tlsOpts,
@@ -254,6 +256,7 @@ func (c *CitadelClient) reconnectIfNeeded() error {
 		return err
 	}
 	c.conn = conn
+	// 基于连接构建Istio Certificate Service Client
 	c.client = pb.NewIstioCertificateServiceClient(conn)
 	citadelClientLog.Errorf("recreated connection")
 	return nil

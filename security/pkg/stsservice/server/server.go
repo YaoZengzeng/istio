@@ -58,9 +58,11 @@ const (
 
 // Server watches HTTP requests for security token service (STS), and returns
 // token in response.
+// Server监听security token service的HTTP请求，并且返回token作为response
 type Server struct {
 	// tokenManager takes STS request parameters and generates tokens, and returns
 	// generated token to the STS server.
+	// tokenManager根据STS request parameters并且生成tokens，并且返回生成的token到STS server
 	tokenManager security.TokenManager
 	stsServer    *http.Server
 	// Port number that server listens on.
@@ -74,6 +76,7 @@ type Config struct {
 }
 
 // NewServer creates a new STS server.
+// NewServer创建一个新的STS server
 func NewServer(config Config, tokenManager security.TokenManager) (*Server, error) {
 	s := &Server{
 		tokenManager: tokenManager,

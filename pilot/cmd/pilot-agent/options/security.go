@@ -70,6 +70,7 @@ func NewSecurityOptions(proxyConfig *meshconfig.ProxyConfig, stsPort int, tokenM
 	var tokenManager security.TokenManager
 	if stsPort > 0 || xdsAuthProvider.Get() != "" {
 		// tokenManager is gcp token manager when using the default token manager plugin.
+		// tokenManager是gcp token manager，当使用默认的token manager plugin时
 		tokenManager, err = tokenmanager.CreateTokenManager(tokenManagerPlugin,
 			tokenmanager.Config{CredFetcher: o.CredFetcher, TrustDomain: o.TrustDomain})
 	}
@@ -87,7 +88,7 @@ func SetupSecurityOptions(proxyConfig *meshconfig.ProxyConfig, secOpt *security.
 		jwtPath = constants.TrustworthyJWTPath
 	case jwt.PolicyFirstParty:
 		log.Info("JWT policy is first-party-jwt")
-		// 
+		// 如果是FirstParty policy，则使用k8s的service account name
 		jwtPath = securityModel.K8sSAJwtFileName
 	default:
 		log.Info("Using existing certs")

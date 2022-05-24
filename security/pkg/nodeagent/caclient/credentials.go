@@ -33,6 +33,8 @@ import (
 
 // TokenProvider is a grpc PerRPCCredentials that can be used to attach a JWT token to each gRPC call.
 // TokenProvider can be used for XDS, which may involve token exchange through STS.
+// TokenProvider是一个grpc PerRPCCredentials，可以用于关联一个JWT token到每个gRPC调用
+// TokenProvider可以用于XDS，可能会包括通过STS的token exchange
 type TokenProvider struct {
 	opts *security.Options
 	// TokenProvider can be used for XDS. Because CA is often used with
@@ -93,6 +95,7 @@ func (t *TokenProvider) GetToken() (string, error) {
 		return t.GetTokenForXDS()
 	}
 	// For CA, we have two modes, using the newer CredentialFetcher or just reading directly from file
+	// 对于CA，我们有两种模式，使用更新的CredentialFetcher或者直接从文件中读取
 	var token string
 	if t.opts.CredFetcher != nil {
 		var err error
@@ -104,6 +107,7 @@ func (t *TokenProvider) GetToken() (string, error) {
 		if t.opts.JWTPath == "" {
 			return "", nil
 		}
+		// 从JWTPath中读取
 		tok, err := os.ReadFile(t.opts.JWTPath)
 		if err != nil {
 			log.Warnf("failed to fetch token from file: %v", err)
@@ -114,6 +118,7 @@ func (t *TokenProvider) GetToken() (string, error) {
 
 	// Regardless of where the token came from, we (optionally) can exchange the token for a different
 	// one using the configured TokenExchanger.
+	// 不管token来自哪里，我们（可选地）可以使用配置的TokenExchanger来交换一个不同的token
 	return t.exchangeToken(token)
 }
 
@@ -181,6 +186,7 @@ func (t *TokenProvider) getTokenForGCP() (string, error) {
 
 // exchangeToken exchanges the provided token using TokenExchanger, if configured. If not, the
 // original token is returned.
+// exchangeToken使用TokenExchange交换提供的token，如果配置的话，如果没有，则返回original token
 func (t *TokenProvider) exchangeToken(token string) (string, error) {
 	if t.opts.TokenExchanger == nil {
 		return token, nil

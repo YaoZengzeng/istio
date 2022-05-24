@@ -83,6 +83,7 @@ func ParseIdentity(s string) (Identity, error) {
 
 func (i Identity) String() string {
 	// trustDomain + ns + sa
+	// 生成一个spiff
 	return URIPrefix + i.TrustDomain + "/ns/" + i.Namespace + "/sa/" + i.ServiceAccount
 }
 

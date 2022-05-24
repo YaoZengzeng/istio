@@ -25,6 +25,7 @@ import (
 )
 
 // ValidateK8sJwt validates a k8s JWT at API server.
+// ValidateK8sJwt在API server检测一个k8s JWT
 // Return {<namespace>, <serviceaccountname>} in the targetToken when the validation passes.
 // Otherwise, return the error.
 // targetToken: the JWT of the K8s service account to be reviewed
@@ -43,6 +44,7 @@ func ValidateK8sJwt(kubeClient kubernetes.Interface, targetToken string, aud []s
 		return nil, err
 	}
 
+	// 从中抽取出namespace和service name
 	return getTokenReviewResult(reviewRes)
 }
 

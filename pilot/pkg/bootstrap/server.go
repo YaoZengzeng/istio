@@ -329,6 +329,8 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	// Notice that the order of authenticators matters, since at runtime
 	// authenticators are activated sequentially and the first successful attempt
 	// is used as the authentication result.
+	// 需要注意的是authenticators的顺序很重要，因为在运行时authenticators按顺序激活
+	// 第一个成功的尝试会被作为认证的结果
 	authenticators := []security.Authenticator{
 		&authenticate.ClientCertAuthenticator{},
 	}
@@ -344,6 +346,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	}
 	// The k8s JWT authenticator requires the multicluster registry to be initialized,
 	// so we build it later.
+	// k8s JWT authenticator需要多集群registry来初始化，因此我们后面构建
 	authenticators = append(authenticators,
 		kubeauth.NewKubeJWTAuthenticator(s.environment.Watcher, s.kubeClient, s.clusterID, s.multiclusterController.GetRemoteKubeClient, features.JwtPolicy))
 	if features.XDSAuth {
@@ -352,6 +355,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	caOpts.Authenticators = authenticators
 
 	// Start CA or RA server. This should be called after CA and Istiod certs have been created.
+	// 启动CA或者RA server，这应该在CA以及Istiod证书被创建之后被调用
 	s.startCA(caOpts)
 
 	// TODO: don't run this if galley is started, one ctlz is enough
@@ -1166,6 +1170,7 @@ func (s *Server) shouldStartNsController() bool {
 }
 
 // StartCA starts the CA or RA server if configured.
+// StartCA开始运行CA或者RA server，如果配置了的话
 func (s *Server) startCA(caOpts *caOptions) {
 	if s.CA == nil && s.RA == nil {
 		return

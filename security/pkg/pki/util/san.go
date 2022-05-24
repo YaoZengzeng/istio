@@ -73,6 +73,7 @@ type Identity struct {
 }
 
 // BuildSubjectAltNameExtension builds the SAN extension for the certificate.
+// BuildSubjectAltNameExtension为证书构建SAN extension
 func BuildSubjectAltNameExtension(hosts string) (*pkix.Extension, error) {
 	ids := []Identity{}
 	for _, host := range strings.Split(hosts, ",") {

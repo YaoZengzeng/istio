@@ -85,10 +85,14 @@ type jwtPayload struct {
 // IsK8SUnbound detects if the token is a K8S unbound token.
 // It is a regular JWT with no audience and expiration, which can
 // be exchanged with bound tokens with audience.
+// IsK8SUnbound检查这个token是否是一个K8S unbount token，一个regular JWT
+// 没有audience和expiration，可以用来和有audience的tokens进行交换
 //
 // This is used to determine if we check audience in the token.
 // Clients should not use unbound tokens except in cases where
 // bound tokens are not possible.
+// 这用于确认我们是否检查token里的audience，Clients不应该使用unbound tokens
+// 除非bound tokens不能获取
 func IsK8SUnbound(jwt string) bool {
 	aud, f := ExtractJwtAud(jwt)
 	if !f {

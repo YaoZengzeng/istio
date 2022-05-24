@@ -150,9 +150,11 @@ func (s *Server) EnableCA() bool {
 }
 
 // RunCA will start the cert signing GRPC service on an existing server.
+// RunCA会在一个已有的server上启动证书签发GRPC服务
 // Protected by installer options: the CA will be started only if the JWT token in /var/run/secrets
 // is mounted. If it is missing - for example old versions of K8S that don't support such tokens -
 // we will not start the cert-signing server, since pods will have no way to authenticate.
+// 由installer options保护：CA只有在/var/run/secrets被挂载的时候启动
 func (s *Server) RunCA(grpc *grpc.Server, ca caserver.CertificateAuthority, opts *caOptions) {
 	iss := trustedIssuer.Get()
 	aud := audience.Get()
@@ -173,6 +175,7 @@ func (s *Server) RunCA(grpc *grpc.Server, ca caserver.CertificateAuthority, opts
 	}
 
 	// The CA API uses cert with the max workload cert TTL.
+	// CA API使用有着最大workload cert TTL的CA API
 	// 'hostlist' must be non-empty - but is not used since a grpc server is passed.
 	// Adds client cert auth and kube (sds enabled)
 	caServer, startErr := caserver.New(ca, maxWorkloadCertTTL.Get(), opts.Authenticators)
@@ -187,9 +190,11 @@ func (s *Server) RunCA(grpc *grpc.Server, ca caserver.CertificateAuthority, opts
 		k8sInCluster.Get() == "" { // not running in cluster - in cluster use direct call to apiserver
 		// Add a custom authenticator using standard JWT validation, if not running in K8S
 		// When running inside K8S - we can use the built-in validator, which also check pod removal (invalidation).
+		// 使用标准的JWT validation添加一个custom authenticator，如果不是运行在K8S中
 		jwtRule := v1beta1.JWTRule{Issuer: iss, Audiences: []string{aud}}
 		oidcAuth, err := authenticate.NewJwtAuthenticator(&jwtRule, opts.TrustDomain)
 		if err == nil {
+			// 扩展authenticators
 			caServer.Authenticators = append(caServer.Authenticators, oidcAuth)
 			log.Info("Using out-of-cluster JWT authentication")
 		} else {

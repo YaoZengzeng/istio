@@ -48,10 +48,12 @@ const (
 )
 
 // CertOptions contains options for generating a new certificate.
+// CertOptions包含了创建一个新的证书的options
 type CertOptions struct {
 	// Comma-separated hostnames and IPs to generate a certificate for.
 	// This can also be set to the identity running the workload,
 	// like kubernetes service account.
+	// 逗号分隔的hostnames以及IPs，用来生成证书，这可以用来设置在workload设置identity
 	Host string
 
 	// The NotBefore field of the issued certificate.
@@ -88,6 +90,7 @@ type CertOptions struct {
 	IsServer bool
 
 	// Whether this certificate is for dual-use clients (SAN+CN).
+	// 是否这个证书是dual-use的客户端
 	IsDualUse bool
 
 	// If true, the private key is encoded with PKCS#8.
@@ -278,6 +281,7 @@ func genCertTemplateFromCSR(csr *x509.CertificateRequest, subjectIDs []string, t
 	}
 
 	// Build cert extensions with the subjectIDs.
+	// 用subjectIDs，构建cert extensions
 	ext, err := BuildSubjectAltNameExtension(subjectIDsInString)
 	if err != nil {
 		return nil, err
@@ -286,7 +290,9 @@ func genCertTemplateFromCSR(csr *x509.CertificateRequest, subjectIDs []string, t
 
 	subject := pkix.Name{}
 	// Dual use mode if common name in CSR is not empty.
+	// 两用模式，如果在CSR中的common name不为空
 	// In this case, set CN as determined by DualUseCommonName(subjectIDsInString).
+	// 在这种情况下，设置CN由DualUseCommonName(subjectIDsInString)决定
 	if len(csr.Subject.CommonName) != 0 {
 		if cn, err := DualUseCommonName(subjectIDsInString); err != nil {
 			// log and continue
@@ -400,6 +406,7 @@ func encodePem(isCSR bool, csrOrCert []byte, priv interface{}, pkcs8 bool) (
 	csrOrCertPem []byte, privPem []byte, err error) {
 	encodeMsg := "CERTIFICATE"
 	if isCSR {
+		// encodeMsg
 		encodeMsg = "CERTIFICATE REQUEST"
 	}
 	csrOrCertPem = pem.EncodeToMemory(&pem.Block{Type: encodeMsg, Bytes: csrOrCert})

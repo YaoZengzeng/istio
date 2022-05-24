@@ -52,6 +52,7 @@ type federatedTokenResponse struct {
 }
 
 // SecureTokenServiceExchanger for google securetoken api interaction.
+// SecureTokenServiceExchanger用于google securetoken api interaction
 type SecureTokenServiceExchanger struct {
 	httpClient  *http.Client
 	credFetcher security.CredFetcher

@@ -42,6 +42,7 @@ const (
 type RemoteKubeClientGetter func(clusterID cluster.ID) kubernetes.Interface
 
 // KubeJWTAuthenticator authenticates K8s JWTs.
+// KubeJWTAuthenticator用于认证K8s JWTs
 type KubeJWTAuthenticator struct {
 	// holder of a mesh configuration for dynamically updating trust domain
 	meshHolder mesh.Holder
@@ -49,6 +50,7 @@ type KubeJWTAuthenticator struct {
 	jwtPolicy string
 
 	// Primary cluster kube client
+	// Primary cluster的kube client
 	kubeClient kubernetes.Interface
 	// Primary cluster ID
 	clusterID cluster.ID
@@ -60,6 +62,7 @@ type KubeJWTAuthenticator struct {
 var _ security.Authenticator = &KubeJWTAuthenticator{}
 
 // NewKubeJWTAuthenticator creates a new kubeJWTAuthenticator.
+// NewKubeJWTAuthenticator创建一个新的kubeJWTAuthenticator
 func NewKubeJWTAuthenticator(meshHolder mesh.Holder, client kubernetes.Interface, clusterID cluster.ID,
 	remoteKubeClientGetter RemoteKubeClientGetter, jwtPolicy string) *KubeJWTAuthenticator {
 	return &KubeJWTAuthenticator{
@@ -95,16 +98,19 @@ func (a *KubeJWTAuthenticator) AuthenticateRequest(req *http.Request) (*security
 // The returned Caller.Identities is in SPIFFE format.
 // Authenticate使用从context中获取的K8s JWT对调用进行认证，返回的Caller.Identities是以SPIFFE格式的
 func (a *KubeJWTAuthenticator) Authenticate(ctx context.Context) (*security.Caller, error) {
+	// 从HTTP header中抽取出target token
 	targetJWT, err := security.ExtractBearerToken(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("target JWT extraction error: %v", err)
 	}
+	// 获取出cluster id
 	clusterID := extractClusterID(ctx)
 
 	return a.authenticate(targetJWT, clusterID)
 }
 
 func (a *KubeJWTAuthenticator) authenticate(targetJWT string, clusterID cluster.ID) (*security.Caller, error) {
+	// 获取clsuter id对应的kubeClient
 	kubeClient := a.GetKubeClient(clusterID)
 	if kubeClient == nil {
 		return nil, fmt.Errorf("could not get cluster %s's kube client", clusterID)
@@ -112,6 +118,7 @@ func (a *KubeJWTAuthenticator) authenticate(targetJWT string, clusterID cluster.
 	var aud []string
 
 	// If the token has audience - we will validate it by setting in in the audiences field,
+	// 如果token有audicen - 我们会通过设置audiences字段来校验它
 	// This happens regardless of Require3PToken setting.
 	//
 	// If 'Require3PToken' is set - we will also set the audiences field, forcing the check.
@@ -138,6 +145,7 @@ func (a *KubeJWTAuthenticator) authenticate(targetJWT string, clusterID cluster.
 	} else {
 		// No audience will be passed to the check if the token
 		// is unbound and the setting to require bound tokens is off
+		// 没有传递audience用于检查
 		aud = nil
 	}
 	id, err := tokenreview.ValidateK8sJwt(kubeClient, targetJWT, aud)
@@ -151,6 +159,7 @@ func (a *KubeJWTAuthenticator) authenticate(targetJWT string, clusterID cluster.
 	callerServiceAccount := id[1]
 	return &security.Caller{
 		AuthSource: security.AuthSourceIDToken,
+		// 构建出一个identities
 		Identities: []string{fmt.Sprintf(authenticate.IdentityTemplate, a.meshHolder.Mesh().GetTrustDomain(), callerNamespace, callerServiceAccount)},
 	}, nil
 }

@@ -61,6 +61,7 @@ type caTypes int
 
 type CertOpts struct {
 	// SubjectIDs are used for building the SAN extension for the certificate.
+	// SubjectIDs用于构建证书的SAN extension
 	SubjectIDs []string
 
 	// TTL is the requested lifetime (Time to live) to be applied in the certificate.
