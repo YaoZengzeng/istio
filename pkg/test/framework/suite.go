@@ -507,6 +507,7 @@ func initRuntime(s *suiteImpl) error {
 	}
 
 	scopes.Framework.Infof("=== Test Framework Settings ===")
+	// 输出测试框架的设置
 	scopes.Framework.Info(settings.String())
 	scopes.Framework.Infof("===============================")
 

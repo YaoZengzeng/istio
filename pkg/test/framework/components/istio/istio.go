@@ -47,6 +47,7 @@ type Instance interface {
 }
 
 // SetupConfigFn is a setup function that specifies the overrides of the configuration to deploy Istio.
+// SetupConfigFn是一个setup函数，指定对于部署的Istio的配置的overrides
 type SetupConfigFn func(ctx resource.Context, cfg *Config)
 
 // SetupContextFn is a setup function that uses Context for configuration.
@@ -104,6 +105,7 @@ func Setup(i *Instance, cfn SetupConfigFn, ctxFns ...SetupContextFn) resource.Se
 }
 
 // Deploy deploys (or attaches to) an Istio deployment and returns a handle. If cfg is nil, then DefaultConfig is used.
+// Deploy部署一个Istio deployment并且返回一个handle，如果cfg为nil，那么使用DefaultConfig
 func Deploy(ctx resource.Context, cfg *Config) (i Instance, err error) {
 	if cfg == nil {
 		c, err := DefaultConfig(ctx)

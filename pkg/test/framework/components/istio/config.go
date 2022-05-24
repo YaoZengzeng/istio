@@ -308,6 +308,7 @@ func newHelmValues(ctx resource.Context, s *image.Settings) (map[string]string, 
 	}
 
 	// Always pull Docker images if using the "latest".
+	// 如果使用"latest"则总是拉取Docker镜像
 	if values[image.TagValuesKey] == image.LatestTag {
 		values[image.ImagePullPolicyValuesKey] = string(kubeCore.PullAlways)
 	}
