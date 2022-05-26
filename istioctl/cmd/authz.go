@@ -119,6 +119,7 @@ func getConfigDumpFromPod(podName, podNamespace string) (*configdump.Wrapper, er
 		return nil, err
 	}
 
+	// 根据namespace和pod name找到对应的envoy
 	pods, err := kubeClient.GetIstioPods(context.TODO(), podNamespace, map[string]string{
 		"fieldSelector": "metadata.name=" + podName,
 	})
@@ -129,6 +130,7 @@ func getConfigDumpFromPod(podName, podNamespace string) (*configdump.Wrapper, er
 		return nil, fmt.Errorf("expecting only 1 pod for %s.%s, found: %d", podName, podNamespace, len(pods))
 	}
 
+	// 获取envoy的config_dump
 	data, err := kubeClient.EnvoyDo(context.TODO(), podName, podNamespace, "GET", "config_dump")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get proxy config for %s.%s: %s", podName, podNamespace, err)

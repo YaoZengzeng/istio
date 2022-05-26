@@ -558,8 +558,10 @@ func (s *Server) initSDSServer() {
 }
 
 // initKubeClient creates the k8s client if running in an k8s environment.
+// initKubeClient创建k8s client，如果运行在k8s环境
 // This is determined by the presence of a kube registry, which
 // uses in-context k8s, or a config source of type k8s.
+// 这由kube registry的presence决定，它使用in-context k8s，或者一个k8s类型的config source
 func (s *Server) initKubeClient(args *PilotArgs) error {
 	if s.kubeClient != nil {
 		// Already initialized by startup arguments

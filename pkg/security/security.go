@@ -61,6 +61,7 @@ const (
 
 	// WorkloadKeyCertResourceName is the resource name of the discovery request for workload
 	// identity.
+	// WorkloadKeyCertResourceName是对于workload identity的discovery request的resource name
 	// TODO: change all the pilot one reference definition here instead.
 	WorkloadKeyCertResourceName = "default"
 
@@ -119,9 +120,11 @@ const (
 // (as source of truth)
 type Options struct {
 	// WorkloadUDSPath is the unix domain socket through which SDS server communicates with workload proxies.
+	// WorkloadUDSPath是unix domain socket，SDS server通过它和workload proxies进行交互
 	WorkloadUDSPath string
 
 	// CAEndpoint is the CA endpoint to which node agent sends CSR request.
+	// CAEndpoint是node agent发送CSR请求的CA endpoint
 	CAEndpoint string
 
 	// CAEndpointSAN overrides the ServerName extracted from CAEndpoint.

@@ -89,6 +89,8 @@ type SidecarScope struct {
 	// default object), we will go through every egress listener in the
 	// object and process the Envoy listener or RDS based on the imported
 	// services/virtual services in that listener.
+	// 一系列的egress listeners以及它们相关的services，一个sidecar scope应该有ingress/egress
+	// listeners或者同时都有
 	EgressListeners []*IstioEgressListenerWrapper
 
 	// Union of services imported across all egress listeners for use by CDS code.
@@ -140,6 +142,9 @@ func (sc *SidecarScope) MarshalJSON() ([]byte, error) {
 // networking.IstioEgressListener object. The wrapper provides performance
 // optimizations as it allows us to precompute and store the list of
 // services/virtualServices that apply to this listener.
+// IstioEgressListenerWrapper是对一个networking.IstioEgressListener对象的封装
+// wrapper提供了性能优化，因为它允许我们提前计算并且存储一系列的services/virtualServices
+// 应用到这个listener
 type IstioEgressListenerWrapper struct {
 	// The actual IstioEgressListener api object from the Config. It can be
 	// nil if this is for the default sidecar scope.
@@ -175,6 +180,9 @@ const defaultSidecar = "default-sidecar"
 // DefaultSidecarScopeForNamespace is a sidecar scope object with a default catch all egress listener
 // that matches the default Istio behavior: a sidecar has listeners for all services in the mesh
 // We use this scope when the user has not set any sidecar Config for a given config namespace.
+// DefaultSidecarScopeForNamespace是一个sidecar scope对象，有着一个默认的catch all egress listener
+// 匹配默认的Istio行为：一个sidecar有对于mesh中所有services的listeners，我们使用这个scope，当用户没有设置
+// 任何的sidecar配置对于给定的config namespace
 func DefaultSidecarScopeForNamespace(ps *PushContext, configNamespace string) *SidecarScope {
 	dummyNode := Proxy{
 		ConfigNamespace: configNamespace,

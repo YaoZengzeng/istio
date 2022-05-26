@@ -575,6 +575,8 @@ func (s *DiscoveryServer) adsz(w http.ResponseWriter, req *http.Request) {
 // ConfigDump returns information in the form of the Envoy admin API config dump for the specified proxy
 // The dump will only contain dynamic listeners/clusters/routes and can be used to compare what an Envoy instance
 // should look like according to Pilot vs what it currently does look like.
+// ConfigDump返回信息，按照Envoy admin API config dump的信息，对于特定的proxy
+// dump会只包含动态的listeners/clusters/routes并且可以用来比较，一个Envoy实例应该有的样子根据Pilot以及它当前的样子
 func (s *DiscoveryServer) ConfigDump(w http.ResponseWriter, req *http.Request) {
 	proxyID, con := s.getDebugConnection(req)
 	if con == nil {

@@ -137,6 +137,7 @@ type AgentOptions struct {
 	// DNSAddr is the DNS capture address
 	DNSAddr string
 	// ProxyType is the type of proxy we are configured to handle
+	// ProxyType是我们配置的proxy的类型
 	ProxyType model.NodeType
 	// ProxyNamespace to use for local dns resolution
 	ProxyNamespace string
@@ -730,6 +731,7 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 		return nil, err
 	}
 
+	// 真正构建secret manager
 	return cache.NewSecretManagerClient(caClient, a.secOpts)
 }
 

@@ -935,6 +935,7 @@ func (ps *PushContext) getSidecarScope(proxy *Proxy, workloadLabels labels.Colle
 
 	// We didn't have a Sidecar in the namespace. This means we should use the default - either an implicit
 	// default selecting everything, or pulling from the root namespace.
+	// 我们在namespace中没有Sidecar，这意味着我们应该使用默认的
 	ps.sidecarIndex.defaultSidecarMu.Lock()
 	defer ps.sidecarIndex.defaultSidecarMu.Unlock()
 	if proxy.Type == Router {

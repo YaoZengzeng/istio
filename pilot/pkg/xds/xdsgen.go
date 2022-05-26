@@ -101,7 +101,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 
 	t0 := time.Now()
 
-	// 调用generator申请resource
+	// 调用generator申请resource，如果有缓存的话，事实上也是包含在gen中
 	res, logdata, err := gen.Generate(con.proxy, push, w, req)
 	if err != nil || res == nil {
 		// If we have nothing to send, report that we got an ACK for this version.

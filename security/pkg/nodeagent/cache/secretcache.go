@@ -113,6 +113,7 @@ type SecretManagerClient struct {
 	// certWatcher watches the certificates for changes and triggers a notification to proxy.
 	certWatcher *fsnotify.Watcher
 	// certs being watched with file watcher.
+	// 由file watcher监听的certs
 	fileCerts map[FileCert]struct{}
 	certMutex sync.RWMutex
 
@@ -236,6 +237,7 @@ func (sc *SecretManagerClient) getCachedSecret(resourceName string) (secret *sec
 	// 从缓存中获取workload
 	if c := sc.cache.GetWorkload(); c != nil {
 		if resourceName == security.RootCertReqResourceName {
+			// 将trust anchor和cert合并
 			rootCertBundle = sc.mergeTrustAnchorBytes(c.RootCert)
 			ns = &security.SecretItem{
 				ResourceName: resourceName,
@@ -244,6 +246,7 @@ func (sc *SecretManagerClient) getCachedSecret(resourceName string) (secret *sec
 			cacheLog.WithLabels("ttl", time.Until(c.ExpireTime)).Info("returned workload trust anchor from cache")
 
 		} else {
+			// 直接构建SecretItem返回
 			ns = &security.SecretItem{
 				ResourceName:     resourceName,
 				CertificateChain: c.CertificateChain,
@@ -326,7 +329,9 @@ func (sc *SecretManagerClient) GenerateSecret(resourceName string) (secret *secu
 	// 存储新的secret到secretCache并且触发对于workload certificate的阶段性重载
 	sc.registerSecret(*ns)
 
+	// 如果请求的资源为root
 	if resourceName == security.RootCertReqResourceName {
+		// 生成root cert
 		ns.RootCert = sc.mergeTrustAnchorBytes(ns.RootCert)
 	} else {
 		// If periodic cert refresh resulted in discovery of a new root, trigger a ROOTCA request to refresh trust anchor
@@ -637,6 +642,7 @@ func (sc *SecretManagerClient) generateNewSecret(resourceName string) (*security
 	return &security.SecretItem{
 		CertificateChain: certChain,
 		PrivateKey:       keyPEM,
+		// 对于节点模式，resource name应该是IP地址
 		ResourceName:     resourceName,
 		CreatedTime:      time.Now(),
 		ExpireTime:       expireTime,
@@ -655,14 +661,16 @@ func (sc *SecretManagerClient) rotateTime(secret security.SecretItem) time.Durat
 }
 
 func (sc *SecretManagerClient) registerSecret(item security.SecretItem) {
-	// 获取轮转时间
+	// 获取证书的轮转时间
 	delay := sc.rotateTime(item)
 	item.ResourceName = security.WorkloadKeyCertResourceName
 	// In case there are two calls to GenerateSecret at once, we don't want both to be concurrently registered
+	// 万一有两个对GenerateSecret的同时的调用，我们不想它们同时被注册
 	if sc.cache.GetWorkload() != nil {
 		resourceLog(item.ResourceName).Infof("skip scheduling certificate rotation, already scheduled")
 		return
 	}
+	// 加入到cache中
 	sc.cache.SetWorkload(&item)
 	resourceLog(item.ResourceName).Debugf("scheduled certificate for rotation in %v", delay)
 	sc.queue.PushDelayed(func() error {
@@ -691,12 +699,14 @@ func (sc *SecretManagerClient) handleFileWatch() {
 			}
 			sc.certMutex.RLock()
 			resources := make(map[FileCert]struct{})
+			// 更新file certs
 			for k, v := range sc.fileCerts {
 				resources[k] = v
 			}
 			sc.certMutex.RUnlock()
 			// Trigger callbacks for all resources referencing this file. This is practically always
 			// a single resource.
+			// 触发所有引用这个文件的资源的callbacks，一般总是为单个的resource
 			cacheLog.Infof("event for file certificate %s : %s, pushing to proxy", event.Name, event.Op.String())
 			for k := range resources {
 				if k.Filename == event.Name {

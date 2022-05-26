@@ -268,6 +268,7 @@ type Proxy struct {
 	SidecarScope *SidecarScope
 
 	// the sidecarScope associated with the proxy previously
+	// 以前和这个proxy相关的sidecarScope
 	PrevSidecarScope *SidecarScope
 
 	// The merged gateways associated with the proxy if this is a Router
@@ -800,9 +801,14 @@ func (node *Proxy) ServiceNode() string {
 // sidecar scope or from the push context's set of global services. Similar
 // logic applies to push.VirtualServices and push.DestinationRule. The
 // short cut here is useful only for CDS and parts of RDS generation code.
-//
+// 
+// SetSidecarScope识别和这个proxy相关的sidecar scope对象并且更新proxy Node，这是一个方便的
+// hack，这样调用者可以简单地调用push.Services(node)，push.Services的实现可以返回这个proxyNode
+// 的sidecar scope或者来自push context的一系列global services，同样的逻辑应用到push.VirtualServices
+// 和push.DestinationRule
 // Listener generation code will still use the SidecarScope object directly
 // as it needs the set of services for each listener port.
+// Listener的生成代码会直接使用SidecarScope对象，因为对每个listener port需要一系列的services
 func (node *Proxy) SetSidecarScope(ps *PushContext) {
 	sidecarScope := node.SidecarScope
 
@@ -811,6 +817,7 @@ func (node *Proxy) SetSidecarScope(ps *PushContext) {
 		node.SidecarScope = ps.getSidecarScope(node, workloadLabels)
 	} else {
 		// Gateways should just have a default scope with egress: */*
+		// Gateways应该有一个默认的scope，有着egress: */*
 		node.SidecarScope = ps.getSidecarScope(node, nil)
 	}
 	node.PrevSidecarScope = sidecarScope

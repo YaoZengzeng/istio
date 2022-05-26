@@ -226,6 +226,7 @@ func (c *CitadelClient) buildConnection() (*grpc.ClientConn, error) {
 
 	conn, err := grpc.Dial(c.opts.CAEndpoint,
 		opts,
+		// 用于添加每次RPC的Credentials
 		grpc.WithPerRPCCredentials(c.provider),
 		security.CARetryInterceptor())
 	if err != nil {

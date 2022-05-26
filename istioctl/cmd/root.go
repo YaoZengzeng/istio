@@ -76,6 +76,7 @@ var (
 	kubeClientWithRevision = newKubeClientWithRevision
 
 	// Create a kubernetes.ExecClient (or mock) for talking to data plane components
+	// 创建一个kubernetes.ExecClient（或者mock）用来和数据面组件进行交互
 	kubeClient = newKubeClient
 
 	loggingOptions = defaultLogOptions()

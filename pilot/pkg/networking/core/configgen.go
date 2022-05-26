@@ -45,6 +45,7 @@ type ConfigGenerator interface {
 		watched *model.WatchedResource) ([]*discovery.Resource, []string, model.XdsLogDetails, bool)
 
 	// BuildHTTPRoutes returns the list of HTTP routes for the given proxy. This is the RDS output
+	// BuildHTTPRoutes返回一系列的HTTP routes对于给定的proxy，这是RDS的输出
 	BuildHTTPRoutes(node *model.Proxy, req *model.PushRequest, routeNames []string) ([]*discovery.Resource, model.XdsLogDetails)
 
 	// BuildNameTable returns list of hostnames and the associated IPs

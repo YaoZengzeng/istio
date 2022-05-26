@@ -45,6 +45,7 @@ const (
 )
 
 // BuildHTTPRoutes produces a list of routes for the proxy
+// BuildHTTPRoutes对于给定的proxy创建一系列的路由
 func (configgen *ConfigGeneratorImpl) BuildHTTPRoutes(
 	node *model.Proxy,
 	req *model.PushRequest,
@@ -60,6 +61,7 @@ func (configgen *ConfigGeneratorImpl) BuildHTTPRoutes(
 		// dependent envoyfilters' key, calculate in front once to prevent calc for each route.
 		envoyfilterKeys := efw.Keys()
 		for _, routeName := range routeNames {
+			// 构建outbound HTTP路由的配置
 			rc, cached := configgen.buildSidecarOutboundHTTPRouteConfig(node, req, routeName, vHostCache, efw, envoyfilterKeys)
 			if cached && !features.EnableUnsafeAssertions {
 				hit++
@@ -123,7 +125,9 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundHTTPRouteConfig(
 }
 
 // buildSidecarOutboundHTTPRouteConfig builds an outbound HTTP Route for sidecar.
+// buildSidecarOutboundHTTPRouteConfig为sidecar构建一个outbound HTTP Route
 // Based on port, will determine all virtual hosts that listen on the port.
+// 基于端口，会决定所有监听在这个端口的virtual hosts
 func (configgen *ConfigGeneratorImpl) buildSidecarOutboundHTTPRouteConfig(
 	node *model.Proxy,
 	req *model.PushRequest,

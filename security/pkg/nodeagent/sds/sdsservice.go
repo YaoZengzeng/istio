@@ -92,7 +92,7 @@ func newSDSService(st security.SecretManager, options *security.Options) *sdsser
 		st:   st,
 		stop: make(chan struct{}),
 	}
-	// 构建xds server
+	// sdsservice中包含了对于xds server的构建
 	ret.XdsServer = NewXdsServer(ret.stop, ret)
 
 	ret.rootCaPath = options.CARootPath
@@ -115,6 +115,7 @@ func newSDSService(st security.SecretManager, options *security.Options) *sdsser
 			if err == nil {
 				break
 			}
+			// 预热证书失败
 			sdsServiceLog.Warnf("failed to warm certificate: %v", err)
 			select {
 			case <-ret.stop:
@@ -127,6 +128,7 @@ func newSDSService(st security.SecretManager, options *security.Options) *sdsser
 			if err == nil {
 				break
 			}
+			// 预热根证书失败
 			sdsServiceLog.Warnf("failed to warm root certificate: %v", err)
 			select {
 			case <-ret.stop:
@@ -153,6 +155,7 @@ func (s *sdsservice) generate(resourceNames []string) (model.Resources, error) {
 			return nil, fmt.Errorf("failed to generate secret for %v: %v", resourceName, err)
 		}
 
+		// 将secret item转换为envoy secret
 		res := util.MessageToAny(toEnvoySecret(secret, s.rootCaPath))
 		resources = append(resources, &discovery.Resource{
 			Name:     resourceName,
@@ -187,12 +190,15 @@ func (s *sdsservice) Generate(_ *model.Proxy, _ *model.PushContext, w *model.Wat
 }
 
 // register adds the SDS handle to the grpc server
+// register将SDS handle加入到grpc server中
 func (s *sdsservice) register(rpcs *grpc.Server) {
 	sds.RegisterSecretDiscoveryServiceServer(rpcs, s)
 }
 
 // StreamSecrets serves SDS discovery requests and SDS push requests
+// StreamSecrets处理SDS discovery requests以及SDS push requests
 func (s *sdsservice) StreamSecrets(stream sds.SecretDiscoveryService_StreamSecretsServer) error {
+	// 调用XdsServer的Stream函数进行处理
 	return s.XdsServer.Stream(stream)
 }
 
