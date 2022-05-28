@@ -90,10 +90,15 @@ func GenKeyCertK8sCA(client clientset.Interface, dnsName,
 }
 
 // SignCSRK8s generates a certificate from CSR using the K8s CA
+// SignCSRK8s使用k8s的CA从CSR生成一个证书
 // 1. Submit a CSR
+// 1. 提交一个CSR
 // 2. Approve a CSR
+// 2. Approve一个CSR
 // 3. Read the signed certificate
+// 3. 读取签发的证书
 // 4. Clean up the artifacts (e.g., delete CSR)
+// 4. 清理artificats
 func SignCSRK8s(client clientset.Interface,
 	csrData []byte, signerName string, requestedDuration *time.Duration,
 	usages []certv1.KeyUsage,

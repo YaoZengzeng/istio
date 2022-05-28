@@ -57,6 +57,7 @@ type CitadelClient struct {
 }
 
 type TLSOptions struct {
+	// 根证书、私钥和证书
 	RootCert string
 	Key      string
 	Cert     string
@@ -215,6 +216,7 @@ func (c *CitadelClient) buildConnection() (*grpc.ClientConn, error) {
 	var opts grpc.DialOption
 	var err error
 	// CA tls disabled
+	// 关闭了CA的tls
 	if c.tlsOpts == nil {
 		opts = grpc.WithTransportCredentials(insecure.NewCredentials())
 	} else {
@@ -224,6 +226,7 @@ func (c *CitadelClient) buildConnection() (*grpc.ClientConn, error) {
 		}
 	}
 
+	// 建立与Citadel的连接
 	conn, err := grpc.Dial(c.opts.CAEndpoint,
 		opts,
 		// 用于添加每次RPC的Credentials

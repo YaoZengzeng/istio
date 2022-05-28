@@ -44,8 +44,10 @@ type Prober interface {
 var _ Prober = &Probe{}
 
 // Check executes the probe and returns an error if the probe fails.
+// Check执行probe并且返回一个error，如果probe失败的话
 func (p *Probe) Check() error {
 	// First, check that Envoy has received a configuration update from Pilot.
+	// 首先，检查Envoy是否接收到来自Pilot的配置更新
 	if err := p.checkConfigStatus(); err != nil {
 		return err
 	}
@@ -53,6 +55,7 @@ func (p *Probe) Check() error {
 }
 
 // checkConfigStatus checks to make sure initial configs have been received from Pilot.
+// checkConfigStatus进行检查来确保初始化的配置已经从Pilot接收到了
 func (p *Probe) checkConfigStatus() error {
 	if p.NoEnvoy {
 		// TODO some way to verify XDS proxy -> control plane works
@@ -71,6 +74,7 @@ func (p *Probe) checkConfigStatus() error {
 	LDSUpdated := s.LDSUpdatesSuccess > 0
 	if CDSUpdated && LDSUpdated {
 		p.receivedFirstUpdate = true
+		// 已经接收到CDS和LDS的更新
 		return nil
 	}
 
@@ -79,6 +83,7 @@ func (p *Probe) checkConfigStatus() error {
 	} else if s.LDSUpdatesRejection > 0 || s.CDSUpdatesRejection > 0 {
 		return fmt.Errorf("config received from XDS server, but was rejected: %s", s.String())
 	} else {
+		// 收到了CDS和LDS的Update并且没有reject
 		return fmt.Errorf("config not fully received from XDS server: %s", s.String())
 	}
 }

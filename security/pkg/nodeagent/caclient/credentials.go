@@ -60,6 +60,7 @@ func (t *TokenProvider) GetRequestMetadata(ctx context.Context, uri ...string) (
 	if t == nil {
 		return nil, nil
 	}
+	// 首先从token provider中获取token
 	token, err := t.GetToken()
 	if err != nil {
 		return nil, err
@@ -72,6 +73,7 @@ func (t *TokenProvider) GetRequestMetadata(ctx context.Context, uri ...string) (
 			"authorization": "Bearer " + token,
 		}, nil
 	}
+	// 从TokenManager中获取map
 	return t.opts.TokenManager.GetMetadata(t.forCA, t.opts.XdsAuthProvider, token)
 }
 
@@ -99,6 +101,7 @@ func (t *TokenProvider) GetToken() (string, error) {
 	var token string
 	if t.opts.CredFetcher != nil {
 		var err error
+		// 获取平台的credential，如果t.opts.CredFetcher不为空的话
 		token, err = t.opts.CredFetcher.GetPlatformCredential()
 		if err != nil {
 			return "", fmt.Errorf("fetch platform credential: %v", err)

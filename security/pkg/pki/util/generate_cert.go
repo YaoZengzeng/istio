@@ -264,6 +264,7 @@ func LoadSignerCredsFromFiles(signerCertFile string, signerPrivFile string) (*x5
 const ClockSkewGracePeriod = time.Minute * 2
 
 // genCertTemplateFromCSR generates a certificate template with the given CSR.
+// genCertTemplateFromCSR用给定的CSR创建一个certificate template
 // The NotBefore value of the cert is set to current time.
 func genCertTemplateFromCSR(csr *x509.CertificateRequest, subjectIDs []string, ttl time.Duration, isCA bool) (
 	*x509.Certificate, error) {

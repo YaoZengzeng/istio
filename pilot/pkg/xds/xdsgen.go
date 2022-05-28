@@ -131,6 +131,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, push *model.PushContext,
 		ptype = "PUSH INC"
 	}
 	if len(logdata.AdditionalInfo) > 0 {
+		// info中包含额外的信息
 		info = " " + logdata.AdditionalInfo
 	}
 

@@ -72,9 +72,11 @@ const (
 	Mock = "Mock" // testing only
 
 	// GoogleCAProvider uses the Google CA for workload certificate signing
+	// GoogleCAProvider使用Google CA用于workload证书的签发
 	GoogleCAProvider = "GoogleCA"
 
 	// GoogleCASProvider uses the Google certificate Authority Service to sign workload certificates
+	// GoogleCASProvider使用Google certificate Authority Service来签发workload证书
 	GoogleCASProvider = "GoogleCAS"
 
 	// GkeWorkloadCertificateProvider uses the GKE workload certificates
@@ -358,6 +360,7 @@ const (
 )
 
 // Caller carries the identity and authentication source of a caller.
+// Caller包含了一个调用者的identity以及authentication source
 type Caller struct {
 	AuthSource AuthSource
 	Identities []string

@@ -671,6 +671,7 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	// 如果proxy使用以文件挂载的certs，我们不需要连接到CA
 	if a.secOpts.FileMountedCerts {
 		log.Info("Workload is using file mounted certificates. Skipping connecting to CA")
+		// 对于文件挂载的proxy，不用caClient
 		return cache.NewSecretManagerClient(nil, a.secOpts)
 	}
 
@@ -688,6 +689,7 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 		return cache.NewSecretManagerClient(caClient, a.secOpts)
 	} else if a.secOpts.CAProviderName == security.GoogleCASProvider {
 		// Use a plugin
+		// 使用插件
 		caClient, err := cas.NewGoogleCASClient(a.secOpts.CAEndpoint,
 			option.WithGRPCDialOption(grpc.WithPerRPCCredentials(caclient.NewCATokenProvider(a.secOpts))))
 		if err != nil {
@@ -726,6 +728,7 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	// 会使用TLS，除非保留的15010被使用（istiod在一个ipsec/secure VPC）
 	// rootCert may be nil - in which case the system roots are used, and the CA is expected to have public key
 	// Otherwise assume the injection has mounted /etc/certs/root-cert.pem
+	// 构建Citadel Client
 	caClient, err := citadel.NewCitadelClient(a.secOpts, tlsOpts)
 	if err != nil {
 		return nil, err

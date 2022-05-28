@@ -99,12 +99,15 @@ func GetReadinessStats(localHostAddr string, adminPort uint16) (*uint64, bool, e
 }
 
 // GetUpdateStatusStats returns the version stats for CDS and LDS.
+// GetUpdateStatusStats返回CDS和LDS的给定的stats
 func GetUpdateStatusStats(localHostAddr string, adminPort uint16) (*Stats, error) {
 	// If the localHostAddr was not set, we use 'localhost' to void empty host in URL.
+	// 如果没有设置localHostAddr，我们使用'localhost'来避免URL中的空host
 	if localHostAddr == "" {
 		localHostAddr = "localhost"
 	}
 
+	// 请求envoy的admin端口
 	stats, err := http.DoHTTPGet(fmt.Sprintf("http://%s:%d/stats?usedonly&filter=%s", localHostAddr, adminPort, updateStatsRegex))
 	if err != nil {
 		return nil, err

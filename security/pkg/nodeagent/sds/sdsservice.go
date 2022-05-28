@@ -173,11 +173,14 @@ func (s *sdsservice) Generate(_ *model.Proxy, _ *model.PushContext, w *model.Wat
 	// updates.Full indicates we should do a complete push of all updated resources
 	// In practice, all pushes should be incremental (ie, if the `default` cert changes we won't push
 	// all file certs).
+	// updates.Full表明我们是否应该对所有更新的resources做一次完整的push
+	// 事实上，所有的pushes都应该是inremental的（例如，如果`default`证书发生了变更，我们不会推送所有的证书certs）
 	if updates.Full {
 		resp, err := s.generate(w.ResourceNames)
 		return resp, pushLog(w.ResourceNames), err
 	}
 	names := []string{}
+	// 监听的一系列资源
 	watched := sets.NewSet(w.ResourceNames...)
 	for i := range updates.ConfigsUpdated {
 		if i.Kind == gvk.Secret && watched.Contains(i.Name) {
@@ -260,6 +263,7 @@ func toEnvoySecret(s *security.SecretItem, caRootPath string) *tls.Secret {
 func pushLog(names []string) model.XdsLogDetails {
 	if len(names) == 1 {
 		// For common case of single resource, show which resource it was
+		// 对于单个资源的情况，展示是那个资源
 		return model.XdsLogDetails{AdditionalInfo: "resource:" + names[0]}
 	}
 	return model.DefaultXdsLogDetails

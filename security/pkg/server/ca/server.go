@@ -38,6 +38,7 @@ var serverCaLog = log.RegisterScope("serverca", "Citadel server log", 0)
 // CertificateAuthority包含了的方法用于支持一个CA
 type CertificateAuthority interface {
 	// Sign generates a certificate for a workload or CA, from the given CSR and cert opts.
+	// Sign创建一个证书，为了一个workload或者CA，从给定的CSR以及cert opts
 	Sign(csrPEM []byte, opts ca.CertOpts) ([]byte, error)
 	// SignWithCertChain is similar to Sign but returns the leaf cert and the entire cert chain.
 	SignWithCertChain(csrPEM []byte, opts ca.CertOpts) ([]string, error)
