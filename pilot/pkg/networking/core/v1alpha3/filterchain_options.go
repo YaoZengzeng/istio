@@ -37,6 +37,7 @@ type FilterChainMatchOptions struct {
 	// Whether this chain should terminate mTLS or not
 	MTLS bool
 	// Hostnames to match on
+	// 匹配的hostnames
 	SNIHosts []string
 	// Has One-way TLS or mTLS configured by the user
 	IsCustomTLS bool
@@ -216,6 +217,7 @@ func getFilterChainMatchOptions(settings plugin.MTLSSettings, protocol networkin
 }
 
 type fcOpts struct {
+	// 构建filter chain匹配的options
 	matchOpts FilterChainMatchOptions
 	fc        networking.FilterChain
 }

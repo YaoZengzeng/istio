@@ -747,6 +747,7 @@ func ParseSubsetKey(s string) (direction TrafficDirection, subsetName string, ho
 }
 
 // GetAddressForProxy returns a Service's address specific to the cluster where the node resides
+// GetAddressForProxy返回一个Service的地址，针对于这个node所在的cluster
 func (s *Service) GetAddressForProxy(node *Proxy) string {
 	if node.Metadata != nil {
 		if node.Metadata.ClusterID != "" {

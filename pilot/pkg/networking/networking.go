@@ -121,19 +121,26 @@ func (tp TransportProtocol) ToEnvoySocketProtocol() core.SocketAddress_Protocol 
 }
 
 // FilterChain describes a set of filters (HTTP or TCP) with a shared TLS context.
+// FilterChain描述了一系列的filters（HTTP或者TCP），以及一个共享的TLS context
 type FilterChain struct {
 	// FilterChainMatch is the match used to select the filter chain.
+	// FilterChainMatch用于匹配filter chain的match
 	FilterChainMatch *listener.FilterChainMatch
 	// TLSContext is the TLS settings for this filter chains.
+	// TLSContext是这个filter chains的TLS设置
 	TLSContext *tls.DownstreamTlsContext
 	// ListenerFilters are the filters needed for the whole listener, not particular to this
 	// filter chain.
+	// 用于整个listener的filters，不是特别用于这个filter chain
 	ListenerFilters []*listener.ListenerFilter
 	// ListenerProtocol indicates whether this filter chain is for HTTP or TCP
 	// Note that HTTP filter chains can also have network filters
+	// ListenerProtocol表明这个filter chain是用于HTTP还是TCP
+	// 注意HTTP filter chains也能有network filters
 	ListenerProtocol ListenerProtocol
 	// TransportProtocol indicates the type of transport used - TCP, UDP, QUIC
 	// This would be TCP by default
+	// TransportProtocol表明使用的传输层 - TCP, UDP, QUIC等等
 	TransportProtocol TransportProtocol
 	// IstioMutualGateway is set only when this filter chain is part of a Gateway, and
 	// the Server corresponding to this filter chain is doing TLS termination with ISTIO_MUTUAL as the TLS mode.
@@ -154,9 +161,11 @@ type FilterChain struct {
 // chain in unpredictable ways.
 type MutableObjects struct {
 	// Listener is the listener being built. Must be initialized before Plugin methods are called.
+	// Listener是正在被构建的listener，必须在Plugin的方法被调用之前初始化
 	Listener *listener.Listener
 
 	// FilterChains is the set of filter chains that will be attached to Listener.
+	// FilterChains是一系列需要关联到Listener的filter chains
 	FilterChains []FilterChain
 }
 

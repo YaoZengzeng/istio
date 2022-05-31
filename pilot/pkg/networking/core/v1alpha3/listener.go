@@ -305,6 +305,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
 			listenerOpts := buildListenerOpts{
 				push:       push,
 				proxy:      node,
+				// 设置绑定端口为wildcard
 				bind:       bind,
 				port:       &port,
 				bindToPort: false,
@@ -480,7 +481,9 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListenerForPortOrUDS(li
 	// Setup filter chain options and call plugins
 	// 构建filter chain options并且调用plugins
 	clusterName := model.BuildInboundSubsetKey(int(pluginParams.ServiceInstance.Endpoint.EndpointPort))
+	// 构建inbound filtr chains
 	fcOpts := configgen.buildInboundFilterchains(pluginParams, listenerOpts, "", clusterName, false)
+	// listenerOpts中包含filterChainOpts
 	listenerOpts.filterChainOpts = fcOpts
 
 	// Buildup the complete listener
@@ -940,11 +943,13 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundHTTPListenerOptsForPor
 	}}
 }
 
+// 构建outbound listener
 func (configgen *ConfigGeneratorImpl) buildSidecarOutboundTCPListenerOptsForPortOrUDS(destinationCIDR *string, listenerMapKey *string,
 	currentListenerEntry **outboundListenerEntry, listenerOpts *buildListenerOpts, listenerMap map[string]*outboundListenerEntry,
 	virtualServices []config.Config, actualWildcard string) (bool, []*filterChainOpts) {
 	// first identify the bind if its not set. Then construct the key
 	// used to lookup the listener in the conflict map.
+	// 首先识别出是否设置了bind，之后构建key用于在conflict map中寻找listener
 
 	// Determine the listener address if bind is empty
 	// we listen on the service VIP if and only
@@ -1372,6 +1377,7 @@ type buildListenerOpts struct {
 	proxy             *model.Proxy
 	bind              string
 	port              *model.Port
+	// 描述一个filterchain的options
 	filterChainOpts   []*filterChainOpts
 	bindToPort        bool
 	skipUserFilters   bool
@@ -1543,13 +1549,16 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 		listenerFilters = append(listenerFilters, xdsfilters.HTTPInspector)
 	}
 
+	// 基于filterChainOpts进行构建
 	for _, chain := range opts.filterChainOpts {
 		for _, filter := range chain.listenerFilters {
+			// 遍历listener filter
 			if _, exist := listenerFiltersMap[filter.Name]; !exist {
 				listenerFiltersMap[filter.Name] = true
 				listenerFilters = append(listenerFilters, filter)
 			}
 		}
+		// 构建listener的FilterChainMatch
 		match := &listener.FilterChainMatch{}
 		needMatch := false
 		if chain.match != nil {
@@ -1563,6 +1572,8 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 					fullWildcardFound = true
 					// If we have a host with *, it effectively means match anything, i.e.
 					// no SNI based matching for this host.
+					// 如果我们有一个*的host，它意味着匹配任何东西
+					// 对于这个host没有基于SNI的matching
 					break
 				}
 			}
@@ -1573,6 +1584,7 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 			}
 		}
 		if len(chain.destinationCIDRs) > 0 {
+			// 如果包含了destinationCIDRs
 			chain.destinationCIDRs = append([]string{}, chain.destinationCIDRs...)
 			sort.Stable(sort.StringSlice(chain.destinationCIDRs))
 			for _, d := range chain.destinationCIDRs {
@@ -1599,6 +1611,7 @@ func buildListener(opts buildListenerOpts, trafficDirection core.TrafficDirectio
 		}
 		// 构建filter chain
 		filterChains = append(filterChains, &listener.FilterChain{
+			// 包含了FilterChainMatch
 			FilterChainMatch: match,
 			TransportSocket:  transportSocket,
 		})

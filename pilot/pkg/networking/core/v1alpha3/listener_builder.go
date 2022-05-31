@@ -64,8 +64,10 @@ type ListenerBuilder struct {
 	inboundListeners  []*listener.Listener
 	outboundListeners []*listener.Listener
 	// HttpProxyListener is a specialize outbound listener. See MeshConfig.proxyHttpPort
+	// HttpProxyListener是一个专门的outbound listener
 	httpProxyListener       *listener.Listener
 	virtualOutboundListener *listener.Listener
+	// 包括Inboun Listener
 	virtualInboundListener  *listener.Listener
 
 	envoyFilterWrapper *model.EnvoyFilterWrapper
@@ -74,12 +76,16 @@ type ListenerBuilder struct {
 // Setup the filter chain match so that the match should work under both
 // - bind_to_port == false listener
 // - virtual inbound listener
+// 设置filter chain match，这样match在以下两种情况都能work
+// - bind_to_port == false的listener
+// - virtual inbound listener
 func amendFilterChainMatchFromInboundListener(chain *listener.FilterChain, l *listener.Listener) enabledInspector {
 	if chain.FilterChainMatch == nil {
 		chain.FilterChainMatch = &listener.FilterChainMatch{}
 	}
 	listenerAddress := l.Address
 	if sockAddr := listenerAddress.GetSocketAddress(); sockAddr != nil {
+		// 构建chain的destination port
 		chain.FilterChainMatch.DestinationPort = &wrappers.UInt32Value{Value: sockAddr.GetPortValue()}
 		chain.Name = l.Name
 	}
@@ -106,12 +112,14 @@ func isBindtoPort(l *listener.Listener) bool {
 }
 
 // enabledInspector captures if for a given listener, listener filter inspectors are added
+// enabledInspector用于获取，对于一个给定的listener，listener filter inspectors是否需要添加
 type enabledInspector struct {
 	HTTPInspector bool
 	TLSInspector  bool
 }
 
 // Accumulate the filter chains from per proxy service listeners
+// 从per proxy service listeners中构建filter chains
 func reduceInboundListenerToFilterChains(listeners []*listener.Listener) ([]*listener.FilterChain, map[int]enabledInspector) {
 	inspectorsMap := map[int]enabledInspector{}
 	chains := make([]*listener.FilterChain, 0)
@@ -169,6 +177,7 @@ func (lb *ListenerBuilder) aggregateVirtualInboundListener(passthroughInspectors
 	// 2. explicit original_dst listener filter
 	// UseOriginalDst: proto.BoolTrue,
 	lb.virtualInboundListener.UseOriginalDst = nil
+	// 构建virtual inbound listener的ListenerFilters
 	lb.virtualInboundListener.ListenerFilters = append(lb.virtualInboundListener.ListenerFilters,
 		xdsfilters.OriginalDestination,
 	)
@@ -206,6 +215,8 @@ func (lb *ListenerBuilder) aggregateVirtualInboundListener(passthroughInspectors
 
 	// All listeners except bind_to_port=true listeners are now a part of virtual inbound and not needed
 	// we can filter these ones out.
+	// 所有的listeners，除了bind_to_port=true的listeners，都是virtual inbound的一部分，并且是不需要的
+	// 我们可以过滤这些
 	bindToPortInbound := make([]*listener.Listener, 0, len(lb.inboundListeners))
 	for _, i := range lb.inboundListeners {
 		if isBindtoPort(i) {
@@ -338,11 +349,13 @@ func NewListenerBuilder(node *model.Proxy, push *model.PushContext) *ListenerBui
 }
 
 func (lb *ListenerBuilder) buildSidecarInboundListeners(configgen *ConfigGeneratorImpl) *ListenerBuilder {
+	// 构建inbound listeners
 	lb.inboundListeners = configgen.buildSidecarInboundListeners(lb.node, lb.push)
 	return lb
 }
 
 func (lb *ListenerBuilder) buildSidecarOutboundListeners(configgen *ConfigGeneratorImpl) *ListenerBuilder {
+	// 构建outbound listeners
 	lb.outboundListeners = configgen.buildSidecarOutboundListeners(lb.node, lb.push)
 	return lb
 }
@@ -634,6 +647,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundFilterchains(in *plugin.InputP
 		}
 	}
 
+	// listener的options中包含了tls的配置
 	if listenerOpts.tlsSettings != nil && !hasMTLs {
 		newOpts = []*fcOpts{}
 		opt := fcOpts{matchOpts: FilterChainMatchOptions{IsCustomTLS: true}}
@@ -648,6 +662,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundFilterchains(in *plugin.InputP
 	}
 
 	// Run our filter chains through the plugin
+	// 将filter chains遍历plugin
 	fcs := make([]istionetworking.FilterChain, 0, len(newOpts))
 	for _, o := range newOpts {
 		fcs = append(fcs, o.fc)
@@ -695,6 +710,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundFilterchains(in *plugin.InputP
 		case istionetworking.ListenerProtocolTCP:
 			fcOpt.networkFilters = buildInboundNetworkFilters(in.Push, in.Node, in.ServiceInstance, clusterName)
 		case istionetworking.ListenerProtocolAuto:
+			// 构建http options
 			fcOpt.httpOpts = configgen.buildSidecarInboundHTTPListenerOptsForPortOrUDS(in.Node, in, clusterName)
 			fcOpt.networkFilters = buildInboundNetworkFilters(in.Push, in.Node, in.ServiceInstance, clusterName)
 		}
