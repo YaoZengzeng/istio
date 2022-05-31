@@ -213,6 +213,7 @@ func NewAgent(proxyConfig *mesh.ProxyConfig, agentOpts *AgentOptions, sopts *sec
 		proxyConfig: proxyConfig,
 		cfg:         agentOpts,
 		secOpts:     sopts,
+		// 包含了envoy的options
 		envoyOpts:   eopts,
 	}
 }
@@ -227,6 +228,7 @@ func (a *Agent) WaitForSigterm() bool {
 	return a.EnvoyDisabled() && !a.envoyOpts.TestOnly
 }
 
+// 构建node metadata
 func (a *Agent) generateNodeMetadata() (*model.Node, error) {
 	provCert, err := a.FindRootCAForXDS()
 	if err != nil {
@@ -277,6 +279,7 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 		a.envoyOpts.ConfigPath = a.proxyConfig.CustomConfigFile
 		a.envoyOpts.ConfigCleanup = false
 	} else {
+		// 构建bootsrap
 		out, err := bootstrap.New(bootstrap.Config{
 			Node: node,
 		   // 这个函数只有在这里被调用
@@ -314,6 +317,7 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 	a.envoyWaitCh = make(chan error, 1)
 	if a.cfg.EnableDynamicBootstrap {
 		// Simulate an xDS request for a bootstrap
+		// 对于bootstrap模拟一个xDS请求
 		a.wg.Add(1)
 		go func() {
 			defer a.wg.Done()
@@ -355,6 +359,7 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 	return nil
 }
 
+// 构建一个bootstrap的Discovery Request
 type bootstrapDiscoveryRequest struct {
 	node        *model.Node
 	envoyWaitCh chan error

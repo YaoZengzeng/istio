@@ -63,6 +63,8 @@ func NewXdsServer(stop chan struct{}, gen model.XdsResourceGenerator) *xds.Disco
 		if len(req.ConfigsUpdated) == 0 {
 			return true
 		}
+
+		// 对于secrets同样要看有没有proxy关心的资源
 		proxy.RLock()
 		wr := proxy.WatchedResources[v3.SecretType]
 		proxy.RUnlock()

@@ -325,7 +325,10 @@ type WatchedResource struct {
 
 	// ResourceNames tracks the list of resources that are actively watched. If empty, all resources of the
 	// TypeUrl type are watched.
+	// ResourceNames追踪一系列当前actively watched的resources，如果为空，则TypeUrl类型的所有的resources
+	// 都被监听
 	// For endpoints the resource names will have list of clusters and for clusters it is empty.
+	// 对于endpoints，resource names会有一系列的clusters，对于clusters为空
 	ResourceNames []string
 
 	// VersionSent is the version of the resource included in the last sent response.
@@ -462,8 +465,10 @@ type Node struct {
 	// ID of the Envoy node
 	ID string
 	// Metadata is the typed node metadata
+	// Metadata是有类型的节点元数据
 	Metadata *BootstrapNodeMetadata
 	// RawMetadata is the untyped node metadata
+	// RawMetadata是没有类型的节点元数据
 	RawMetadata map[string]interface{}
 	// Locality from Envoy bootstrap
 	Locality *core.Locality
@@ -473,6 +478,7 @@ type Node struct {
 // we configure in the Envoy bootstrap. This is split out from NodeMetadata to explicitly segment the parameters
 // that are consumed by Pilot from the parameters used only as part of the bootstrap. Fields used by bootstrap only
 // are consumed by Envoy itself, such as the telemetry filters.
+// BootstrapNodeMetadata是NodeMetadata的超集，对整个节点元数据进行建模
 type BootstrapNodeMetadata struct {
 	NodeMetadata
 

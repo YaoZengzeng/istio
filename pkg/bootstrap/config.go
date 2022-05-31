@@ -43,6 +43,7 @@ import (
 
 const (
 	// IstioMetaPrefix is used to pass env vars as node metadata.
+	// IstioMetaPrefix用于传入环境变量，作为node metadata
 	IstioMetaPrefix = "ISTIO_META_"
 
 	// IstioMetaJSONPrefix is used to pass annotations and similar environment info.
@@ -474,6 +475,7 @@ func extractAttributesMetadata(envVars []string, plat platform.Environment, meta
 }
 
 // MetadataOptions for constructing node metadata.
+// MetadataOptions用于构建node metadata
 type MetadataOptions struct {
 	Envs                []string
 	Platform            platform.Environment

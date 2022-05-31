@@ -50,6 +50,7 @@ type Instance interface {
 }
 
 // New creates a new Instance of an Envoy bootstrap writer.
+// New创建一个envoy bootsrap writer的新实例
 func New(cfg Config) Instance {
 	return &instance{
 		Config: cfg,
@@ -62,18 +63,21 @@ type instance struct {
 
 func (i *instance) WriteTo(templateFile string, w io.Writer) error {
 	// Get the input bootstrap template.
+	// 获取input bootstrap的模板
 	t, err := newTemplate(templateFile)
 	if err != nil {
 		return err
 	}
 
 	// Create the parameters for the template.
+	// 为template创建参数
 	templateParams, err := i.toTemplateParams()
 	if err != nil {
 		return err
 	}
 
 	// Execute the template.
+	// 执行template
 	return t.Execute(w, templateParams)
 }
 
@@ -111,6 +115,7 @@ func GetEffectiveTemplatePath(pc *model.NodeMetaProxyConfig) string {
 
 func (i *instance) CreateFileForEpoch(epoch int) (string, error) {
 	// Create the output file.
+	// 创建output文件
 	if err := os.MkdirAll(i.Metadata.ProxyConfig.ConfigPath, 0o700); err != nil {
 		return "", err
 	}
