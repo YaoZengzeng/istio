@@ -184,6 +184,7 @@ var (
 )
 
 // getFilterChainMatchOptions returns the FilterChainMatchOptions that should be used based on mTLS mode and protocol
+// getFilterChainMatchOptions返回FilterChainMatchOptions，应该基于mTLS mode以及protocol使用
 func getFilterChainMatchOptions(settings plugin.MTLSSettings, protocol networking.ListenerProtocol) []FilterChainMatchOptions {
 	switch protocol {
 	case networking.ListenerProtocolHTTP:
@@ -227,6 +228,7 @@ func (opt fcOpts) populateFilterChain(mtls plugin.MTLSSettings, port uint32, mat
 	opt.fc.FilterChainMatch.ApplicationProtocols = opt.matchOpts.ApplicationProtocols
 	opt.fc.FilterChainMatch.TransportProtocol = opt.matchOpts.TransportProtocol
 	if len(matchingIP) > 0 {
+		// 填充CIDR range，如果指定了matchingIP的话
 		opt.fc.FilterChainMatch.PrefixRanges = []*core.CidrRange{util.ConvertAddressToCidr(matchingIP)}
 	}
 	if port > 0 {

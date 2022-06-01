@@ -36,6 +36,8 @@ const (
 // InputParams is a set of values passed to Plugin callback methods. Not all fields are guaranteed to
 // be set, it's up to the callee to validate required fields are set and emit error if they are not.
 // These are for reading only and should not be modified.
+// InputParams是一系列传给Plugin回调函数的值，不保证所有字段都被设置，
+// 需要调用者来确保所需字段，他们都是只读的并且不能修改
 type InputParams struct {
 	// Node is the node the response is for.
 	Node *model.Proxy
@@ -67,6 +69,7 @@ type Plugin interface {
 	OnInboundPassthrough(in *InputParams, mutable *istionetworking.MutableObjects) error
 
 	// InboundMTLSConfiguration configures the mTLS configuration for inbound listeners.
+	// InboundMTLSConfiguration配置mTLS配置，对于inbound listeners
 	InboundMTLSConfiguration(in *InputParams, passthrough bool) []MTLSSettings
 }
 

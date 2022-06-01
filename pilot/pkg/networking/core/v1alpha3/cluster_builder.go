@@ -567,6 +567,8 @@ func (cb *ClusterBuilder) buildInboundClusterForPortOrUDS(clusterPort int, bind 
 	if bind != LocalhostAddress && bind != LocalhostIPv6Address {
 		// iptables will redirect our own traffic to localhost back to us if we do not use the "magic" upstream bind
 		// config which will be skipped.
+		// iptables会转发我们的流到到localhost，返回到我们，如果我们没有使用"magic" upstream bind config
+		// 它会被忽略
 		localCluster.cluster.UpstreamBindConfig = &core.BindConfig{
 			SourceAddress: &core.SocketAddress{
 				Address: cb.passThroughBindIP,

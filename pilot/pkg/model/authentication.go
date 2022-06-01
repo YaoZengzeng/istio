@@ -35,6 +35,7 @@ const (
 	MTLSUnknown MutualTLSMode = iota
 
 	// MTLSDisable if authentication policy disable mTLS.
+	// 如果authentication policy禁止了mTLS
 	MTLSDisable
 
 	// MTLSPermissive if authentication policy enable mTLS in permissive mode.

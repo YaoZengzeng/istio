@@ -513,6 +513,7 @@ func (lb *ListenerBuilder) getListeners() []*listener.Listener {
 }
 
 func getMtlsSettings(configgen *ConfigGeneratorImpl, in *plugin.InputParams, passthrough bool) []plugin.MTLSSettings {
+	// 调用plugins，设置mtls
 	for _, p := range configgen.Plugins {
 		cfg := p.InboundMTLSConfiguration(in, passthrough)
 		if cfg != nil {
@@ -520,6 +521,7 @@ func getMtlsSettings(configgen *ConfigGeneratorImpl, in *plugin.InputParams, pas
 		}
 	}
 	// If no plugin configures mtls, set it to disabled
+	// 如果没有plugin配置mtls，设置为disaled
 	if passthrough {
 		return []plugin.MTLSSettings{{Mode: model.MTLSDisable}}
 	}
@@ -642,6 +644,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundFilterchains(in *plugin.InputP
 			hasMTLs = false
 		}
 		for _, match := range getFilterChainMatchOptions(mtlsConfig, listenerOpts.protocol) {
+			// 在inbound中，传入的matchingIP为空
 			opt := fcOpts{matchOpts: match}.populateFilterChain(mtlsConfig, mtlsConfig.Port, matchingIP)
 			newOpts = append(newOpts, &opt)
 		}

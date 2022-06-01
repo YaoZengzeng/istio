@@ -1375,6 +1375,7 @@ type buildListenerOpts struct {
 	// nolint: maligned
 	push              *model.PushContext
 	proxy             *model.Proxy
+	// buildListenerOpts中包含bind地址
 	bind              string
 	port              *model.Port
 	// 描述一个filterchain的options
