@@ -169,6 +169,7 @@ const (
 	DisabledTLSModeLabel = "disabled"
 
 	// IstioMutualTLSModeLabel implies that the endpoint is ready to receive Istio mTLS connections.
+	// IstioMutualTLSModeLabel表明endpoint准备好接收Istio mTLS连接
 	IstioMutualTLSModeLabel = "istio"
 
 	// IstioCanonicalServiceLabelName is the name of label for the Istio Canonical Service for a workload instance.

@@ -51,6 +51,7 @@ type Option struct {
 }
 
 // Builder builds Istio authorization policy to Envoy filters.
+// Builder将Istio authorization policy转换为Envoy filters
 type Builder struct {
 	trustDomainBundle trustdomain.Bundle
 	option            Option
@@ -69,6 +70,8 @@ type Builder struct {
 
 // New returns a new builder for the given workload with the authorization policy.
 // Returns nil if none of the authorization policies are enabled for the workload.
+// New返回用authorization policy构建一个新的builder，对于给定的workload
+// 返回nil，如果对于workload没有使能任何的authorization policy
 func New(trustDomainBundle trustdomain.Bundle, in *plugin.InputParams, option Option) *Builder {
 	policies := in.Push.AuthzPolicies.ListAuthorizationPolicies(in.Node.ConfigNamespace, labels.Collection{in.Node.Metadata.Labels})
 	if option.IsCustomBuilder {
@@ -100,6 +103,7 @@ func New(trustDomainBundle trustdomain.Bundle, in *plugin.InputParams, option Op
 }
 
 // BuildHTTP returns the HTTP filters built from the authorization policy.
+// BuildHTTP返回HTTP filters，从authorization policy构建而来
 func (b Builder) BuildHTTP() []*httppb.HttpFilter {
 	if b.option.IsCustomBuilder {
 		// Use the DENY action so that a HTTP rule is properly handled when generating for TCP filter chain.
@@ -127,6 +131,7 @@ func (b Builder) BuildHTTP() []*httppb.HttpFilter {
 }
 
 // BuildTCP returns the TCP filters built from the authorization policy.
+// BuildTCP返回TCP filters，从authorization policy构建而来
 func (b Builder) BuildTCP() []*tcppb.Filter {
 	if b.option.IsCustomBuilder {
 		if configs := b.build(b.customPolicies, rbacpb.RBAC_DENY, true); configs != nil {

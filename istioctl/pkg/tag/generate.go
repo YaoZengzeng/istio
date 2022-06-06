@@ -116,6 +116,7 @@ func Generate(ctx context.Context, client kube.ExtendedClient, opts *GenerateOpt
 	if opts.Tag == DefaultRevisionName {
 		if !opts.Generate {
 			// deactivate other istio-injection=enabled injectors if using default revisions.
+			// 如果使用默认版本的话，禁用其他的istio-injection=enabled的injectors
 			err := DeactivateIstioInjectionWebhook(ctx, client)
 			if err != nil {
 				return "", fmt.Errorf("failed deactivating existing default revision: %w", err)

@@ -321,12 +321,14 @@ func injectPod(req InjectionParameters) ([]byte, error) {
 	checkPreconditions(req)
 
 	// The patch will be built relative to the initial pod, capture its current state
+	// patch会基于初始的pod进行构建，获取它当前的状态
 	originalPodSpec, err := json.Marshal(req.pod)
 	if err != nil {
 		return nil, err
 	}
 
 	// Run the injection template, giving us a partial pod spec
+	// 运行injection template，给我们一个部分的pod spec
 	mergedPod, injectedPodData, err := RunTemplate(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run injection template: %v", err)
@@ -338,10 +340,12 @@ func injectPod(req InjectionParameters) ([]byte, error) {
 	}
 
 	// Apply some additional transformations to the pod
+	// 应用额外的transformations到pod
 	if err := postProcessPod(mergedPod, *injectedPodData, req); err != nil {
 		return nil, fmt.Errorf("failed to process pod: %v", err)
 	}
 
+	// 创建patch
 	patch, err := createPatch(mergedPod, originalPodSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create patch: %v", err)
@@ -474,6 +478,7 @@ func createPatch(pod *corev1.Pod, original []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// 创建patch
 	p, err := jsonpatch.CreatePatch(original, reinjected)
 	if err != nil {
 		return nil, err
@@ -515,6 +520,7 @@ func applyMetadata(pod *corev1.Pod, injectedPodData corev1.Pod, req InjectionPar
 		pod.Labels[label.TopologyNetwork.Name] = nw
 	}
 	// Add all additional injected annotations. These are overridden if needed
+	// 添加所有额外注入的anntations，如果需要的话，这些都会被覆盖
 	pod.Annotations[annotation.SidecarStatus.Name] = getInjectionStatus(injectedPodData.Spec, req.revision)
 
 	// Deprecated; should be set directly in the template instead
@@ -726,6 +732,7 @@ func applyInitContainer(target *corev1.Pod, container corev1.Container) (*corev1
 }
 
 // applyContainer merges a pod spec, provided as JSON, on top of the provided pod
+// applyContainer合并一个pod spec，以JSON的形式提供，在已经提供的pod之上
 func applyOverlay(target *corev1.Pod, overlayJSON []byte) (*corev1.Pod, error) {
 	currentJSON, err := json.Marshal(target)
 	if err != nil {
@@ -755,9 +762,12 @@ func (wh *Webhook) inject(ar *kube.AdmissionReview, path string) *kube.Admission
 	}
 	// Managed fields is sometimes extremely large, leading to excessive CPU time on patch generation
 	// It does not impact the injection output at all, so we can just remove it.
+	// Managed字段有时候会非常大，导致过量的CPU时间在patch generation上
+	// 它完全不会影响injection output，因此我们可以只是移除它
 	pod.ManagedFields = nil
 
 	// Deal with potential empty fields, e.g., when the pod is created by a deployment
+	// 处理潜在的空字段，例如，当pod是由一个deployment创建的时候
 	podName := potentialPodName(pod.ObjectMeta)
 	if pod.ObjectMeta.Namespace == "" {
 		pod.ObjectMeta.Namespace = req.Namespace

@@ -64,6 +64,7 @@ func GetAuthorizationPolicies(env *Environment) (*AuthorizationPolicies, error) 
 	return policy, nil
 }
 
+// 包含一系列的AuthorizationPolicy
 type AuthorizationPoliciesResult struct {
 	Custom []AuthorizationPolicy
 	Deny   []AuthorizationPolicy
@@ -72,6 +73,7 @@ type AuthorizationPoliciesResult struct {
 }
 
 // ListAuthorizationPolicies returns authorization policies applied to the workload in the given namespace.
+// ListAuthorizationPolicies返回应用到给定namespace的workload的authorizatino polices
 func (policy *AuthorizationPolicies) ListAuthorizationPolicies(namespace string, workload labels.Collection) AuthorizationPoliciesResult {
 	ret := AuthorizationPoliciesResult{}
 	if policy == nil {

@@ -294,6 +294,7 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 
 	// Back-fill envoy options from proxy config options
 	a.envoyOpts.BinaryPath = a.proxyConfig.BinaryPath
+	// 对AdminPort进行赋值
 	a.envoyOpts.AdminPort = a.proxyConfig.ProxyAdminPort
 	a.envoyOpts.DrainDuration = a.proxyConfig.DrainDuration
 	a.envoyOpts.ParentShutdownDuration = a.proxyConfig.ParentShutdownDuration

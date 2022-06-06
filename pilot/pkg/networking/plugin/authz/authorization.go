@@ -91,6 +91,7 @@ func (p Plugin) buildFilter(in *plugin.InputParams, mutable *networking.MutableO
 	}
 
 	// We will lazily build filters for tcp/http as needed
+	// 我们会延迟构建tcp/http的filters，如果需要的话
 	httpBuilt := false
 	tcpBuilt := false
 	var httpFilters []*httppb.HttpFilter

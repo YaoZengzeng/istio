@@ -68,6 +68,9 @@ const (
 	// namespace(s) being watched. Resources can disable injection
 	// using the "sidecar.istio.io/inject" annotation with value of
 	// false.
+	// InjectionPolicyEnabled指定了sidecar注入规则，会默认注入sidecar，对于
+	// 被监听的namespaces，Resources可以停止注入，使用"sidecar.istio.io/inject"
+	// annotation，将value指定为false
 	InjectionPolicyEnabled InjectionPolicy = "enabled"
 )
 
@@ -122,6 +125,8 @@ type Injector interface {
 // Config specifies the sidecar injection configuration This includes
 // the sidecar template and cluster-side injection policy. It is used
 // by kube-inject, sidecar injector, and http endpoint.
+// Config指定了sidecar注入的配置，包括sidecar template以及cluster级别的注入策略
+// 它用于kube-inject, sidecar injector以及http endpoint
 type Config struct {
 	Policy InjectionPolicy `json:"policy"`
 
@@ -146,6 +151,7 @@ type Config struct {
 	// AlwaysInjectSelector: Forces the injection on pods whose labels match this selector.
 	// It's an array of label selectors, that will be OR'ed, meaning we will iterate
 	// over it and stop at the first match
+	// AlwaysInjectSelector：执行注入，当pods的labels匹配这个selector
 	AlwaysInjectSelector []metav1.LabelSelector `json:"alwaysInjectSelector"`
 
 	// InjectedAnnotations are additional annotations that will be added to the pod spec after injection
@@ -203,6 +209,7 @@ func injectRequired(ignored []string, config *Config, podSpec *corev1.PodSpec, m
 	objectSelector := annos[annotation.SidecarInject.Name]
 	if lbl, labelPresent := metadata.GetLabels()[annotation.SidecarInject.Name]; labelPresent {
 		// The label is the new API; if both are present we prefer the label
+		// 这个label是新的API；如果都存在的话，我们更倾向于label
 		objectSelector = lbl
 	}
 	switch strings.ToLower(objectSelector) {
@@ -214,6 +221,7 @@ func injectRequired(ignored []string, config *Config, podSpec *corev1.PodSpec, m
 	}
 
 	// If an annotation is not explicitly given, check the LabelSelectors, starting with NeverInject
+	// 如果没有一个显式的annotation，检查LabelSelectors，从NeverInject开始
 	if useDefault {
 		for _, neverSelector := range config.NeverInjectSelector {
 			selector, err := metav1.LabelSelectorAsSelector(&neverSelector)
@@ -349,7 +357,9 @@ func updateImageTypeIfPresent(tag string, imageType string) string {
 }
 
 // RunTemplate renders the sidecar template
+// RunTemplate渲染sidecar template
 // Returns the raw string template, as well as the parse pod form
+// 返回raw string template，以及parse pod form
 func RunTemplate(params InjectionParameters) (mergedPod *corev1.Pod, templatePod *corev1.Pod, err error) {
 	metadata := &params.pod.ObjectMeta
 	meshConfig := params.meshConfig

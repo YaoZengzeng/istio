@@ -65,6 +65,7 @@ func buildFilter(in *plugin.InputParams, mutable *networking.MutableObjects) err
 	for i := range mutable.FilterChains {
 		if mutable.FilterChains[i].ListenerProtocol == networking.ListenerProtocolHTTP {
 			// Adding Jwt filter and authn filter, if needed.
+			// 添加Jwt filter以及authn filter，如果需要的话
 			if filter := applier.JwtFilter(); filter != nil {
 				mutable.FilterChains[i].HTTP = append(mutable.FilterChains[i].HTTP, filter)
 			}
@@ -88,12 +89,14 @@ func (Plugin) OnInboundPassthrough(in *plugin.InputParams, mutable *networking.M
 }
 
 func (p Plugin) InboundMTLSConfiguration(in *plugin.InputParams, passthrough bool) []plugin.MTLSSettings {
+	// 基于node的labels构建applier
 	applier := factory.NewPolicyApplier(in.Push, in.Node.Metadata.Namespace, labels.Collection{in.Node.Metadata.Labels})
 	trustDomains := TrustDomainsForValidation(in.Push.Mesh)
 
 	port := in.ServiceInstance.Endpoint.EndpointPort
 
 	// For non passthrough, set up the specific port
+	// 对于非passthrough，设置特定的端口
 	if !passthrough {
 		return []plugin.MTLSSettings{
 			applier.InboundMTLSSettings(port, in.Node, trustDomains),
@@ -107,6 +110,7 @@ func (p Plugin) InboundMTLSConfiguration(in *plugin.InputParams, passthrough boo
 	}
 
 	// Then generate the per-port passthrough filter chains.
+	// 之后创建每个端口的passthrough filter chains
 	for port := range applier.PortLevelSetting() {
 		// Skip the per-port passthrough filterchain if the port is already handled by InboundMTLSConfiguration().
 		if !needPerPortPassthroughFilterChain(port, in.Node) {

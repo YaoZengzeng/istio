@@ -127,6 +127,7 @@ type AdmissionRequest struct {
 }
 
 // AdmissionResponse describes an admission response.
+// AdmissionResponse描述了一个admission response
 type AdmissionResponse struct {
 
 	// UID is an identifier for the individual request/response.

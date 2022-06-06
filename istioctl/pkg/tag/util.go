@@ -148,6 +148,7 @@ func PreviousInstallExists(ctx context.Context, client kubernetes.Interface) boo
 }
 
 // DeactivateIstioInjectionWebhook deactivates the istio-injection webhook from the given MutatingWebhookConfiguration if exists.
+// DeactivateIstioInjectionWebhook停用istio-injection webhook，从给定的MutatingWebhookConfiguration，如果存在的话
 // used rather than just deleting the webhook since we want to keep it around after changing the default so user can later
 // switch back to it. This is a hack but it is meant to cover a corner case where a user wants to migrate from a non-revisioned
 // old version and then later decides to switch back to the old revision again.

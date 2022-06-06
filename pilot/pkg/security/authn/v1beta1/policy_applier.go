@@ -125,12 +125,14 @@ func (a *v1beta1PolicyApplier) AuthNFilter(forSidecar bool) *http_conn.HttpFilte
 	var filterConfigProto *authn_filter.FilterConfig
 
 	// Override the config with request authentication, if applicable.
+	// 用request authentication覆盖配置，如果适用的话
 	filterConfigProto = a.setAuthnFilterForRequestAuthn(filterConfigProto)
 
 	if filterConfigProto == nil {
 		return nil
 	}
 	// disable clear route cache for sidecars because the JWT claim based routing is only supported on gateways.
+	// 对于sidecars禁止clear route cache，因为基于JWT claim的路由只在gateways支持
 	filterConfigProto.DisableClearRouteCache = forSidecar
 
 	// Note: in previous Istio versions, the authn filter also handled PeerAuthentication, to extract principal.

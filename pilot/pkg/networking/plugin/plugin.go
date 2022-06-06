@@ -55,6 +55,8 @@ type InputParams struct {
 type Plugin interface {
 	// OnOutboundListener is called whenever a new outbound listener is added to the LDS output for a given service.
 	// Can be used to add additional filters on the outbound path.
+	// OnOutboundListener被调用，当一个新的outbound listener被加入到LDS output中，对于一个给定的service
+	// 可以用于在outbound path添加额外的filters
 	OnOutboundListener(in *InputParams, mutable *istionetworking.MutableObjects) error
 
 	// OnInboundListener is called whenever a new listener is added to the LDS output for a given service
@@ -74,13 +76,17 @@ type Plugin interface {
 }
 
 // MTLSSettings describes the mTLS options for a filter chain
+// MTLSSettigns描述了一个filter chain的mTLS选项
 type MTLSSettings struct {
 	// Port is the port this option applies for
+	// Port是这个option应用的端口
 	Port uint32
 	// Mode is the mTLS  mode to use
 	Mode model.MutualTLSMode
 	// TCP describes the tls context to use for TCP filter chains
+	// TCP描述了TCP filter chains的tls context
 	TCP *tls.DownstreamTlsContext
 	// HTTP describes the tls context to use for HTTP filter chains
+	// HTTP描述了HTTP filter chains的tls context
 	HTTP *tls.DownstreamTlsContext
 }

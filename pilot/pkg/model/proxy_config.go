@@ -39,6 +39,7 @@ type ProxyConfigs struct {
 }
 
 // EffectiveProxyConfig generates the correct merged ProxyConfig for a given ProxyConfigTarget.
+// EffectiveProxyConfig生成正确的merged ProxyConfig，对于一个给定的ProxyConfigTarget
 func (p *ProxyConfigs) EffectiveProxyConfig(meta *NodeMetadata, mc *meshconfig.MeshConfig) *meshconfig.ProxyConfig {
 	if p == nil || meta == nil {
 		return nil
