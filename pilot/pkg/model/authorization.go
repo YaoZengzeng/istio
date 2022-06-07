@@ -33,9 +33,11 @@ type AuthorizationPolicy struct {
 // AuthorizationPolicies organizes AuthorizationPolicy by namespace.
 type AuthorizationPolicies struct {
 	// Maps from namespace to the Authorization policies.
+	// namespace到Authorization policies的映射
 	NamespaceToPolicies map[string][]AuthorizationPolicy `json:"namespace_to_policies"`
 
 	// The name of the root namespace. Policy in the root namespace applies to workloads in all namespaces.
+	// root namespace的名字，在root namespace中的Policy应用到所有namespaces中的workloads
 	RootNamespace string `json:"root_namespace"`
 }
 

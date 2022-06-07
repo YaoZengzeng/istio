@@ -245,6 +245,7 @@ func (b Builder) build(policies []model.AuthorizationPolicy, action rbacpb.RBAC_
 		}
 		if len(policy.Spec.Rules) == 0 {
 			// Generate an explicit policy that never matches.
+			// 创建一个显式的policy，从不会匹配
 			name := policyName(policy.Namespace, policy.Name, 0, b.option)
 			b.option.Logger.AppendDebugf("generated config from policy %s on %s filter chain successfully", name, filterType)
 			currentRule.Policies[name] = rbacPolicyMatchNever

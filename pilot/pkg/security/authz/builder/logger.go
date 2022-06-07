@@ -33,6 +33,7 @@ type AuthzLogger struct {
 }
 
 func (al *AuthzLogger) AppendDebugf(format string, args ...interface{}) {
+	// 扩展debug Msg
 	al.debugMsg = append(al.debugMsg, fmt.Sprintf(format, args...))
 }
 

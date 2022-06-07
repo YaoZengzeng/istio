@@ -62,6 +62,8 @@ func (p Plugin) OnOutboundListener(in *plugin.InputParams, mutable *networking.M
 // OnInboundListener is called whenever a new listener is added to the LDS output for a given service
 // Can be used to add additional filters or add more stuff to the HTTP connection manager
 // on the inbound path
+// OnInboundListener被调用当前一个新的listener被添加到LDS output中，对于一个给定的service
+// 可以用于提那家额外的filters或者添加更多的东西到HTTP connection manager
 func (p Plugin) OnInboundListener(in *plugin.InputParams, mutable *networking.MutableObjects) error {
 	if in.Node.Type != model.SidecarProxy {
 		// Only care about sidecar.

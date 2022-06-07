@@ -220,6 +220,8 @@ type PushContext struct {
 
 	// AuthzPolicies stores the existing authorization policies in the cluster. Could be nil if there
 	// are no authorization policies in the cluster.
+	// AuthzPolicies存储了cluster中已经存在的authorization policies，可以为nil如果
+	// 在集群中没有authorization polices
 	AuthzPolicies *AuthorizationPolicies `json:"-"`
 
 	// Telemetry stores the existing Telemetry resources for the cluster.

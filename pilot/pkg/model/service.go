@@ -451,9 +451,11 @@ type IstioEndpoint struct {
 	Namespace string
 
 	// Name of the workload that this endpoint belongs to. This is for telemetry purpose.
+	// 这个endpoint属于的workload的名字，这是用于telemtry
 	WorkloadName string
 
 	// Specifies the hostname of the Pod, empty for vm workload.
+	// 指定Pod的hostname，对于vm workload为空
 	HostName string
 
 	// If specified, the fully qualified Pod hostname will be "<hostname>.<subdomain>.<pod namespace>.svc.<cluster domain>".
