@@ -38,6 +38,7 @@ func DefaultProxyConfig() meshconfig.ProxyConfig {
 	// TODO: set default namespace based on POD_NAMESPACE env
 	return meshconfig.ProxyConfig{
 		ConfigPath:               constants.ConfigPathDir,
+		// 默认的cluster name
 		ClusterName:              &meshconfig.ProxyConfig_ServiceCluster{ServiceCluster: constants.ServiceClusterName},
 		DrainDuration:            types.DurationProto(45 * time.Second),
 		ParentShutdownDuration:   types.DurationProto(60 * time.Second),

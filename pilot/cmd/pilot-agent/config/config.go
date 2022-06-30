@@ -67,6 +67,7 @@ func ConstructProxyConfig(meshConfigFile, serviceCluster, proxyConfigEnv string,
 	}
 	if x, ok := proxyConfig.GetClusterName().(*meshconfig.ProxyConfig_ServiceCluster); ok {
 		if x.ServiceCluster == "" {
+			// ClusterName设置为ProxyConfig_ServiceCluster
 			proxyConfig.ClusterName = &meshconfig.ProxyConfig_ServiceCluster{ServiceCluster: serviceCluster}
 		}
 	}

@@ -127,6 +127,7 @@ func (cfg Config) toTemplateParams() (map[string]interface{}, error) {
 			option.DNSLookupFamily(option.DNSLookupFamilyIPv4))
 	}
 
+	// 获取ProxyConfig Options的配置
 	proxyOpts, err := getProxyConfigOptions(cfg.Metadata)
 	if err != nil {
 		return nil, err
@@ -285,6 +286,7 @@ func getServiceCluster(metadata *model.BootstrapNodeMetadata) string {
 	case *meshAPI.ProxyConfig_TracingServiceName_:
 		workloadName := metadata.WorkloadName
 		if workloadName == "" {
+			// 如果workloadName为空，则将其设置为"istio-proxy"
 			workloadName = "istio-proxy"
 		}
 
@@ -311,12 +313,15 @@ func getServiceCluster(metadata *model.BootstrapNodeMetadata) string {
 
 func serviceClusterOrDefault(name string, metadata *model.BootstrapNodeMetadata) string {
 	if name != "" && name != "istio-proxy" {
+		// 不为空且不为"istio-proxy"则直接返回
 		return name
 	}
 	if app, ok := metadata.Labels["app"]; ok {
+		// 如果labels中设置了app，则使用"app"，加上namespace
 		return app + "." + metadata.Namespace
 	}
 	if metadata.WorkloadName != "" {
+		// 否则，workload name加上namespace
 		return metadata.WorkloadName + "." + metadata.Namespace
 	}
 	if metadata.Namespace != "" {
@@ -332,6 +337,7 @@ func getProxyConfigOptions(metadata *model.BootstrapNodeMetadata) ([]option.Inst
 	opts := make([]option.Instance, 0)
 
 	opts = append(opts, option.ProxyConfig(config),
+		// 设置cluster
 		option.Cluster(getServiceCluster(metadata)),
 		option.PilotGRPCAddress(config.DiscoveryAddress),
 		option.DiscoveryAddress(config.DiscoveryAddress),
@@ -461,6 +467,7 @@ func extractAttributesMetadata(envVars []string, plat platform.Environment, meta
 			if len(m) > 0 {
 				meta.Labels = m
 			}
+		// 抽取出POD_NAME和POD_NAMESPACE
 		case "POD_NAME":
 			meta.InstanceName = val
 		case "POD_NAMESPACE":
@@ -493,6 +500,7 @@ type MetadataOptions struct {
 
 // GetNodeMetaData function uses an environment variable contract
 // ISTIO_METAJSON_* env variables contain json_string in the value.
+// GetNodeMetaData函数使用环境变量ISTIO_METAJSON_*，在value中包含json_string
 // The name of variable is ignored.
 // ISTIO_META_* env variables are passed thru
 func GetNodeMetaData(options MetadataOptions) (*model.Node, error) {
@@ -531,13 +539,16 @@ func GetNodeMetaData(options MetadataOptions) (*model.Node, error) {
 	meta.EnvoyStatusPort = options.EnvoyStatusPort
 	meta.EnvoyPrometheusPort = options.EnvoyPrometheusPort
 
+	// 对ProxyConfig进行赋值
 	meta.ProxyConfig = (*model.NodeMetaProxyConfig)(options.ProxyConfig)
 
 	// Add all instance labels with lower precedence than pod labels
+	// 添加所有的instance labels
 	extractInstanceLabels(options.Platform, meta)
 
 	// Add all pod labels found from filesystem
 	// These are typically volume mounted by the downward API
+	// 添加所有从文件系统找到的pod labels，它们通常通过downward API挂载
 	lbls, err := readPodLabels()
 	if err == nil {
 		if meta.Labels == nil {

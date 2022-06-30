@@ -143,8 +143,10 @@ type AgentOptions struct {
 	ProxyNamespace string
 	// ProxyDomain is the DNS domain associated with the proxy (assumed
 	// to include the namespace as well) (for local dns resolution)
+	// ProxyDomain是和proxy相关的DNS domain（假设也包含namespace）（用于local dns resolution）
 	ProxyDomain string
 	// Node identifier used by Envoy
+	// Envoy使用的Node identifier
 	ServiceNode string
 
 	// XDSRootCerts is the location of the root CA for the XDS connection. Used for setting platform certs or

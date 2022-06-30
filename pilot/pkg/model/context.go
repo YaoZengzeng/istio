@@ -484,9 +484,11 @@ type BootstrapNodeMetadata struct {
 
 	// InstanceName is the short name for the workload instance (ex: pod name)
 	// replaces POD_NAME
+	// InstanceName是workload实例的short name（例如：pod name），替换了POD_NAME
 	InstanceName string `json:"NAME,omitempty"`
 
 	// WorkloadName specifies the name of the workload represented by this node.
+	// WorkloadName指定了这个node代表的workload的名字
 	WorkloadName string `json:"WORKLOAD_NAME,omitempty"`
 
 	// Owner specifies the workload owner (opaque string). Typically, this is the owning controller of
@@ -503,6 +505,7 @@ type BootstrapNodeMetadata struct {
 	ProvCert string `json:"PROV_CERT,omitempty"`
 
 	// AppContainers is the list of containers in the pod.
+	// AppContainers是pod里的一系列容器
 	AppContainers string `json:"APP_CONTAINERS,omitempty"`
 
 	// IstioProxySHA is the SHA of the proxy version.
@@ -510,15 +513,18 @@ type BootstrapNodeMetadata struct {
 }
 
 // NodeMetadata defines the metadata associated with a proxy
+// NodeMetadata定义了一个和proxy相关的元数据
 // Fields should not be assumed to exist on the proxy, especially newly added fields which will not exist
 // on older versions.
 // The JSON field names should never change, as they are needed for backward compatibility with older proxies
 // nolint: maligned
 type NodeMetadata struct {
 	// ProxyConfig defines the proxy config specified for a proxy.
+	// PorxyConfig定义了对于一个proxy指定的proxy配置
 	// Note that this setting may be configured different for each proxy, due user overrides
 	// or from different versions of proxies connecting. While Pilot has access to the meshConfig.defaultConfig,
 	// this field should be preferred if it is present.
+	// 其中包含了ClusterName字段
 	ProxyConfig *NodeMetaProxyConfig `json:"PROXY_CONFIG,omitempty"`
 
 	// IstioVersion specifies the Istio version associated with the proxy
@@ -559,6 +565,7 @@ type NodeMetadata struct {
 	MeshID string `json:"MESH_ID,omitempty"`
 
 	// ClusterID defines the cluster the node belongs to.
+	// ClusterID定义了node所属的cluster
 	ClusterID cluster.ID `json:"CLUSTER_ID,omitempty"`
 
 	// Network defines the network the node belongs to. It is an optional metadata,

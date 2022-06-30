@@ -60,6 +60,7 @@ var (
 	meshConfigFile string
 
 	// proxy config flags (named identically)
+	// proxy配置的flags（命名相同）
 	serviceCluster         string
 	proxyLogLevel          string
 	proxyComponentLogLevel string
