@@ -59,6 +59,7 @@ func buildMetricsNetworkFilters(push *model.PushContext, proxy *model.Proxy, cla
 }
 
 // buildInboundNetworkFilters generates a TCP proxy network filter on the inbound path
+// buildInboundNetworkFilters在inbound路径生成一个TCP proxy network filter
 func buildInboundNetworkFilters(push *model.PushContext, proxy *model.Proxy, instance *model.ServiceInstance, clusterName string) []*listener.Filter {
 	statPrefix := clusterName
 	// If stat name is configured, build the stat prefix from configured pattern.

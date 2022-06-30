@@ -35,6 +35,7 @@ var SupportedCiphers = []string{
 }
 
 // BuildInboundTLS returns the TLS context corresponding to the mTLS mode.
+// BuildInboundTLS返回mTLS mode对应的TLS context
 func BuildInboundTLS(mTLSMode model.MutualTLSMode, node *model.Proxy,
 	protocol networking.ListenerProtocol, trustDomainAliases []string) *tls.DownstreamTlsContext {
 	if mTLSMode == model.MTLSDisable || mTLSMode == model.MTLSUnknown {
@@ -48,6 +49,8 @@ func BuildInboundTLS(mTLSMode model.MutualTLSMode, node *model.Proxy,
 		// For TCP with mTLS, we advertise "istio-peer-exchange" from client and
 		// expect the same from server. This  is so that secure metadata exchange
 		// transfer can take place between sidecars for TCP with mTLS.
+		// 对于有着mTLS的TCP，我们建议client和server都使用"istio-peer-exchange"
+		// 这样安全的metadata exchange就能在两个sidecar之间发生，对于有着mTLS的TCP
 		ctx.CommonTlsContext.AlpnProtocols = util.ALPNDownstream
 	} else {
 		// Note that in the PERMISSIVE mode, we match filter chain on "istio" ALPN,

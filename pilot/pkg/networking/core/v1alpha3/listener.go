@@ -142,6 +142,7 @@ func (configgen *ConfigGeneratorImpl) BuildListenerTLSContext(serverTLSSettings 
 	}
 	ctx := &auth.DownstreamTlsContext{
 		CommonTlsContext: &auth.CommonTlsContext{
+			// 构建alpn protocols
 			AlpnProtocols: alpnByTransport,
 		},
 	}

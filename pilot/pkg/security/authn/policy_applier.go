@@ -28,6 +28,7 @@ import (
 // authentication policy，每个版本的authentication policy都会实现这个接口
 type PolicyApplier interface {
 	// InboundMTLSSettings returns inbound mTLS settings for a given workload port
+	// InboundMTLSSettings对于给定的workload port，返回inbound mTLS settings
 	InboundMTLSSettings(endpointPort uint32, node *model.Proxy, trustDomainAliases []string) plugin.MTLSSettings
 
 	// AuthNFilter returns the JWT HTTP filter to enforce the underlying authentication policy.
@@ -41,6 +42,7 @@ type PolicyApplier interface {
 	AuthNFilter(forSidecar bool) *http_conn.HttpFilter
 
 	// PortLevelSetting returns port level mTLS settings.
+	// PortLevelSetting返回端口级别的mTLS配置
 	PortLevelSetting() map[uint32]*v1beta1.PeerAuthentication_MutualTLS
 
 	// GetMutualTLSModeForPort gets the mTLS mode for the given port. If there is no port level setting, it

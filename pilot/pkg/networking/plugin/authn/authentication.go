@@ -113,6 +113,7 @@ func (p Plugin) InboundMTLSConfiguration(in *plugin.InputParams, passthrough boo
 	// 之后创建每个端口的passthrough filter chains
 	for port := range applier.PortLevelSetting() {
 		// Skip the per-port passthrough filterchain if the port is already handled by InboundMTLSConfiguration().
+		// 跳过per-port的passthrough filterchain，如果port已经由InboundMTLSConfiguration()处理
 		if !needPerPortPassthroughFilterChain(port, in.Node) {
 			continue
 		}

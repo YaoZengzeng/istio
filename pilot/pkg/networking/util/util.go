@@ -128,15 +128,19 @@ var ALPNInMesh = []string{"istio"}
 // ALPNInMeshWithMxc advertises that Proxy is going to talk to the in-mesh cluster and has metadata exchange enabled for
 // TCP. The custom "istio-peer-exchange" value indicates, metadata exchange is enabled for TCP. The custom "istio" value
 // indicates in-mesh traffic and it's going to be used for routing decisions.
+// ALPNInMeshWithMxc建议Proxy和in-mesh cluster进行交互，对于TCP使能metadata exchange
+// "istio-peer-exchange"表明对于TCP打开metadata exchange，"istio"表明是mesh内的流量并且用于routing decisions
 var ALPNInMeshWithMxc = []string{"istio-peer-exchange", "istio"}
 
 // ALPNHttp advertises that Proxy is going to talking either http2 or http 1.1.
+// ALPNHttp建议Proxy使用http2或者http 1.1进行交互
 var ALPNHttp = []string{"h2", "http/1.1"}
 
 // ALPNHttp3OverQUIC advertises that Proxy is going to talk HTTP/3 over QUIC
 var ALPNHttp3OverQUIC = []string{"h3"}
 
 // ALPNDownstream advertises that Proxy is going to talking either tcp(for metadata exchange), http2 or http 1.1.
+// ALPNDownstream建议Proxy使用tcp（对于metadata exchange），http2或者http 1.1进行交互
 var ALPNDownstream = []string{"istio-peer-exchange", "h2", "http/1.1"}
 
 func getMaxCidrPrefix(addr string) uint32 {

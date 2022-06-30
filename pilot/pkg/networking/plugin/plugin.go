@@ -82,6 +82,7 @@ type MTLSSettings struct {
 	// Port是这个option应用的端口
 	Port uint32
 	// Mode is the mTLS  mode to use
+	// 使用的mTLS的模式
 	Mode model.MutualTLSMode
 	// TCP describes the tls context to use for TCP filter chains
 	// TCP描述了TCP filter chains的tls context

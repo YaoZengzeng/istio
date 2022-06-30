@@ -27,6 +27,7 @@ import (
 )
 
 // FilterChainMatchOptions describes options used for filter chain matches.
+// FilterChainMatchOptions描述了用于filter chain matches的options
 type FilterChainMatchOptions struct {
 	// Application protocols of the filter chain match
 	ApplicationProtocols []string
@@ -40,6 +41,7 @@ type FilterChainMatchOptions struct {
 	// 匹配的hostnames
 	SNIHosts []string
 	// Has One-way TLS or mTLS configured by the user
+	// 是否有用户配置的One-way TLS或者mTLS
 	IsCustomTLS bool
 }
 
@@ -107,6 +109,7 @@ var (
 	inboundPermissiveTCPFilterChainMatchWithMxcOptions = []FilterChainMatchOptions{
 		{
 			// MTLS
+			// mtls
 			ApplicationProtocols: allIstioMtlsALPNs,
 			TransportProtocol:    xdsfilters.TLSTransportProtocol,
 			Protocol:             networking.ListenerProtocolTCP,
@@ -114,11 +117,13 @@ var (
 		},
 		{
 			// Plain TLS
+			// 普通的tls
 			TransportProtocol: xdsfilters.TLSTransportProtocol,
 			Protocol:          networking.ListenerProtocolTCP,
 		},
 		{
 			// Plaintext
+			// 明文
 			Protocol:          networking.ListenerProtocolTCP,
 			TransportProtocol: xdsfilters.RawBufferTransportProtocol,
 		},
@@ -186,6 +191,7 @@ var (
 // getFilterChainMatchOptions returns the FilterChainMatchOptions that should be used based on mTLS mode and protocol
 // getFilterChainMatchOptions返回FilterChainMatchOptions，应该基于mTLS mode以及protocol使用
 func getFilterChainMatchOptions(settings plugin.MTLSSettings, protocol networking.ListenerProtocol) []FilterChainMatchOptions {
+	// 根据协议以及mtls的模式构建filter chain match options
 	switch protocol {
 	case networking.ListenerProtocolHTTP:
 		switch settings.Mode {
@@ -225,6 +231,7 @@ type fcOpts struct {
 
 func (opt fcOpts) populateFilterChain(mtls plugin.MTLSSettings, port uint32, matchingIP string) fcOpts {
 	opt.fc.FilterChainMatch = &listener.FilterChainMatch{}
+	// 填充application protocols
 	opt.fc.FilterChainMatch.ApplicationProtocols = opt.matchOpts.ApplicationProtocols
 	opt.fc.FilterChainMatch.TransportProtocol = opt.matchOpts.TransportProtocol
 	if len(matchingIP) > 0 {

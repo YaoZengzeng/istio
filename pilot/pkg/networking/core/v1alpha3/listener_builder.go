@@ -711,6 +711,7 @@ func (configgen *ConfigGeneratorImpl) buildInboundFilterchains(in *plugin.InputP
 				buildMetadataExchangeNetworkFilters(in.Push, istionetworking.ListenerClassSidecarInbound, in.Node.IstioVersion),
 				fcOpt.filterChain.TCP...)
 		case istionetworking.ListenerProtocolTCP:
+			// 如果是TCP协议
 			fcOpt.networkFilters = buildInboundNetworkFilters(in.Push, in.Node, in.ServiceInstance, clusterName)
 		case istionetworking.ListenerProtocolAuto:
 			// 构建http options
