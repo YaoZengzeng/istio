@@ -44,6 +44,7 @@ type ConfigGenerator interface {
 	BuildHTTPRoutes(node *model.Proxy, req *model.PushRequest, routeNames []string) ([]*discovery.Resource, model.XdsLogDetails)
 
 	// BuildNameTable returns list of hostnames and the associated IPs
+	// BuildNameTable返回一系列的hostnames以及相关的IPs
 	BuildNameTable(node *model.Proxy, push *model.PushContext) *dnsProto.NameTable
 
 	// BuildExtensionConfiguration returns the list of extension configuration for the given proxy and list of names. This is the ECDS output.

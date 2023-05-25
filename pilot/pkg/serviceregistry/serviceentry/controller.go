@@ -76,6 +76,7 @@ type configKey struct {
 }
 
 // Controller communicates with ServiceEntry CRDs and monitors for changes.
+// Controller和ServiceEntry CRDs进行交互并且监控变化
 type Controller struct {
 	XdsUpdater model.XDSUpdater
 
@@ -587,11 +588,13 @@ func (s *Controller) HasSynced() bool {
 }
 
 // Services list declarations of all services in the system
+// Services列举系统中所有服务的声明
 func (s *Controller) Services() []*model.Service {
 	s.mutex.Lock()
 	allServices := s.services.getAllServices()
 	out := make([]*model.Service, 0, len(allServices))
 	if s.services.allocateNeeded {
+		// 分配IP
 		autoAllocateIPs(allServices)
 		s.services.allocateNeeded = false
 	}
@@ -884,6 +887,10 @@ func autoAllocateIPs(services []*model.Service) []*model.Service {
 		//   for NONE because we will not know the original DST IP that the application requested.
 		// 2. the address is not set (0.0.0.0)
 		// 3. the hostname is not a wildcard
+		// 我们只能为以下服务分配IP
+		// 1. 服务的解析设置为static/dns。我们不能为NONE分配，因为我们不知道应用程序请求的原始DST IP。
+		// 2. 地址未设置（0.0.0.0)
+		// 3. 主机名不是通配符
 		if svc.DefaultAddress == constants.UnspecifiedIP && !svc.Hostname.IsWildCarded() &&
 			svc.Resolution != model.Passthrough {
 			x++
@@ -897,8 +904,10 @@ func autoAllocateIPs(services []*model.Service) []*model.Service {
 			thirdOctet := x / 255
 			fourthOctet := x % 255
 
+			// 自动分配一个IPv4 Address
 			svc.AutoAllocatedIPv4Address = fmt.Sprintf("240.240.%d.%d", thirdOctet, fourthOctet)
 			// if the service of service entry has IPv6 address, then allocate the IPv4-Mapped IPv6 Address for it
+			// 如果service entry的service有IPv6地址，则为其分配IPv4-Mapped IPv6 Address
 			if thirdOctet == 0 {
 				svc.AutoAllocatedIPv6Address = fmt.Sprintf("2001:2::f0f0:%x", fourthOctet)
 			} else {

@@ -912,6 +912,10 @@ func (ps *PushContext) DelegateVirtualServices(vses []config.Config) []ConfigHas
 // function based on the Sidecar API objects in each namespace. If there is
 // no sidecar api object, a default sidecarscope is assigned to the
 // namespace which enables connectivity to all services in the mesh.
+// getSidecarScope返回一个SidecarScope对象，该对象与代理关联。这个SidecarScope对象是一个半处理的视图
+// 服务注册表和与sidecar crd相关的配置状态。范围包含一组入站和出站侦听器，每个侦听器的服务/配置等。
+// 这个sidecar scopes是在initSidecarContext函数中基于每个命名空间中的Sidecar API对象预先计算的。
+// 如果没有sidecar api对象，则为该命名空间分配一个默认的sidecarscope，该对象使得可以连接到网格中的所有服务。
 //
 // Callers can check if the sidecarScope is from user generated object or not
 // by checking the sidecarScope.Config field, that contains the user provided config
@@ -926,6 +930,7 @@ func (ps *PushContext) getSidecarScope(proxy *Proxy, workloadLabels labels.Insta
 		if proxy.Type == Router {
 			for _, wrapper := range sidecars {
 				// Gateways should just have a default scope with egress: */*
+				// Gateways对于egress应该就只有一个默认的范围：egress: */*
 				if wrapper.Sidecar == nil {
 					return wrapper
 				}

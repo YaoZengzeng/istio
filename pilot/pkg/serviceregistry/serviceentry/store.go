@@ -100,6 +100,7 @@ func (s *serviceInstancesStore) deleteAllServiceEntryInstances(key types.Namespa
 }
 
 // stores all the services converted from serviceEntries
+// 存储所有从serviceEntries转换的服务
 type serviceStore struct {
 	// services keeps track of all services - mainly used to return from Services() to avoid reconversion.
 	servicesBySE   map[types.NamespacedName][]*model.Service

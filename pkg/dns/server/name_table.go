@@ -60,13 +60,16 @@ func BuildNameTable(cfg Config) *dnsProto.NameTable {
 		} else {
 			// The IP will be unspecified here if its headless service or if the auto
 			// IP allocation logic for service entry was unable to allocate an IP.
+			// IP没有被指定，可能是headless service，也可能是service entry的自动分配IP逻辑无法分配IP
 			if svc.Resolution == model.Passthrough && len(svc.Ports) > 0 {
 				for _, instance := range cfg.Push.ServiceInstancesByPort(svc, svc.Ports[0].Port, nil) {
 					// TODO(stevenctl): headless across-networks https://github.com/istio/istio/issues/38327
 					sameNetwork := cfg.Node.InNetwork(instance.Endpoint.Network)
 					sameCluster := cfg.Node.InCluster(instance.Endpoint.Locality.ClusterID)
 					// For all k8s headless services, populate the dns table with the endpoint IPs as k8s does.
+					// 对于所有的k8s headless services，将endpoint IP填充到dns表中，就像k8s一样
 					// And for each individual pod, populate the dns table with the endpoint IP with a manufactured host name.
+					// 对于每个单独的pod，将endpoint IP填充到dns表中，使用一个制造的host name
 					if instance.Endpoint.SubDomain != "" && sameNetwork {
 						// Follow k8s pods dns naming convention of "<hostname>.<subdomain>.<pod namespace>.svc.<cluster domain>"
 						// i.e. "mysql-0.mysql.default.svc.cluster.local".

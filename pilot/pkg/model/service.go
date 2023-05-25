@@ -76,6 +76,8 @@ type Service struct {
 
 	// DefaultAddress specifies the default service IP of the load balancer.
 	// Do not access directly. Use GetAddressForProxy
+	// DefaultAddress指定负载均衡器的默认服务IP。
+	// 不要直接访问。使用GetAddressForProxy
 	DefaultAddress string `json:"defaultAddress,omitempty"`
 
 	// AutoAllocatedIPv4Address and AutoAllocatedIPv6Address specifies
@@ -89,6 +91,11 @@ type Service struct {
 	// to allocate IPs is pretty deterministic that at stable state, two
 	// istiods will allocate the exact same set of IPs for a given set of
 	// service entries.
+	// AutoAllocatedIPv4Address和AutoAllocatedIPv6Address指定了自动分配的IPv4/IPv6地址
+	// 来自保留的E类子网(240.240.0.0/16)或保留的基准IP范围(RFC5180中的2001:2::/48)。
+	// 对于非通配符主机名的服务条目。分配给服务的IP在istiod副本之间不会同步，因为这些服务条目的DNS解析
+	// 完全发生在一个pod内，其代理由一个istiod管理。也就是说，分配IP的算法是非常确定的，稳定状态下，
+	// 两个istiod将为给定的一组服务条目分配完全相同的IP。
 	AutoAllocatedIPv4Address string `json:"autoAllocatedIPv4Address,omitempty"`
 	AutoAllocatedIPv6Address string `json:"autoAllocatedIPv6Address,omitempty"`
 
@@ -125,8 +132,10 @@ const (
 	// DNSLB implies that the proxy will resolve a DNS address and forward to the resolved address
 	DNSLB
 	// Passthrough implies that the proxy should forward traffic to the destination IP requested by the caller
+	// Passthrough意味着proxy应该将流量转发到调用者请求的目标IP
 	Passthrough
 	// DNSRoundRobinLB implies that the proxy will resolve a DNS address and forward to the resolved address
+	// DNSRoundRobinLB意味着代理将解析DNS地址并转发到解析的地址
 	DNSRoundRobinLB
 )
 
@@ -752,6 +761,7 @@ func (s *Service) GetAddresses(node *Proxy) []string {
 }
 
 // GetAddressForProxy returns a Service's address specific to the cluster where the node resides
+// GetAddressForProxy返回一个Service的地址，该地址特定于节点所在的集群
 func (s *Service) GetAddressForProxy(node *Proxy) string {
 	if node.Metadata != nil {
 		if node.Metadata.ClusterID != "" {
