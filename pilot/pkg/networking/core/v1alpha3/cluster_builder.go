@@ -87,6 +87,7 @@ type metadataCerts struct {
 }
 
 // ClusterBuilder interface provides an abstraction for building Envoy Clusters.
+// ClusterBuilder接口提供了一个抽象，用于构建Envoy集群。
 type ClusterBuilder struct {
 	// Proxy related information used to build clusters.
 	serviceInstances  []*model.ServiceInstance // Service instances of Proxy.
@@ -99,11 +100,13 @@ type ClusterBuilder struct {
 	passThroughBindIP string                   // Passthrough IP to be used while building clusters.
 	supportsIPv4      bool                     // Whether Proxy IPs has IPv4 address.
 	supportsIPv6      bool                     // Whether Proxy IPs has IPv6 address.
-	locality          *core.Locality           // Locality information of proxy.
-	proxyLabels       map[string]string        // Proxy labels.
-	proxyView         model.ProxyView          // Proxy view of endpoints.
-	proxyIPAddresses  []string                 // IP addresses on which proxy is listening on.
-	configNamespace   string                   // Proxy config namespace.
+	// proxy的locality信息
+	locality *core.Locality // Locality information of proxy.
+	// proxy的label信息
+	proxyLabels      map[string]string // Proxy labels.
+	proxyView        model.ProxyView   // Proxy view of endpoints.
+	proxyIPAddresses []string          // IP addresses on which proxy is listening on.
+	configNamespace  string            // Proxy config namespace.
 	// PushRequest to look for updates.
 	req                   *model.PushRequest
 	cache                 model.XdsCache
@@ -719,7 +722,9 @@ func (cb *ClusterBuilder) applyTrafficPolicy(opts buildClusterOpts) {
 	}
 	cb.applyConnectionPool(opts.mesh, opts.mutable, connectionPool)
 	if opts.direction != model.TrafficDirectionInbound {
+		// 非inbound方向的流量
 		cb.applyH2Upgrade(opts, connectionPool)
+		// 应用outlier detection
 		applyOutlierDetection(opts.mutable.cluster, outlierDetection)
 		applyLoadBalancer(opts.mutable.cluster, loadBalancer, opts.port, cb.locality, cb.proxyLabels, opts.mesh)
 		if opts.clusterMode != SniDnatClusterMode {

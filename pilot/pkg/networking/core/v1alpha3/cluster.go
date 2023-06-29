@@ -713,6 +713,7 @@ func applyLoadBalancer(c *cluster.Cluster, lb *networking.LoadBalancerSettings, 
 ) {
 	// Disable panic threshold when SendUnhealthyEndpoints is enabled as enabling it "may" send traffic to unready
 	// end points when load balancer is in panic mode.
+	// 禁止panic threshold，当SendUnhealthyEndpoints启用时，因为启用它“可能”发送流量到unready端点当负载均衡器处于panic模式时。
 	if features.SendUnhealthyEndpoints.Load() {
 		c.CommonLbConfig.HealthyPanicThreshold = &xdstype.Percent{Value: 0}
 	}
@@ -723,6 +724,7 @@ func applyLoadBalancer(c *cluster.Cluster, lb *networking.LoadBalancerSettings, 
 		}
 	}
 	// Use locality lb settings from load balancer settings if present, else use mesh wide locality lb settings
+	// 使用来自负载均衡器设置的locality lb设置，如果存在，否则使用网格范围的地方性lb设置
 	applyLocalityLBSetting(locality, proxyLabels, c, localityLbSetting)
 
 	if c.GetType() == cluster.Cluster_ORIGINAL_DST {
@@ -827,6 +829,7 @@ func applyLocalityLBSetting(locality *core.Locality, proxyLabels map[string]stri
 	localityLB *networking.LocalityLoadBalancerSetting,
 ) {
 	// Failover should only be applied with outlier detection, or traffic will never failover.
+	// Failover只应该应用于异常检测，否则流量将永远无法故障转移。
 	enabledFailover := cluster.OutlierDetection != nil
 	if cluster.LoadAssignment != nil {
 		// TODO: enable failoverPriority for `STRICT_DNS` cluster type

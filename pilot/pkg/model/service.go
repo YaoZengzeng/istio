@@ -446,6 +446,7 @@ type IstioEndpoint struct {
 	Network network.ID
 
 	// The locality where the endpoint is present.
+	// endpoint所在的locality
 	Locality Locality
 
 	// EndpointPort is the port where the workload is listening, can be different
