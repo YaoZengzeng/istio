@@ -196,6 +196,7 @@ func (configgen *ConfigGeneratorImpl) deltaFromDestinationRules(updatedDr model.
 }
 
 // buildClusters builds clusters for the proxy with the services passed.
+// buildClusters构建clusters，对于proxy，用传入的services
 func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *model.PushRequest,
 	services []*model.Service,
 ) ([]*discovery.Resource, model.XdsLogDetails) {
@@ -218,6 +219,7 @@ func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *mod
 		// Setup inbound clusters
 		inboundPatcher := clusterPatcher{efw: envoyFilterPatches, pctx: networking.EnvoyFilter_SIDECAR_INBOUND}
 		clusters = append(clusters, configgen.buildInboundClusters(cb, proxy, instances, inboundPatcher)...)
+		// 扩展HBONE Clusters
 		if proxy.EnableHBONE() {
 			clusters = append(clusters, configgen.buildInboundHBONEClusters())
 		}
@@ -249,6 +251,7 @@ func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *mod
 	}
 
 	// OutboundTunnel cluster is needed for sidecar and gateway.
+	// OutboundTunnel cluster对于sidecar和gateway是需要的
 	if proxy.EnableHBONE() {
 		clusters = append(clusters, cb.buildConnectOriginate(proxy, req.Push, nil))
 	}

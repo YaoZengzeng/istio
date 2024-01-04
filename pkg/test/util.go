@@ -22,6 +22,7 @@ import (
 )
 
 // SetForTest sets a variable for the duration of a test, then resets it once the test is complete.
+// SetForTest设置一个测试的时长的变量，之后再重置它，一旦完成
 func SetForTest[T any](t Failer, vv *T, v T) {
 	old := *vv
 	*vv = v

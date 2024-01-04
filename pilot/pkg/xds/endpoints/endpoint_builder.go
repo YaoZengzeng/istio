@@ -601,6 +601,7 @@ func ExtractEnvoyEndpoints(locEps []*LocalityEndpoints) []*endpoint.LocalityLbEn
 }
 
 // buildEnvoyLbEndpoint packs the endpoint based on istio info.
+// buildEnvoyLbEndpoint封装endpoint，基于istio info
 func buildEnvoyLbEndpoint(b *EndpointBuilder, e *model.IstioEndpoint, mtlsEnabled bool) *endpoint.LbEndpoint {
 	addr := util.BuildAddress(e.Address, e.EndpointPort)
 	healthStatus := e.HealthStatus

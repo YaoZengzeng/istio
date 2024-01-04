@@ -100,6 +100,7 @@ func (sg *StatusGen) Generate(proxy *model.Proxy, w *model.WatchedResource, req 
 }
 
 // isSidecar ad-hoc method to see if connection represents a sidecar
+// isSidecar是一个临时方法，查看一个连接是否代表一个sidecar
 func isProxy(con *Connection) bool {
 	return con != nil &&
 		con.proxy != nil &&
@@ -128,6 +129,7 @@ func (sg *StatusGen) debugSyncz() model.Resources {
 	for _, con := range sg.Server.Clients() {
 		con.proxy.RLock()
 		// Skip "nodes" without metadata (they are probably istioctl queries!)
+		// 跳过没有metadata的"nodes"（它们可能是istioctl queries）
 		if isProxy(con) || isZtunnel(con) {
 			xdsConfigs := make([]*status.ClientConfig_GenericXdsConfig, 0)
 			for _, stype := range stypes {

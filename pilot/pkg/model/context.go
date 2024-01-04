@@ -671,7 +671,9 @@ type NodeMetadata struct {
 	DNSAutoAllocate StringBool `json:"DNS_AUTO_ALLOCATE,omitempty"`
 
 	// EnableHBONE, if set, will enable generation of HBONE config.
+	// EnableHBONE，如果设置了，会使能HBONE config的生成
 	// Note: this only impacts sidecars; ztunnel and waypoint proxy unconditionally use HBONE.
+	// 注意：这只影响sidecars； ztunnel和waypoint proxy无条件使用HBONE
 	EnableHBONE StringBool `json:"ENABLE_HBONE,omitempty"`
 
 	// AutoRegister will enable auto registration of the connected endpoint to the service registry using the given WorkloadGroup name
@@ -756,16 +758,19 @@ func (node *Proxy) InCluster(cluster cluster.ID) bool {
 }
 
 // IsWaypointProxy returns true if the proxy is acting as a waypoint proxy in an ambient mesh.
+// IsWaypointProxy返回true，如果proxy作为一个waypoint proxy，在ambient mesh中
 func (node *Proxy) IsWaypointProxy() bool {
 	return node.Type == Waypoint
 }
 
 // IsZTunnel returns true if the proxy is acting as a ztunnel in an ambient mesh.
+// IsZTunnel返回true，如果proxy在ambient mesh中作为一个ztunnel
 func (node *Proxy) IsZTunnel() bool {
 	return node.Type == Ztunnel
 }
 
 // IsAmbient returns true if the proxy is acting as either a ztunnel or a waypoint proxy in an ambient mesh.
+// IsAmbient返回true，如果proxy作为一个ztunnel或者waypoint，在一个ambient mesh
 func (node *Proxy) IsAmbient() bool {
 	return node.IsWaypointProxy() || node.IsZTunnel()
 }
@@ -859,9 +864,11 @@ const (
 	Router NodeType = "router"
 
 	// Waypoint type is used for waypoint proxies
+	// Waypoint类型用于waypoint proxies``
 	Waypoint NodeType = "waypoint"
 
 	// Ztunnel type is used for node proxies (ztunnel)
+	// Ztunnel类型用于node proxies（ztunnel）
 	Ztunnel NodeType = "ztunnel"
 )
 
@@ -878,6 +885,7 @@ const (
 )
 
 // IsApplicationNodeType verifies that the NodeType is one of the declared constants in the model
+// IsApplicationNodeType校验NodeType是model中声明的常量
 func IsApplicationNodeType(nType NodeType) bool {
 	switch nType {
 	case SidecarProxy, Router, Waypoint, Ztunnel:

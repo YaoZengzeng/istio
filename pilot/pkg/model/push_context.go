@@ -691,6 +691,7 @@ var (
 )
 
 // NewPushContext creates a new PushContext structure to track push status.
+// NewPushContext创建一个新的PushContext结构来追踪push status
 func NewPushContext() *PushContext {
 	return &PushContext{
 		ServiceIndex:            newServiceIndex(),

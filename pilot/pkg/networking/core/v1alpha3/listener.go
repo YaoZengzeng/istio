@@ -111,6 +111,7 @@ func (configgen *ConfigGeneratorImpl) BuildListeners(node *model.Proxy,
 	builder.patchListeners()
 	l := builder.getListeners()
 	if builder.node.EnableHBONE() && !builder.node.IsAmbient() {
+		// 如果使能了HBONE并且node不是Ambient
 		l = append(l, buildConnectOriginateListener())
 	}
 

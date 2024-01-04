@@ -90,12 +90,13 @@ type ClusterBuilder struct {
 	passThroughBindIPs []string              // Passthrough IPs to be used while building clusters.
 	supportsIPv4       bool                  // Whether Proxy IPs has IPv4 address.
 	supportsIPv6       bool                  // Whether Proxy IPs has IPv6 address.
-	hbone              bool                  // Does the proxy support HBONE
-	locality           *core.Locality        // Locality information of proxy.
-	proxyLabels        map[string]string     // Proxy labels.
-	proxyView          model.ProxyView       // Proxy view of endpoints.
-	proxyIPAddresses   []string              // IP addresses on which proxy is listening on.
-	configNamespace    string                // Proxy config namespace.
+	// proxy是否支持HBONE
+	hbone            bool              // Does the proxy support HBONE
+	locality         *core.Locality    // Locality information of proxy.
+	proxyLabels      map[string]string // Proxy labels.
+	proxyView        model.ProxyView   // Proxy view of endpoints.
+	proxyIPAddresses []string          // IP addresses on which proxy is listening on.
+	configNamespace  string            // Proxy config namespace.
 	// PushRequest to look for updates.
 	req                   *model.PushRequest
 	cache                 model.XdsCache
@@ -103,6 +104,7 @@ type ClusterBuilder struct {
 }
 
 // NewClusterBuilder builds an instance of ClusterBuilder.
+// NewClusterBuilder构建ClusterBuilder实例
 func NewClusterBuilder(proxy *model.Proxy, req *model.PushRequest, cache model.XdsCache) *ClusterBuilder {
 	cb := &ClusterBuilder{
 		serviceTargets:     proxy.ServiceTargets,
