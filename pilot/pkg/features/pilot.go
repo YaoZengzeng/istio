@@ -527,8 +527,11 @@ var (
 	).Get()
 
 	// EnableHBONE provides a global Pilot flag for enabling HBONE.
+	// EnableHBONE提供了一个全局的Pilot flag来使能HBONE
 	// Generally, this could be a per-proxy setting (and is, via ENABLE_HBONE node metadata).
+	// 一般来说，这可以是一个per-proxy的配置（并且，通过ENABLE_HBONE的node metadata）
 	// However, there are some code paths that impact all clients, hence the global flag.
+	// 然而，有一些code paths会影响所有的clients，因此是global flag
 	// Warning: do not enable by default until endpoint_builder.go caching is fixed (and possibly other locations).
 	EnableHBONE = env.Register(
 		"PILOT_ENABLE_HBONE",
@@ -539,6 +542,7 @@ var (
 	EnableAmbientControllers = env.Register(
 		"PILOT_ENABLE_AMBIENT_CONTROLLERS",
 		false,
+		// 如果enabled，controllers需要ambient运行，这需要运行ambient mesh
 		"If enabled, controllers required for ambient will run. This is required to run ambient mesh.").Get()
 
 	// EnableUnsafeAssertions enables runtime checks to test assertions in our code. This should never be enabled in
