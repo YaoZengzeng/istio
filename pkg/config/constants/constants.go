@@ -57,6 +57,7 @@ const (
 	IstioDataDir = "/var/lib/istio/data"
 
 	// BinaryPathFilename envoy binary location
+	// BinaryPathFilename是envoy binary的位置
 	BinaryPathFilename = "/usr/local/bin/envoy"
 
 	// ServiceClusterName service cluster name used in xDS calls

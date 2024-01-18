@@ -72,7 +72,9 @@ type ResponseHandler func(resp *anypb.Any) error
 // XdsProxy proxies all XDS requests from envoy to istiod, in addition to allowing
 // subsystems inside the agent to also communicate with either istiod/envoy (eg dns, sds, etc).
 // The goal here is to consolidate all xds related connections to istiod/envoy into a
+// XdsProxy代理所有的XDS请求，从envoy到istiod，另外agent内的子系统能够和istiod/envoy交互，
 // single tcp connection with multiple gRPC streams.
+// 目标是将所有xds相关的到istiod/envoy的连接都聚合到单个的tcp连接，有多个gRPC streams
 // TODO: Right now, the workloadSDS server and gatewaySDS servers are still separate
 // connections. These need to be consolidated.
 // TODO: consolidate/use ADSC struct - a lot of duplication.
@@ -96,6 +98,7 @@ type XdsProxy struct {
 	tapResponseChannel chan *discovery.DiscoveryResponse
 
 	// connected stores the active gRPC stream. The proxy will only have 1 connection at a time
+	// connected存储active gRPC stream，proxy一次只会有一个连接
 	connected                 *ProxyConnection
 	initialHealthRequest      *discovery.DiscoveryRequest
 	initialDeltaHealthRequest *discovery.DeltaDiscoveryRequest
@@ -222,13 +225,16 @@ func initXdsProxy(ia *Agent) (*XdsProxy, error) {
 
 // sendHealthCheckRequest sends a request to the currently connected proxy. Additionally, on any reconnection
 // to the upstream XDS request we will resend this request.
+// sendHealthCheckRequest发送一个请求到当前连接的proxy，另外，对于任何到upstream的重连XDS请求，我们会重新发送这个请求
 func (p *XdsProxy) sendHealthCheckRequest(req *discovery.DiscoveryRequest) {
 	p.connectedMutex.Lock()
 	// Immediately send if we are currently connected.
+	// 如果当前是连接的，立即发送
 	if p.connected != nil && p.connected.requestsChan != nil {
 		p.connected.requestsChan.Put(req)
 	}
 	// Otherwise place it as our initial request for new connections
+	// 否则将它作为我们的intial request，对于新的连接
 	p.initialHealthRequest = req
 	p.connectedMutex.Unlock()
 }
@@ -253,6 +259,7 @@ func (p *XdsProxy) registerStream(c *ProxyConnection) {
 }
 
 // ProxyConnection represents connection to downstream proxy.
+// ProxyConnection代表到downstream proxy的连接
 type ProxyConnection struct {
 	conID              uint32
 	upstreamError      chan error
@@ -263,13 +270,15 @@ type ProxyConnection struct {
 	deltaResponsesChan chan *discovery.DeltaDiscoveryResponse
 	stopChan           chan struct{}
 	downstream         adsStream
-	upstream           xds.DiscoveryClient
-	downstreamDeltas   xds.DeltaDiscoveryStream
-	upstreamDeltas     xds.DeltaDiscoveryClient
+	// upstream的DiscoveryClient
+	upstream         xds.DiscoveryClient
+	downstreamDeltas xds.DeltaDiscoveryStream
+	upstreamDeltas   xds.DeltaDiscoveryClient
 }
 
 // sendRequest is a small wrapper around sending to con.requestsChan. This ensures that we do not
 // block forever on
+// sendRequest是一个小的wrapper，关于发送到con.requestsChan，这确保我们不会一直阻塞
 func (con *ProxyConnection) sendRequest(req *discovery.DiscoveryRequest) {
 	con.requestsChan.Put(req)
 }
@@ -290,9 +299,12 @@ type adsStream interface {
 }
 
 // StreamAggregatedResources is an implementation of XDS API used for proxying between Istiod and Envoy.
+// StreamAggregatedResources是xds api的一个实现，用于在Istiod和Envoy之间代理请求
 // Every time envoy makes a fresh connection to the agent, we reestablish a new connection to the upstream xds
+// 每次envoy构建一个到agent的fresh connection，我们重新构建一个新的连接到upstream xds
 // This ensures that a new connection between istiod and agent doesn't end up consuming pending messages from envoy
 // as the new connection may not go to the same istiod. Vice versa case also applies.
+// 这确保一个新的istiod和agent之间的连接不会从envoy消费pending messages，因为新的连接可能不会走到同一个istiod
 func (p *XdsProxy) StreamAggregatedResources(downstream xds.DiscoveryStream) error {
 	proxyLog.Debugf("accepted XDS connection from Envoy, forwarding to upstream XDS server")
 	return p.handleStream(downstream)
@@ -334,6 +346,7 @@ func (p *XdsProxy) handleStream(downstream adsStream) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
+	// 构建upstream conn
 	upstreamConn, err := p.buildUpstreamConn(ctx)
 	if err != nil {
 		proxyLog.Errorf("failed to connect to upstream %s: %v", p.istiodAddress, err)
@@ -342,12 +355,14 @@ func (p *XdsProxy) handleStream(downstream adsStream) error {
 	}
 	defer upstreamConn.Close()
 
+	// 构建aggregated discovery service client
 	xds := discovery.NewAggregatedDiscoveryServiceClient(upstreamConn)
 	ctx = metadata.AppendToOutgoingContext(context.Background(), "ClusterID", p.clusterID)
 	for k, v := range p.xdsHeaders {
 		ctx = metadata.AppendToOutgoingContext(ctx, k, v)
 	}
 	// We must propagate upstream termination to Envoy. This ensures that we resume the full XDS sequence on new connection
+	// 我们必须传播upstream，这确保我们在新的连接消费完整的XDS sequence
 	return p.handleUpstream(ctx, con, xds)
 }
 
@@ -374,9 +389,11 @@ func (p *XdsProxy) handleUpstream(ctx context.Context, con *ProxyConnection, xds
 	con.upstream = upstream
 
 	// Handle upstream xds recv
+	// 处理xds recv
 	go func() {
 		for {
 			// from istiod
+			// 来自istiod
 			resp, err := con.upstream.Recv()
 			if err != nil {
 				select {
@@ -430,6 +447,7 @@ func (p *XdsProxy) handleUpstreamRequest(con *ProxyConnection) {
 	go func() {
 		for {
 			// recv xds requests from envoy
+			// 从envoy接收xds requests
 			req, err := con.downstream.Recv()
 			if err != nil {
 				select {
@@ -440,6 +458,7 @@ func (p *XdsProxy) handleUpstreamRequest(con *ProxyConnection) {
 			}
 
 			// forward to istiod
+			// 转发到istiod
 			con.sendRequest(req)
 			if !initialRequestsSent.Load() && req.TypeUrl == v3.ListenerType {
 				// fire off an initial NDS request
@@ -484,6 +503,7 @@ func (p *XdsProxy) handleUpstreamRequest(con *ProxyConnection) {
 				}
 				p.ecdsLastNonce.Store(req.ResponseNonce)
 			}
+			// 发送到upstream
 			if err := sendUpstream(con.upstream, req); err != nil {
 				err = fmt.Errorf("upstream [%d] send error for type url %s: %v", con.conID, req.TypeUrl, err)
 				con.upstreamError <- err
@@ -632,7 +652,9 @@ func (p *XdsProxy) initDownstreamServer() error {
 	// TODO: Expose keepalive options to agent cmd line flags.
 	opts := p.downstreamGrpcOptions
 	opts = append(opts, istiogrpc.ServerOptions(istiokeepalive.DefaultOption())...)
+	// 构建新的grpc server
 	grpcs := grpc.NewServer(opts...)
+	// 注册discovery service
 	discovery.RegisterAggregatedDiscoveryServiceServer(grpcs, p)
 	reflection.Register(grpcs)
 	p.downstreamGrpcServer = grpcs
@@ -641,6 +663,7 @@ func (p *XdsProxy) initDownstreamServer() error {
 }
 
 func (p *XdsProxy) initIstiodDialOptions(agent *Agent) error {
+	// 获取grpc的DialOptions
 	opts, err := p.buildUpstreamClientDialOpts(agent)
 	if err != nil {
 		return err

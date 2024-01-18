@@ -74,6 +74,7 @@ type Proxy interface {
 
 type Agent struct {
 	// proxy commands
+	// proxy命令
 	proxy Proxy
 
 	// channel for proxy exit notifications

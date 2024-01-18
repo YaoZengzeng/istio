@@ -105,6 +105,7 @@ func TestAgent(t *testing.T) {
 	t.Run("Kubernetes defaults", func(t *testing.T) {
 		// XDS and CA are both using JWT authentication and TLS. Root certificates distributed in
 		// configmap to each namespace.
+		// XDS以及CA都使用JWT authentication以及TLS，
 		Setup(t).Check(t, security.WorkloadKeyCertResourceName, security.RootCertReqResourceName)
 	})
 	t.Run("RSA", func(t *testing.T) {
@@ -652,6 +653,7 @@ func Setup(t *testing.T, opts ...func(a AgentTest) AgentTest) *AgentTest {
 		ProxyConfig:      mesh.DefaultProxyConfig(),
 	}
 	// Run through opts one time just to get the authenticators.
+	// 运行opts一次，只是获取authenticators
 	for _, opt := range opts {
 		resp = opt(resp)
 	}
@@ -676,6 +678,7 @@ func Setup(t *testing.T, opts ...func(a AgentTest) AgentTest) *AgentTest {
 	}
 	resp.ProxyConfig = mesh.DefaultProxyConfig()
 	resp.ProxyConfig.DiscoveryAddress = setupDiscovery(t, resp.XdsAuthenticator, ca.KeyCertBundle.GetRootCertPem(), resp.bootstrapGenerator)
+	// 获取root cert
 	rootCert := filepath.Join(env.IstioSrc, "./tests/testdata/certs/pilot/root-cert.pem")
 	resp.AgentConfig = AgentOptions{
 		ProxyXDSDebugViaAgent: true,
@@ -686,6 +689,7 @@ func Setup(t *testing.T, opts ...func(a AgentTest) AgentTest) *AgentTest {
 	}
 
 	// Set-up envoy defaults
+	// 设置envoy默认配置
 	resp.ProxyConfig.ProxyBootstrapTemplatePath = filepath.Join(env.IstioSrc, "./tools/packaging/common/envoy_bootstrap.json")
 	resp.ProxyConfig.ConfigPath = d
 	resp.ProxyConfig.BinaryPath = filepath.Join(env.LocalOut, "envoy")
@@ -720,6 +724,7 @@ func Setup(t *testing.T, opts ...func(a AgentTest) AgentTest) *AgentTest {
 		t.Cleanup(stsServer.Stop)
 	}
 
+	// 构建新的Agent
 	a := NewAgent(resp.ProxyConfig, &resp.AgentConfig, &resp.Security, envoy.ProxyConfig{TestOnly: !resp.envoyEnable})
 	t.Cleanup(a.Close)
 	ctx, done := context.WithCancel(context.Background())
@@ -953,6 +958,7 @@ func setupDiscovery(t *testing.T, auth *security.FakeAuthenticator, certPem []by
 	}
 	opt := tlsOptions(t, certPem)
 	// Set up a simple service to make sure we have mTLS requested
+	// 设置一个简单的service来确保我们有mTLS
 	ds := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{ConfigString: `
 apiVersion: networking.istio.io/v1alpha3
 kind: ServiceEntry

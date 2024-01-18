@@ -79,6 +79,7 @@ type Connection struct {
 
 	// conID is the connection conID, used as a key in the connection table.
 	// Currently based on the node name and a counter.
+	// conID是connection connID，作为key在connection table，当前基于node name和counter
 	conID string
 
 	// proxy is the client to which this connection is established.
@@ -179,6 +180,7 @@ func (s *DiscoveryServer) receive(con *Connection, identities []string) {
 			return
 		}
 		// This should be only set for the first request. The node id may not be set - for example malicious clients.
+		// 这应该只对第一个请求设置，node可能不被设置 - 例如对于malicious clients
 		if firstRequest {
 			// probe happens before envoy sends first xDS request
 			if req.TypeUrl == v3.HealthInfoType {
@@ -210,6 +212,8 @@ func (s *DiscoveryServer) receive(con *Connection, identities []string) {
 // processRequest handles one discovery request. This is currently called from the 'main' thread, which also
 // handles 'push' requests and close - the code will eventually call the 'push' code, and it needs more mutex
 // protection. Original code avoided the mutexes by doing both 'push' and 'process requests' in same thread.
+// processRequest处理一个discovery request，它当前在'main' thread被调用，它也处理'push' requests以及关闭 - 代码最终会调用
+// 'push'代码，它需要mutex保护，
 func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *Connection) error {
 	stype := v3.GetShortType(req.TypeUrl)
 	log.Debugf("ADS:%s: REQ %s resources:%d nonce:%s version:%s ", stype,
@@ -749,10 +753,12 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 		}
 	}
 	// compute the sidecarscope for both proxy type whenever it changes.
+	// 计算sidecarscope，同时对于两种类型，不论何时发生变更
 	if sidecar {
 		proxy.SetSidecarScope(push)
 	}
 	// only compute gateways for "router" type proxy.
+	// 只对"route"类型的proxy计算gateways
 	if gateway && proxy.Type == model.Router {
 		proxy.SetGatewaysForProxy(push)
 	}

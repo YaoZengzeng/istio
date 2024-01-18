@@ -59,6 +59,7 @@ type ProxyConfig struct {
 }
 
 // NewProxy creates an instance of the proxy control commands
+// NewProxy创建proxy control命令的一个实例
 func NewProxy(cfg ProxyConfig) Proxy {
 	// inject tracing flag for higher levels
 	var args []string

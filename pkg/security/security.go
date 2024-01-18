@@ -87,10 +87,12 @@ const (
 	SystemRootCerts = "SYSTEM"
 
 	// RootCertReqResourceName is resource name of discovery request for root certificate.
+	// RootCertReqResourceName是resource name。对于root ca的discovery req
 	RootCertReqResourceName = "ROOTCA"
 
 	// WorkloadKeyCertResourceName is the resource name of the discovery request for workload
 	// identity.
+	// WorkloadKeyCertResourceName是resource name，对于workload id的discovery req
 	WorkloadKeyCertResourceName = "default"
 
 	// GCE is Credential fetcher type of Google plugin

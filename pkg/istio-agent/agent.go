@@ -81,10 +81,15 @@ var _ ready.Prober = &Agent{}
 
 // Agent contains the configuration of the agent, based on the injected
 // environment:
+// Agent包含agent的配置，基于注入的环境
 // - SDS hostPath if node-agent was used
+// - SDS的hostPath，如果使用了node-agent
 // - /etc/certs/key if Citadel or other mounted Secrets are used
+// - /etc/certs/key，如果Citadel或者使用了其他区的Secrets
 // - root cert to use for connecting to XDS server
+// - root cert用于连接到XDS server
 // - CA address, with proper defaults and detection
+// - CA地址，有合适的默认值和检测
 type Agent struct {
 	proxyConfig *mesh.ProxyConfig
 
@@ -99,6 +104,7 @@ type Agent struct {
 	secretCache *cache.SecretManagerClient
 
 	// Used when proxying envoy xds via istio-agent is enabled.
+	// 当通过istio-agent代理envoy xds的功能使用时启用
 	xdsProxy    *XdsProxy
 	fileWatcher filewatcher.FileWatcher
 
@@ -110,8 +116,11 @@ type Agent struct {
 }
 
 // AgentOptions contains additional config for the agent, not included in ProxyConfig.
+// AgentOptions包含对于agent的额外配置，不包含在ProxyConfig
 // Most are from env variables ( still experimental ) or for testing only.
+// 大多数来自env变量，或者只用于测试
 // Eventually most non-test settings should graduate to ProxyConfig
+// 最终，大多数非测试的settings应该进入ProxyConfig
 // Please don't add 100 parameters to the NewAgent function (or any other)!
 type AgentOptions struct {
 	// ProxyXDSDebugViaAgent if true will listen on 15004 and forward queries
@@ -137,10 +146,12 @@ type AgentOptions struct {
 
 	// XDSRootCerts is the location of the root CA for the XDS connection. Used for setting platform certs or
 	// using custom roots.
+	// XDSRootCerts是用于XDS连接的root CA的位置
 	XDSRootCerts string
 
 	// CARootCerts of the location of the root CA for the CA connection. Used for setting platform certs or
 	// using custom roots.
+	// CARootCerts是用于CA连接的root CA的位置，用于设置platform certs或者使用自定义的roots
 	CARootCerts string
 
 	// Extra headers to add to the XDS connection.
@@ -199,6 +210,8 @@ type AgentOptions struct {
 // NewAgent hosts the functionality for local SDS and XDS. This consists of the local SDS server and
 // associated clients to sign certificates (when not using files), and the local XDS proxy (including
 // health checking for VMs and DNS proxying).
+// NewAgent维护了local SDS和XDS的功能，它由local SDS server以及相关的client来签署证书（当不使用files），以及本地的XDS proxy
+// （包含对于VMs和DNS代理的健康检查）
 func NewAgent(proxyConfig *mesh.ProxyConfig, agentOpts *AgentOptions, sopts *security.Options, eopts envoy.ProxyConfig) *Agent {
 	return &Agent{
 		proxyConfig: proxyConfig,
@@ -299,6 +312,7 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 	if a.cfg.IsIPv6 {
 		localHostAddr = localHostIPv6
 	}
+	// 构建envoy agent
 	a.envoyAgent = envoy.NewAgent(envoyProxy, drainDuration, a.cfg.MinimumDrainDuration, localHostAddr,
 		int(a.proxyConfig.ProxyAdminPort), a.cfg.EnvoyStatusPort, a.cfg.EnvoyPrometheusPort, a.cfg.ExitOnZeroActiveConnections)
 	if a.cfg.EnableDynamicBootstrap {
@@ -338,6 +352,7 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 }
 
 // Run is a non-blocking call which returns either an error or a function to await for completion.
+// Run是一个非阻塞的调用，会返回一个error或者一个等待执行的函数
 func (a *Agent) Run(ctx context.Context) (func(), error) {
 	var err error
 	if err = a.initLocalDNSServer(); err != nil {
@@ -355,6 +370,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 			return nil, errors.New("workload SDS socket is required but not found")
 		}
 		log.Info("Workload SDS socket not found. Starting Istio SDS Server")
+		// 初始化SDS Server
 		err = a.initSdsServer()
 		if err != nil {
 			return nil, fmt.Errorf("failed to start SDS server: %v", err)
@@ -398,6 +414,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 		go func() {
 			defer a.wg.Done()
 			// This is a blocking call for graceful termination.
+			// 这个是一个阻塞调用，用于优雅结束
 			a.envoyAgent.Run(ctx)
 		}()
 	} else if a.WaitForSigterm() {
@@ -492,6 +509,7 @@ func (a *Agent) startFileWatcher(ctx context.Context, filePath string, handler f
 	for {
 		select {
 		case gotEvent := <-a.fileWatcher.Events(filePath):
+			// 获取文件的event
 			log.Debugf("Receive file %s event %v", filePath, gotEvent)
 			handler()
 		case err := <-a.fileWatcher.Errors(filePath):

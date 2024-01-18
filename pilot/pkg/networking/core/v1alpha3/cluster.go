@@ -240,6 +240,7 @@ func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *mod
 		clusters = append(clusters, configgen.buildWaypointInboundClusters(cb, proxy, req.Push, svcs)...)
 		clusters = append(clusters, inboundPatcher.insertedClusters()...)
 	default: // Gateways
+		// 默认生成gateways
 		patcher := clusterPatcher{efw: envoyFilterPatches, pctx: networking.EnvoyFilter_GATEWAY}
 		ob, cs := configgen.buildOutboundClusters(cb, proxy, patcher, services)
 		cacheStats = cacheStats.merge(cs)

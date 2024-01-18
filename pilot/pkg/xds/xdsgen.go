@@ -94,10 +94,13 @@ func (s *DiscoveryServer) findGenerator(typeURL string, con *Connection) model.X
 // Push an XDS resource for the given connection. Configuration will be generated
 // based on the passed in generator. Based on the updates field, generators may
 // choose to send partial or even no response if there are no changes.
+// 推送一个XDS资源到给定的连接，基于传入的generator会生成配置，基于更新的字段，generators会
+// 选择推送部分，甚至没有response，如果没有变更的话
 func (s *DiscoveryServer) pushXds(con *Connection, w *model.WatchedResource, req *model.PushRequest) error {
 	if w == nil {
 		return nil
 	}
+	// 找到generator
 	gen := s.findGenerator(w.TypeUrl, con)
 	if gen == nil {
 		return nil
@@ -118,6 +121,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, w *model.WatchedResource, req
 			ResourceNames: req.Delta.Subscribed.UnsortedList(),
 		}
 	}
+	// 生成res
 	res, logdata, err := gen.Generate(con.proxy, w, req)
 	info := ""
 	if len(logdata.AdditionalInfo) > 0 {

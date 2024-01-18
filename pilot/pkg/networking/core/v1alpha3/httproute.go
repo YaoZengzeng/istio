@@ -95,6 +95,7 @@ func (configgen *ConfigGeneratorImpl) BuildHTTPRoutes(
 		}
 	case model.Router:
 		for _, routeName := range routeNames {
+			// 构建Gateway HTTP Route Config
 			rc := configgen.buildGatewayHTTPRouteConfig(node, req.Push, routeName)
 			if rc != nil {
 				rc = envoyfilter.ApplyRouteConfigurationPatches(networking.EnvoyFilter_GATEWAY, node, efw, rc)

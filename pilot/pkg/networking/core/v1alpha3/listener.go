@@ -94,6 +94,7 @@ var (
 )
 
 // BuildListeners produces a list of listeners and referenced clusters for all proxies
+// BuildListeners生成一系列的listeners以及引用的clusters，对于所有的proxies
 func (configgen *ConfigGeneratorImpl) BuildListeners(node *model.Proxy,
 	push *model.PushContext,
 ) []*listener.Listener {

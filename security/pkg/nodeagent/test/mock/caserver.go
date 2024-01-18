@@ -38,6 +38,7 @@ import (
 var caServerLog = log.RegisterScope("ca", "CA service debugging")
 
 // CAServer is a mock CA server.
+// CAServer是一个mock的CA server
 type CAServer struct {
 	pb.UnimplementedIstioCertificateServiceServer
 	URL            string
