@@ -356,6 +356,7 @@ func (f *FakeDiscoveryServer) PushContext() *model.PushContext {
 }
 
 // ConnectADS starts an ADS connection to the server. It will automatically be cleaned up when the test ends
+// ConnectADS开始一个到server的ADS连接，它会在测试结束的时候自动清理
 func (f *FakeDiscoveryServer) ConnectADS() *AdsTest {
 	conn, err := grpc.Dial("buffcon",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -370,6 +371,7 @@ func (f *FakeDiscoveryServer) ConnectADS() *AdsTest {
 }
 
 // ConnectDeltaADS starts a Delta ADS connection to the server. It will automatically be cleaned up when the test ends
+// ConnectDeltaADS开始一个Delta ADS连接到server，它会自动被清理，在test结束
 func (f *FakeDiscoveryServer) ConnectDeltaADS() *DeltaAdsTest {
 	conn, err := grpc.Dial("buffcon",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -453,8 +455,11 @@ func (f *FakeDiscoveryServer) Endpoints(p *model.Proxy) []*endpoint.ClusterLoadA
 }
 
 // EnsureSynced checks that all ConfigUpdates sent have been established
+// EnsureSynced检查所有发送的ConfigUpdates都已经建立
 // This does NOT ensure that the change has been sent to all proxies; only that PushContext is updated
 // Typically, if trying to ensure changes are sent, its better to wait for the push event.
+// 这不确保change已经被发送给所有的proxies，只有PushContext被更新
+// 一般来说，如果试着确保changes被发送，更好等待push event
 func (f *FakeDiscoveryServer) EnsureSynced(t test.Failer) {
 	c := f.Discovery.InboundUpdates.Load()
 	retry.UntilOrFail(t, func() bool {

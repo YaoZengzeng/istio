@@ -36,10 +36,15 @@ var (
 // GenerateDeltas computes Workload resources. This is design to be highly optimized to delta updates,
 // and supports *on-demand* client usage. A client can subscribe with a wildcard subscription and get all
 // resources (with delta updates), or on-demand and only get responses for specifically subscribed resources.
+// GenerateDeltas计算Workload resources，这是被设计来高度优化delta updates并且支持*按需*的client使用，一个client可以订阅一个wildcard subscription并且获取
+// 所有的资源（有着delta updates），或者按需并且只获取responses，对于特别订阅的资源
 //
 // Incoming requests may be for VIP or Pod IP addresses. However, all responses are Workload resources, which are pod based.
+// 到来的请求可能是为了VIP或者Pod IP地址，然而，所有的responses都是Workload resources，是基于pod的
 // This means subscribing to a VIP may end up pushing many resources of different name than the request.
+// 这意味着订阅一个VIP可能最后推送很多resources，有着和请求不同的名字
 // On-demand clients are expected to handle this (for wildcard, this is not applicable, as they don't specify any resources at all).
+// On-demand clients期望能处理它（对于wildcard，这是不适用的，因为他们没有指定任何资源）
 func (e WorkloadGenerator) GenerateDeltas(
 	proxy *model.Proxy,
 	req *model.PushRequest,
@@ -54,10 +59,12 @@ func (e WorkloadGenerator) GenerateDeltas(
 	subs := sets.New(w.ResourceNames...)
 	addresses := updatedAddresses
 	// If it is not a wildcard, filter out resources we are not subscribed to
+	// 如果不是wildcard，过滤我们没有订阅的资源
 	if !w.Wildcard {
 		addresses = addresses.Intersection(subs)
 	}
 	// Specific requested resource: always include
+	// 指定请求的资源，总是包含
 	addresses = addresses.Merge(req.Delta.Subscribed)
 	addresses = addresses.Difference(req.Delta.Unsubscribed)
 	if !w.Wildcard {
@@ -114,6 +121,7 @@ func (e WorkloadGenerator) GenerateDeltas(
 
 	if full {
 		// If it's a full push, AddressInformation won't have info to compute the full set of removals.
+		// 如果这是一个full push，AddressInformation不会有info计算完整的set of removals
 		// Instead, we need can see what resources are missing that we were subscribe to; those were removed.
 		removed = subs.Difference(have).Merge(removed)
 	}
@@ -124,6 +132,7 @@ func (e WorkloadGenerator) GenerateDeltas(
 		w.ResourceNames = subs.Merge(have).UnsortedList()
 	} else {
 		// For wildcard, we record all resources that have been pushed and not removed
+		// 对于wildcard，我们记录所有resources，已经被push并且没有移除
 		// It was to correctly calculate removed resources during full push alongside with specific address removed.
 		w.ResourceNames = subs.Merge(have).Difference(removed).UnsortedList()
 	}
@@ -167,6 +176,7 @@ func (e WorkloadRBACGenerator) GenerateDeltas(
 		return nil, nil, model.DefaultXdsLogDetails, false, nil
 	}
 
+	// 获取policies
 	policies := e.s.Env.ServiceDiscovery.Policies(updatedPolicies)
 
 	resources := make(model.Resources, 0)

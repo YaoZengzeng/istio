@@ -78,6 +78,7 @@ func (s *DiscoveryServer) findGenerator(typeURL string, con *Connection) model.X
 
 	// XdsResourceGenerator is the default generator for this connection. We want to allow
 	// some types to use custom generators - for example EDS.
+	// XdsResourceGenerator对于这个连接使用默认的generator，我们想要允许有的类型有自定义的generators - 例如EDS
 	g := con.proxy.XdsResourceGenerator
 	if g == nil {
 		if strings.HasPrefix(typeURL, TypeDebugPrefix) {

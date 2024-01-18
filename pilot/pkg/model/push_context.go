@@ -336,7 +336,9 @@ type XDSUpdater interface {
 }
 
 // PushRequest defines a request to push to proxies
+// PushRequest定义了一个request，推送到proxies
 // It is used to send updates to the config update debouncer and pass to the PushQueue.
+// 它用于发送updates到config update debouncer并且传递给PushQueue
 type PushRequest struct {
 	// Full determines whether a full push is required or not. If false, an incremental update will be sent.
 	// Incremental pushes:

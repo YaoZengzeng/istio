@@ -81,6 +81,7 @@ func (c CdsGenerator) Generate(proxy *model.Proxy, w *model.WatchedResource, req
 }
 
 // GenerateDeltas for CDS currently only builds deltas when services change. todo implement changes for DestinationRule, etc
+// GenerateDeltas对于CDS，当前只有在services发生改变的时候构建deltas，
 func (c CdsGenerator) GenerateDeltas(proxy *model.Proxy, req *model.PushRequest,
 	w *model.WatchedResource,
 ) (model.Resources, model.DeletedResources, model.XdsLogDetails, bool, error) {

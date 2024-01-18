@@ -64,19 +64,25 @@ type debounceOptions struct {
 }
 
 // DiscoveryServer is Pilot's gRPC implementation for Envoy's xds APIs
+// DiscoveryServer是Pilot的gRPC实现，对于Envoy的xds API
 type DiscoveryServer struct {
 	// Env is the model environment.
 	Env *model.Environment
 
 	// ConfigGenerator is responsible for generating data plane configuration using Istio networking
 	// APIs and service registry info
+	// ConfigGenerator负责生成数据面的配置，使用Istio的networking APIs以及service registry的信息
 	ConfigGenerator core.ConfigGenerator
 
 	// Generators allow customizing the generated config, based on the client metadata.
+	// Generators允许自定义生成的config，基于client metadata
 	// Key is the generator type - will match the Generator metadata to set the per-connection
 	// default generator, or the combination of Generator metadata and TypeUrl to select a
 	// different generator for a type.
+	// Key是generator类型 - 会匹配Generator元数据，设置每个connection，默认的generator，
+	// 或者Generator元数据加TypeUrl的组合来选择一个不同的generator，为这个类型
 	// Normal istio clients use the default generator - will not be impacted by this.
+	// 普通的istio clients会用默认的generator - 会被它影响
 	Generators map[string]model.XdsResourceGenerator
 
 	// ProxyNeedsPush is a function that determines whether a push can be completely skipped. Individual generators
@@ -108,6 +114,7 @@ type DiscoveryServer struct {
 	debugHandlers map[string]string
 
 	// adsClients reflect active gRPC channels, for both ADS and EDS.
+	// adsClients反映活跃的gRPC channels，对于ADS和EDS
 	adsClients      map[string]*Connection
 	adsClientsMutex sync.RWMutex
 

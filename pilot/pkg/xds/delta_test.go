@@ -43,6 +43,7 @@ func TestDeltaAdsClusterUpdate(t *testing.T) {
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 	ads := s.ConnectDeltaADS().WithType(v3.EndpointType)
 	nonce := ""
+	// 发送EDS请求并且校验
 	sendEDSReqAndVerify := func(add, remove, expect []string) {
 		t.Helper()
 		res := ads.RequestResponseAck(&discovery.DeltaDiscoveryRequest{
@@ -53,17 +54,20 @@ func TestDeltaAdsClusterUpdate(t *testing.T) {
 		nonce = res.Nonce
 		got := xdstest.MapKeys(xdstest.ExtractLoadAssignments(xdstest.UnmarshalClusterLoadAssignment(t, model.ResourcesToAny(res.Resources))))
 		if !reflect.DeepEqual(expect, got) {
+			// 期望获取的clusters
 			t.Fatalf("expected clusters %v got %v", expect, got)
 		}
 	}
 
 	sendEDSReqAndVerify([]string{"outbound|80||local.default.svc.cluster.local"}, nil, []string{"outbound|80||local.default.svc.cluster.local"})
 	// Only send the one that is requested
+	// 只发送请求的
 	sendEDSReqAndVerify([]string{"outbound|81||local.default.svc.cluster.local"}, nil, []string{"outbound|81||local.default.svc.cluster.local"})
 	ads.Request(&discovery.DeltaDiscoveryRequest{
 		ResponseNonce:            nonce,
 		ResourceNamesUnsubscribe: []string{"outbound|81||local.default.svc.cluster.local"},
 	})
+	// 期望没有收到response
 	ads.ExpectNoResponse()
 }
 
@@ -103,6 +107,7 @@ func TestDeltaEDS(t *testing.T) {
 	}
 
 	// update endpoint
+	// 更新endpoint
 	s.MemRegistry.SetEndpoints(edsIncSvc, "",
 		newEndpointWithAccount("127.0.0.2", "hello-sa", "v1"))
 	resp = ads.ExpectResponse()
@@ -115,6 +120,7 @@ func TestDeltaEDS(t *testing.T) {
 
 	t.Logf("update svc")
 	// update svc, only send the eds for this service
+	// 更新svc，只为这个service发送eds
 	s.MemRegistry.AddHTTPService(edsIncSvc, "10.10.1.3", 8080)
 
 	resp = ads.ExpectResponse()
@@ -126,6 +132,7 @@ func TestDeltaEDS(t *testing.T) {
 	}
 
 	// delete svc, only send eds for this service
+	// 删除svc，只为这个service发送eds
 	s.MemRegistry.RemoveService(edsIncSvc)
 
 	resp = ads.ExpectResponse()
@@ -177,42 +184,52 @@ func TestDeltaReconnectRequests(t *testing.T) {
 	const staticCluster = "outbound|2080||adsstatic.example.com"
 	ads := s.ConnectDeltaADS()
 	// Send initial request
+	// 发送初始的请求
 	res := ads.RequestResponseAck(&discovery.DeltaDiscoveryRequest{TypeUrl: v3.ClusterType})
 	// we must get the cluster back
+	// 我们必须拿回cluster
 	if resn := xdstest.ExtractResource(res.Resources); !resn.Contains(updateCluster) || !resn.Contains(staticCluster) {
 		t.Fatalf("unexpected resources: %v", resn)
 	}
 
 	// A push should get a response
+	// 一个push应该获取一个response
 	s.Discovery.ConfigUpdate(&model.PushRequest{Full: true})
 	ads.ExpectResponse()
 
 	// Close the connection
+	// 关闭连接
 	ads.Cleanup()
 
 	// Service is removed while connection is closed
+	// Service被移除，当connection被关闭
 	s.MemRegistry.RemoveService("adsupdate.example.com")
 	s.Discovery.ConfigUpdate(&model.PushRequest{
 		Full:           true,
 		ConfigsUpdated: sets.New(model.ConfigKey{Kind: kind.ServiceEntry, Name: "adsupdate.example.com", Namespace: "default"}),
 	})
+	// 确保同步
 	s.EnsureSynced(t)
 
 	ads = s.ConnectDeltaADS()
 	// Send initial request
+	// 发送初始的请求
 	res = ads.RequestResponseAck(&discovery.DeltaDiscoveryRequest{
 		TypeUrl: v3.ClusterType,
 		InitialResourceVersions: map[string]string{
 			// This time we include the version map, since it is a reconnect
+			// 这次我们包含version map，因为这是一个重连
 			staticCluster: "",
 			updateCluster: "",
 		},
 	})
 	// we must NOT get the cluster back
+	// 我们必须不拿回cluster
 	if resn := xdstest.ExtractResource(res.Resources); resn.Contains(updateCluster) || !resn.Contains(staticCluster) {
 		t.Fatalf("unexpected resources: %v", resn)
 	}
 	// It should be removed
+	// 它应该被移除
 	if resn := sets.New(res.RemovedResources...); !resn.Contains(updateCluster) {
 		t.Fatalf("unexpected remove resources: %v", resn)
 	}
@@ -267,8 +284,10 @@ func TestDeltaWDS(t *testing.T) {
 	s.MemRegistry.AddServiceInfo(svcA, svcB, svcC)
 
 	// Wait until the above debounce, to ensure we can precisely check XDS responses without spurious pushes
+	// 等待直到超过debounce，确保我们可以精确地检查XDS responses，而没有虚假的pushes
 	s.EnsureSynced(t)
 
+	// 以ztunnel的形式连接
 	ads := s.ConnectDeltaADS().WithType(v3.AddressType).WithID("ztunnel~1.1.1.1~test.default~default.svc.cluster.local")
 	ads.Request(&discovery.DeltaDiscoveryRequest{
 		ResourceNamesSubscribe: []string{"*"},
@@ -282,6 +301,7 @@ func TestDeltaWDS(t *testing.T) {
 	}
 
 	// simulate a svc update
+	// 模拟一个svc更新
 	s.XdsUpdater.ConfigUpdate(&model.PushRequest{
 		ConfigsUpdated: sets.New(model.ConfigKey{
 			Kind: kind.Address, Name: svcA.ResourceName(), Namespace: svcA.Namespace,
@@ -289,6 +309,7 @@ func TestDeltaWDS(t *testing.T) {
 	})
 
 	resp = ads.ExpectResponse()
+	// 期望获取一个resource
 	if len(resp.Resources) != 1 || resp.Resources[0].Name != svcA.ResourceName() {
 		t.Fatalf("received unexpected address resource %v", resp.Resources)
 	}
@@ -297,6 +318,7 @@ func TestDeltaWDS(t *testing.T) {
 	}
 
 	// simulate a svc delete
+	// 模拟一个svc的删除
 	s.MemRegistry.RemoveServiceInfo(svcA)
 	s.XdsUpdater.ConfigUpdate(&model.PushRequest{
 		ConfigsUpdated: sets.New(model.ConfigKey{
@@ -309,22 +331,28 @@ func TestDeltaWDS(t *testing.T) {
 		t.Fatalf("received unexpected address resource %v", resp.Resources)
 	}
 	if len(resp.RemovedResources) != 1 || resp.RemovedResources[0] != svcA.ResourceName() {
+		// 有资源被移除的通知
 		t.Fatalf("received unexpected removed eds resource %v", resp.RemovedResources)
 	}
 
 	// delete workload
+	// 删除workload
 	s.MemRegistry.RemoveWorkloadInfo(wlA)
 	// a full push and a pod delete event
+	// 一个full push以及一个pod delete事件
 	// This is a merged push request
+	// 这是一个merged push requst
 	s.XdsUpdater.ConfigUpdate(&model.PushRequest{
 		Full: true,
 	})
 
 	resp = ads.ExpectResponse()
 	if len(resp.RemovedResources) != 1 || resp.RemovedResources[0] != wlA.ResourceName() {
+		// 收到非期望的，被移除的eds资源
 		t.Fatalf("received unexpected removed eds resource %v", resp.RemovedResources)
 	}
 	if len(resp.Resources) != 4 {
+		// resources为4
 		t.Fatalf("received unexpected eds resource %v", resp.Resources)
 	}
 }

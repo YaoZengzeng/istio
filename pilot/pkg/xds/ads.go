@@ -65,9 +65,11 @@ type DeltaDiscoveryStream = discovery.AggregatedDiscoveryService_DeltaAggregated
 type DiscoveryClient = discovery.AggregatedDiscoveryService_StreamAggregatedResourcesClient
 
 // DeltaDiscoveryClient is a client interface for Delta XDS.
+// DeltaDiscoveryClient是一个client接口，用于Delta XDS
 type DeltaDiscoveryClient = discovery.AggregatedDiscoveryService_DeltaAggregatedResourcesClient
 
 // Connection holds information about connected client.
+// Connection维护关于一个连接的client的信息
 type Connection struct {
 	// peerAddr is the address of the client, from network layer.
 	peerAddr string
@@ -80,14 +82,17 @@ type Connection struct {
 	conID string
 
 	// proxy is the client to which this connection is established.
+	// proxy是这个连接建立对应的client
 	proxy *model.Proxy
 
 	// Sending on this channel results in a push.
 	pushChannel chan *Event
 
 	// Both ADS and SDS streams implement this interface
+	// ADS和SDS streams实现了这个接口
 	stream DiscoveryStream
 	// deltaStream is used for Delta XDS. Only one of deltaStream or stream will be set
+	// deltaStream用于Delta XDS，只有deltaStream或者stream会被设置
 	deltaStream DeltaDiscoveryStream
 
 	// Original node metadata, to avoid unmarshal/marshal.
@@ -102,6 +107,7 @@ type Connection struct {
 	stop chan struct{}
 
 	// reqChan is used to receive discovery requests for this connection.
+	// reqChan用于为这个连接接收discovery requests
 	reqChan      chan *discovery.DiscoveryRequest
 	deltaReqChan chan *discovery.DeltaDiscoveryRequest
 
@@ -303,6 +309,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 		log.Warnf("Error reading config %v", err)
 		return status.Error(codes.Unavailable, "error reading config")
 	}
+	// 初始化connection
 	con := newConnection(peerAddr, stream)
 
 	// Do not call: defer close(con.pushChannel). The push channel will be garbage collected
@@ -312,6 +319,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 
 	// Block until either a request is received or a push is triggered.
 	// We need 2 go routines because 'read' blocks in Recv().
+	// 阻塞，直到收到一个request或者一个push被触发，我们需要2个goroutines，因为'read'开在Recv()
 	go s.receive(con, ids)
 
 	// Wait for the proxy to be fully initialized before we start serving traffic. Because
@@ -319,6 +327,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 	// here. Prior to this explicit wait, we were implicitly waiting by receive() not sending to
 	// reqChannel and the connection not being enqueued for pushes to pushChannel until the
 	// initialization is complete.
+	// 等待proxy完全初始化，在我们开始服务流量之前，因为初始化没有以来会阻塞，这里没有必要添加任何的超时
 	<-con.initialized
 
 	for {
@@ -533,25 +542,32 @@ func listEqualUnordered(a []string, b []string) bool {
 
 // update the node associated with the connection, after receiving a packet from envoy, also adds the connection
 // to the tracking map.
+// 更新和这个连接相关的node，在从envoy接收到一个packet，同时添加connection到tracking map
 func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection, identities []string) error {
 	// Setup the initial proxy metadata
+	// 设置初始的proxy metadata
 	proxy, err := s.initProxyMetadata(node)
 	if err != nil {
 		return err
 	}
 	// Check if proxy cluster has an alias configured, if yes use that as cluster ID for this proxy.
+	// 检查是否proxy cluster又alilas配置，如果是的话，作为这个proxy的cluster ID
 	if alias, exists := s.ClusterAliases[proxy.Metadata.ClusterID]; exists {
 		proxy.Metadata.ClusterID = alias
 	}
 	// To ensure push context is monotonically increasing, setup LastPushContext before we addCon. This
 	// way only new push contexts will be registered for this proxy.
+	// 为了确保push context是单调递增的，设置LastPushContext，在我们调用addCon之前，这样的话，只有新的push contexts会
+	// 注册到这个proxy
 	proxy.LastPushContext = s.globalPushContext()
 	// First request so initialize connection id and start tracking it.
+	// 第一个请求，因此初始化connection id并且开始追踪它
 	con.conID = connectionID(proxy.ID)
 	con.node = node
 	con.proxy = proxy
 
 	// Authorize xds clients
+	// 认证xds clients
 	if err := s.authorize(con, identities); err != nil {
 		return err
 	}
@@ -561,12 +577,14 @@ func (s *DiscoveryServer) initConnection(node *core.Node, con *Connection, ident
 	// a better choice, it introduces a race condition; If we complete initialization of a new push
 	// context between initializeProxy and addCon, we would not get any pushes triggered for the new
 	// push context, leading the proxy to have a stale state until the next full push.
+	// 注册丽娜姐，这允许对于proxy触发pushes，时间以及initializeProxy很重要
 	s.addCon(con.conID, con)
 	// Register that initialization is complete. This triggers to calls that it is safe to access the
 	// proxy
 	defer close(con.initialized)
 
 	// Complete full initialization of the proxy
+	// 完成proxy的完整初始
 	if err := s.initializeProxy(con); err != nil {
 		s.closeConnection(con)
 		return err
@@ -610,6 +628,7 @@ func (s *DiscoveryServer) initProxyMetadata(node *core.Node) (*model.Proxy, erro
 		return nil, status.New(codes.InvalidArgument, err.Error()).Err()
 	}
 	// Update the config namespace associated with this proxy
+	// 更新和这个proxy香港的config namespace
 	proxy.ConfigNamespace = model.GetProxyConfigNamespace(proxy)
 	proxy.XdsNode = node
 	return proxy, nil
@@ -668,16 +687,20 @@ func localityFromProxyLabels(proxy *model.Proxy) *core.Locality {
 func (s *DiscoveryServer) initializeProxy(con *Connection) error {
 	proxy := con.proxy
 	// this should be done before we look for service instances, but after we load metadata
+	// 这应该被完成，在我们查找servcie instances，但是在我们加载metadata之后
 	// TODO fix check in kubecontroller treat echo VMs like there isn't a pod
 	if err := s.WorkloadEntryController.OnConnect(con); err != nil {
 		return err
 	}
+	// 计算proxy state
 	s.computeProxyState(proxy, nil)
 	// Discover supported IP Versions of proxy so that appropriate config can be delivered.
+	// 发现IPv4/v6的模式
 	proxy.DiscoverIPMode()
 
 	proxy.WatchedResources = map[string]*model.WatchedResource{}
 	// Based on node metadata and version, we can associate a different generator.
+	// 基于node metadata以及版本，我们可以关联一个不同的generator
 	if proxy.Metadata.Generator != "" {
 		proxy.XdsResourceGenerator = s.Generators[proxy.Metadata.Generator]
 	}

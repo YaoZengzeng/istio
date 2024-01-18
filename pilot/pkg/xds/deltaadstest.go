@@ -33,6 +33,7 @@ import (
 func NewDeltaAdsTest(t test.Failer, conn *grpc.ClientConn) *DeltaAdsTest {
 	test.SetForTest(t, &features.DeltaXds, true)
 	return NewDeltaXdsTest(t, conn, func(conn *grpc.ClientConn) (DeltaDiscoveryClient, error) {
+		// 构建xds client
 		xds := discovery.NewAggregatedDiscoveryServiceClient(conn)
 		return xds.DeltaAggregatedResources(context.Background())
 	})
@@ -43,6 +44,7 @@ func NewDeltaXdsTest(t test.Failer, conn *grpc.ClientConn,
 ) *DeltaAdsTest {
 	ctx, cancel := context.WithCancel(context.Background())
 
+	// 获取client
 	cl, err := getClient(conn)
 	if err != nil {
 		t.Fatal(err)
@@ -100,6 +102,7 @@ func (a *DeltaAdsTest) adsReceiveChannel() {
 		a.Cleanup()
 	}()
 	for {
+		// 添加一个resp channel
 		resp, err := a.client.Recv()
 		if err != nil {
 			if isUnexpectedError(err) {
@@ -210,12 +213,14 @@ func (a *DeltaAdsTest) fillInRequestDefaults(req *discovery.DeltaDiscoveryReques
 
 func (a *DeltaAdsTest) Request(req *discovery.DeltaDiscoveryRequest) {
 	req = a.fillInRequestDefaults(req)
+	// 发送delta requests
 	if err := a.client.Send(req); err != nil {
 		a.t.Fatal(err)
 	}
 }
 
 // RequestResponseAck does a full XDS exchange: Send a request, get a response, and ACK the response
+// RequestResponseAck做一个完整的XDS exchange：发送一个请求，获取一个response，并且ACK the response
 func (a *DeltaAdsTest) RequestResponseAck(req *discovery.DeltaDiscoveryRequest) *discovery.DeltaDiscoveryResponse {
 	a.t.Helper()
 	req = a.fillInRequestDefaults(req)
@@ -248,11 +253,13 @@ func (a *DeltaAdsTest) RequestResponseNack(req *discovery.DeltaDiscoveryRequest)
 }
 
 func (a *DeltaAdsTest) WithID(id string) *DeltaAdsTest {
+	// 设置ID
 	a.ID = id
 	return a
 }
 
 func (a *DeltaAdsTest) WithType(typeURL string) *DeltaAdsTest {
+	// 指定类型
 	a.Type = typeURL
 	return a
 }

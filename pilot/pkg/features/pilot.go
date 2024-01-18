@@ -556,6 +556,7 @@ var (
 
 	// EnableUnsafeDeltaTest enables runtime checks to test Delta XDS efficiency. This should never be enabled in
 	// production.
+	// EnableUnsafeDeltaTest允许运行时检查，测试Delta XDS的效率，这在生产环境不应该使能
 	EnableUnsafeDeltaTest = env.Register(
 		"UNSAFE_PILOT_ENABLE_DELTA_TEST",
 		false,

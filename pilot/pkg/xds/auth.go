@@ -46,6 +46,7 @@ func (s *DiscoveryServer) authorize(con *Connection, identities []string) error 
 
 	if features.EnableXDSIdentityCheck && identities != nil {
 		// TODO: allow locking down, rejecting unauthenticated requests.
+		// 检查connection identity
 		id, err := checkConnectionIdentity(con.proxy, identities)
 		if err != nil {
 			log.Warnf("Unauthorized XDS: %v with identity %v: %v", con.peerAddr, identities, err)

@@ -67,10 +67,12 @@ func (configgen *ConfigGeneratorImpl) BuildClusters(proxy *model.Proxy, req *mod
 
 // BuildDeltaClusters generates the deltas (add and delete) for a given proxy. Currently, only service changes are reflected with deltas.
 // Otherwise, we fall back onto generating everything.
+// BuildDeltaClusters生成deltas（add以及delete），对于给定的proxy，当前只有service changes反应到deltas，否则我们回到生成所有
 func (configgen *ConfigGeneratorImpl) BuildDeltaClusters(proxy *model.Proxy, updates *model.PushRequest,
 	watched *model.WatchedResource,
 ) ([]*discovery.Resource, []string, model.XdsLogDetails, bool) {
 	// if we can't use delta, fall back to generate all
+	// 如果我们没有使用delta，回到生成所有
 	if !shouldUseDelta(updates) {
 		cl, lg := configgen.BuildClusters(proxy, updates)
 		return cl, nil, lg, false

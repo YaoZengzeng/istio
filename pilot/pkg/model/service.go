@@ -948,6 +948,7 @@ func serviceResourceName(s *workloadapi.Service) string {
 type WorkloadInfo struct {
 	*workloadapi.Workload
 	// Labels for the workload. Note these are only used internally, not sent over XDS
+	// workload的labels，注意他们只在内部使用，不通过XDS发送
 	Labels map[string]string
 }
 

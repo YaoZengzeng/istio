@@ -70,6 +70,7 @@ func (s *DiscoveryServer) StreamDeltas(stream DeltaDiscoveryStream) error {
 		return status.Errorf(codes.ResourceExhausted, "request rate limit exceeded: %v", err)
 	}
 
+	// 认证连接
 	ids, err := s.authenticate(ctx)
 	if err != nil {
 		return status.Error(codes.Unauthenticated, err.Error())
@@ -267,6 +268,7 @@ func (conn *Connection) sendDelta(res *discovery.DeltaDiscoveryResponse) error {
 // processDeltaRequest is handling one request. This is currently called from the 'main' thread, which also
 // handles 'push' requests and close - the code will eventually call the 'push' code, and it needs more mutex
 // protection. Original code avoided the mutexes by doing both 'push' and 'process requests' in same thread.
+// processDeltaRequest处理一个请求，这当前在'main' thread被调用，同时处理'push'请求并且关闭
 func (s *DiscoveryServer) processDeltaRequest(req *discovery.DeltaDiscoveryRequest, con *Connection) error {
 	if req.TypeUrl == v3.HealthInfoType {
 		s.handleWorkloadHealthcheck(con.proxy, deltaToSotwRequest(req))
@@ -429,12 +431,14 @@ func (s *DiscoveryServer) shouldRespondDelta(con *Connection, request *discovery
 }
 
 // Push a Delta XDS resource for the given connection.
+// 对于给定的连接，Push一个Delta XDS
 func (s *DiscoveryServer) pushDeltaXds(con *Connection,
 	w *model.WatchedResource, req *model.PushRequest,
 ) error {
 	if w == nil {
 		return nil
 	}
+	// 找到Generator
 	gen := s.findGenerator(w.TypeUrl, con)
 	if gen == nil {
 		return nil
@@ -444,6 +448,7 @@ func (s *DiscoveryServer) pushDeltaXds(con *Connection,
 	originalW := w
 	// If delta is set, client is requesting new resources or removing old ones. We should just generate the
 	// new resources it needs, rather than the entire set of known resources.
+	// 如果设置了delta，client请求新的resources或者移除老的，我们应该产生它需要的新的resources，而不是整个已知的资源
 	// Note: we do not need to account for unsubscribed resources as these are handled by parent removal;
 	// See https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol#deleting-resources.
 	// This means if there are only removals, we will not respond.
@@ -464,6 +469,7 @@ func (s *DiscoveryServer) pushDeltaXds(con *Connection,
 	var err error
 	switch g := gen.(type) {
 	case model.XdsDeltaResourceGenerator:
+		// 生成deltas
 		res, deletedRes, logdata, usedDelta, err = g.GenerateDeltas(con.proxy, req, w)
 		if features.EnableUnsafeDeltaTest {
 			fullRes, l, _ := g.Generate(con.proxy, originalW, req)
@@ -570,6 +576,7 @@ func shouldSetWatchedResources(w *model.WatchedResource) bool {
 }
 
 func newDeltaConnection(peerAddr string, stream DeltaDiscoveryStream) *Connection {
+	// 初始化delta connection
 	return &Connection{
 		pushChannel:  make(chan *Event),
 		initialized:  make(chan struct{}),

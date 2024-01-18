@@ -26,6 +26,7 @@ import (
 )
 
 // ConfigGenerator represents the interfaces to be implemented by code that generates xDS responses
+// ConfigGenerator代表需要代码实现的接口，用来产生xDS responses
 type ConfigGenerator interface {
 	// BuildListeners returns the list of inbound/outbound listeners for the given proxy. This is the LDS output
 	// Internally, the computation will be optimized to ensure that listeners are computed only
@@ -37,6 +38,7 @@ type ConfigGenerator interface {
 
 	// BuildDeltaClusters returns both a list of resources that need to be pushed for a given proxy and a list of resources
 	// that have been deleted and should be removed from a given proxy. This is Delta CDS output.
+	// BuildDeltaClusters返回一系列的resources，需要被推动到给定的proxy以及一系列已经被删除的resources并且应该从给定的proxy移除，这是一个Delta CDS的输出
 	BuildDeltaClusters(proxy *model.Proxy, updates *model.PushRequest,
 		watched *model.WatchedResource) ([]*discovery.Resource, []string, model.XdsLogDetails, bool)
 
