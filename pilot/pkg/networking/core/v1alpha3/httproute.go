@@ -99,6 +99,7 @@ func (configgen *ConfigGeneratorImpl) BuildHTTPRoutes(
 			rc := configgen.buildGatewayHTTPRouteConfig(node, req.Push, routeName)
 			if rc != nil {
 				rc = envoyfilter.ApplyRouteConfigurationPatches(networking.EnvoyFilter_GATEWAY, node, efw, rc)
+				// 构建discovery resource
 				resource := &discovery.Resource{
 					Name:     routeName,
 					Resource: protoconv.MessageToAny(rc),

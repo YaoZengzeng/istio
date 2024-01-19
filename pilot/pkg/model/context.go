@@ -233,6 +233,7 @@ func (e *Environment) GetProxyConfigOrDefault(ns string, labels, annotations map
 }
 
 // Resources is an alias for array of marshaled resources.
+// Resources是对于marshaled resources的数组的别名
 type Resources = []*discovery.Resource
 
 // DeletedResources is an alias for array of strings that represent removed resources in delta.
@@ -570,6 +571,7 @@ type BootstrapNodeMetadata struct {
 }
 
 // NodeMetadata defines the metadata associated with a proxy
+// NodeMetadata定义了和一个proxy关联的元数据
 // Fields should not be assumed to exist on the proxy, especially newly added fields which will not exist
 // on older versions.
 // The JSON field names should never change, as they are needed for backward compatibility with older proxies

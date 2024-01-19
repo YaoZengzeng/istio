@@ -152,6 +152,7 @@ type ImpersonatedIdentityContextKey struct{}
 
 // Options provides all of the configuration parameters for secret discovery service
 // and CA configuration. Used in both Istiod and Agent.
+// Options提供了所有的配置参数，对于secret discovery service以及CA的配置，同时在Istiod和Agent中使用
 // TODO: ProxyConfig should have most of those, and be passed to all components
 // (as source of truth)
 type Options struct {

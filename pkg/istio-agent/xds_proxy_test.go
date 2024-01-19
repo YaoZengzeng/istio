@@ -86,10 +86,12 @@ func sendDownstreamWithoutResponse(t *testing.T, downstream discovery.Aggregated
 }
 
 // Validates basic xds proxy flow by proxying one CDS requests end to end.
+// 校验基本的xds proxy flow，通过端到端代理CDS requests
 func TestXdsProxyBasicFlow(t *testing.T) {
 	proxy := setupXdsProxy(t)
 	f := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 	setDialOptions(proxy, f.BufListener)
+	// 构建downstream的connection
 	conn := setupDownstreamConnection(t, proxy)
 	downstream := stream(t, conn)
 	sendDownstreamWithNode(t, downstream, model.NodeMetadata{
@@ -270,6 +272,7 @@ func setupXdsProxyWithDownstreamOptions(t *testing.T, opts []grpc.ServerOption) 
 		MetadataClientRootCert:  path.Join(env.IstioSrc, "tests/testdata/certs/pilot/root-cert.pem"),
 	}
 	dir := t.TempDir()
+	// 构建新的agent
 	ia := NewAgent(proxyConfig, &AgentOptions{
 		XdsUdsPath:            filepath.Join(dir, "XDS"),
 		DownstreamGrpcOptions: opts,
@@ -574,6 +577,7 @@ func TestECDSWasmConversion(t *testing.T) {
 
 func stream(t *testing.T, conn *grpc.ClientConn) discovery.AggregatedDiscoveryService_StreamAggregatedResourcesClient {
 	t.Helper()
+	// 构建aggregated discovery client
 	adsClient := discovery.NewAggregatedDiscoveryServiceClient(conn)
 	downstream, err := adsClient.StreamAggregatedResources(ctx)
 	if err != nil {
