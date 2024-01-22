@@ -701,6 +701,7 @@ func Setup(t *testing.T, opts ...func(a AgentTest) AgentTest) *AgentTest {
 	resp.AgentConfig.Platform = &platform.Unknown{}           // disable discovery
 
 	// Run through opts again to apply settings
+	// 再次遍历opts来应用settings
 	for _, opt := range opts {
 		resp = opt(resp)
 	}

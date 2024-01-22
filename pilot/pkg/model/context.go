@@ -293,6 +293,7 @@ type XdsDeltaResourceGenerator interface {
 // Proxy contains information about an specific instance of a proxy (envoy sidecar, gateway,
 // etc). The Proxy is initialized when a sidecar connects to Pilot, and populated from
 // 'node' info in the protocol as well as data extracted from registries.
+// Proxy包含信息，关于一个proxy的一个特定实例（envoy sidecar，gateway等等），Proxy被初始化，当一个sidecar连接到Pilot
 //
 // In current Istio implementation nodes use a 4-parts '~' delimited ID.
 // Type~IPAddress~ID~Domain
@@ -337,6 +338,7 @@ type Proxy struct {
 	SidecarScope *SidecarScope
 
 	// the sidecarScope associated with the proxy previously
+	// 之前和这个proxy相关的sidecarScope
 	PrevSidecarScope *SidecarScope
 
 	// The merged gateways associated with the proxy if this is a Router
@@ -369,6 +371,8 @@ type Proxy struct {
 	// If nil, the default networking/core v2 generator is used. This field can be set
 	// at connect time, based on node metadata, to trigger generation of a different style
 	// of configuration.
+	// XdsResourceGenerator用于为node生成resroucees，基于PushContext，如果为nil，会使用默认的networking/core v2 generator
+	// 这可以在连接的时候设置，基于node metadata，触发一个不同风格配置的generation
 	XdsResourceGenerator XdsResourceGenerator
 
 	// WatchedResources contains the list of watched resources for the proxy, keyed by the DiscoveryRequest TypeUrl.
@@ -384,6 +388,8 @@ type Proxy struct {
 	// increasing in version. Requests should send config based on this context; not the global latest.
 	// Historically, the latest was used which can cause problems when computing whether a push is
 	// required, as the computed sidecar scope version would not monotonically increase.
+	// LastPushContext存储这个proxy的最近的push context，它会随着版本单调递增，Requests应该基于这个context发送config；
+	// 不是全局的最新
 	LastPushContext *PushContext
 	// LastPushTime records the time of the last push. This is used in conjunction with
 	// LastPushContext; the XDS cache depends on knowing the time of the PushContext to determine if a
@@ -930,6 +936,7 @@ func (node *Proxy) SetSidecarScope(ps *PushContext) {
 		node.SidecarScope = ps.getSidecarScope(node, node.Labels)
 	case Router, Waypoint:
 		// Gateways should just have a default scope with egress: */*
+		// Gateways应该有一个默认的scope的egress：*/*
 		node.SidecarScope = ps.getSidecarScope(node, nil)
 	}
 	node.PrevSidecarScope = sidecarScope

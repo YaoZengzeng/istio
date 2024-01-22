@@ -87,6 +87,7 @@ const (
 )
 
 // ClientOptions returns consistent grpc dial options with custom dial options
+// ClientOptions返回一致的grpc dial options，又自定义的dial options
 func ClientOptions(options *istiokeepalive.Options, tlsOpts *TLSOptions) ([]grpc.DialOption, error) {
 	if options == nil {
 		options = istiokeepalive.DefaultOption()

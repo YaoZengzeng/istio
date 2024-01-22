@@ -691,6 +691,7 @@ func (p *XdsProxy) buildUpstreamClientDialOpts(sa *Agent) ([]grpc.DialOption, er
 }
 
 // Returns the TLS option to use when talking to Istiod
+// 返回TLS option被使用，当和Istiod交互时
 func (p *XdsProxy) getTLSOptions(agent *Agent) (*istiogrpc.TLSOptions, error) {
 	if agent.proxyConfig.ControlPlaneAuthPolicy == meshconfig.AuthenticationPolicy_NONE {
 		return nil, nil

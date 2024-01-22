@@ -211,6 +211,7 @@ func TestAdsClusterUpdate(t *testing.T) {
 		if len(got) != 1 {
 			t.Fatalf("expected 1 response, got %v", len(got))
 		}
+		// 期望获取cluster name
 		if got[0] != clusterName {
 			t.Fatalf("expected cluster %v got %v", clusterName, got[0])
 		}
@@ -801,6 +802,7 @@ func TestAdsUpdate(t *testing.T) {
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 	ads := s.ConnectADS()
 
+	// 增加service
 	s.MemRegistry.AddService(&model.Service{
 		Hostname:       "adsupdate.default.svc.cluster.local",
 		DefaultAddress: "10.11.0.1",
@@ -816,6 +818,7 @@ func TestAdsUpdate(t *testing.T) {
 			Namespace: "default",
 		},
 	})
+	// 配置更新
 	s.Discovery.ConfigUpdate(&model.PushRequest{Full: true})
 	time.Sleep(time.Millisecond * 200)
 	s.MemRegistry.SetEndpoints("adsupdate.default.svc.cluster.local", "default",
@@ -839,6 +842,7 @@ func TestAdsUpdate(t *testing.T) {
 
 	// will trigger recompute and push for all clients - including some that may be closing
 	// This reproduced the 'push on closed connection' bug.
+	// 会触发recompute并且对所有的clients推送 - 包括那些可能关闭的 - 这会重现'push on closed connection'的bug
 	xds.AdsPushAll(s.Discovery)
 	res1 := ads.ExpectResponse(t)
 	xdstest.UnmarshalClusterLoadAssignment(t, res1.GetResources())
@@ -881,19 +885,23 @@ func TestEnvoyRDSUpdatedRouteRequest(t *testing.T) {
 	resp := ads.RequestResponseAck(t, &discovery.DiscoveryRequest{ResourceNames: []string{routeA}})
 	expectRoutes(resp, routeA)
 
+	// 全部push
 	xds.AdsPushAll(s.Discovery)
 	resp = ads.ExpectResponse(t)
 	expectRoutes(resp, routeA)
 
 	// Test update from A -> B
+	// 测试从A到B的更新
 	resp = ads.RequestResponseAck(t, &discovery.DiscoveryRequest{ResourceNames: []string{routeB}})
 	expectRoutes(resp, routeB)
 
 	// Test update from B -> A, B
+	// 测试从B到A，B的更新
 	resp = ads.RequestResponseAck(t, &discovery.DiscoveryRequest{ResourceNames: []string{routeA, routeB}})
 	expectRoutes(resp, routeA, routeB)
 
 	// Test update from B, B -> A
+	// 测试从B, B到A的更新
 	resp = ads.RequestResponseAck(t, &discovery.DiscoveryRequest{ResourceNames: []string{routeA}})
 	expectRoutes(resp, routeA)
 }

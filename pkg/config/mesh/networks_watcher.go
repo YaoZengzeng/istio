@@ -33,6 +33,7 @@ type NetworksHolder interface {
 }
 
 // NetworksWatcher watches changes to the mesh networks config.
+// NetworksWatcher监听mesh networks配置的改变
 type NetworksWatcher interface {
 	NetworksHolder
 

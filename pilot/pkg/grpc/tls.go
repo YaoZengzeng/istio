@@ -30,6 +30,7 @@ import (
 )
 
 // TLSOptions include TLS options that a grpc client uses to connect with server.
+// TLSOptions包含TLS options，一个grpc client用于和server连接
 type TLSOptions struct {
 	RootCert      string
 	Key           string
@@ -37,10 +38,12 @@ type TLSOptions struct {
 	ServerAddress string
 	SAN           string
 	// This is to notify caller when successfully load tls certificate
+	// 这同于通知caller，当成功加载tls证书
 	GetClientCertificateCb func()
 }
 
 func getTLSDialOption(opts *TLSOptions) (grpc.DialOption, error) {
+	// 获取root cert
 	rootCert, err := getRootCertificate(opts.RootCert)
 	if err != nil {
 		return nil, err
@@ -78,6 +81,7 @@ func getTLSDialOption(opts *TLSOptions) (grpc.DialOption, error) {
 		config.ServerName = host
 	}
 	// For debugging on localhost (with port forward)
+	// 在localhost用于debugging
 	if strings.Contains(config.ServerName, "localhost") {
 		config.ServerName = "istiod.istio-system.svc"
 	}

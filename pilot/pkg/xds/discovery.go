@@ -104,7 +104,9 @@ type DiscoveryServer struct {
 	CommittedUpdates *atomic.Int64
 
 	// pushChannel is the buffer used for debouncing.
+	// pushChannel是buffer用于去抖
 	// after debouncing the pushRequest will be sent to pushQueue
+	// 在去抖之后，pushRequest会被发送给pushQueue
 	pushChannel chan *model.PushRequest
 
 	// pushQueue is the buffer that used after debounce and before the real xds push.
@@ -218,6 +220,7 @@ func (s *DiscoveryServer) Register(rpcs *grpc.Server) {
 var processStartTime = time.Now()
 
 // CachesSynced is called when caches have been synced so that server can accept connections.
+// CachesSynced被调用，当caches已经被同步，这样server可以接收连接
 func (s *DiscoveryServer) CachesSynced() {
 	log.Infof("All caches have been synced up in %v, marking server ready", time.Since(s.discoveryStartTime))
 	s.serverReady.Store(true)
@@ -313,6 +316,7 @@ func (s *DiscoveryServer) globalPushContext() *model.PushContext {
 }
 
 // ConfigUpdate implements ConfigUpdater interface, used to request pushes.
+// ConfigUpdate实现ConfigUpdater接口，用于req的推送
 func (s *DiscoveryServer) ConfigUpdate(req *model.PushRequest) {
 	if len(model.ConfigsOfKind(req.ConfigsUpdated, kind.Address)) > 0 {
 		// This is a bit like clearing EDS cache on EndpointShard update. Because Address

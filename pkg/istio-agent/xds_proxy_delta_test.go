@@ -59,6 +59,7 @@ func sendDeltaDownstreamWithoutResponse(t *testing.T, downstream discovery.Aggre
 }
 
 // Validates basic xds proxy flow by proxying one CDS requests end to end.
+// 校验基本的xds proxy flow，通过端到端代理一个CDS请求
 func TestDeltaXdsProxyBasicFlow(t *testing.T) {
 	proxy := setupXdsProxy(t)
 	f := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
@@ -74,6 +75,7 @@ func TestDeltaXdsProxyBasicFlow(t *testing.T) {
 func deltaStream(t *testing.T, conn *grpc.ClientConn) discovery.AggregatedDiscoveryService_DeltaAggregatedResourcesClient {
 	t.Helper()
 	adsClient := discovery.NewAggregatedDiscoveryServiceClient(conn)
+	// 构建delta aggregated resources
 	downstream, err := adsClient.DeltaAggregatedResources(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -87,6 +89,7 @@ func sendDeltaDownstreamWithNode(t *testing.T, downstream discovery.AggregatedDi
 		Id:       "sidecar~1.1.1.1~debug~cluster.local",
 		Metadata: meta.ToStruct(),
 	}
+	// 发送Cluster request
 	err := downstream.Send(&discovery.DeltaDiscoveryRequest{TypeUrl: v3.ClusterType, Node: node})
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +101,7 @@ func sendDeltaDownstreamWithNode(t *testing.T, downstream discovery.AggregatedDi
 	if res == nil || res.TypeUrl != v3.ClusterType {
 		t.Fatalf("Expected to get cluster response but got %v", res)
 	}
+	// 发送Listener request
 	err = downstream.Send(&discovery.DeltaDiscoveryRequest{TypeUrl: v3.ListenerType, Node: node})
 	if err != nil {
 		t.Fatal(err)

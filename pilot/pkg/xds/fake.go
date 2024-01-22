@@ -87,6 +87,7 @@ type FakeOptions struct {
 	// If provided, the ConfigString will be treated as a go template, with this as input params
 	ConfigTemplateInput any
 	// If provided, this mesh config will be used
+	// 如果配置了，这个mesh config会被使用
 	MeshConfig      *meshconfig.MeshConfig
 	NetworksWatcher mesh.NetworksWatcher
 
@@ -169,6 +170,7 @@ func NewFakeDiscoveryServer(t test.Failer, opts FakeOptions) *FakeDiscoveryServe
 	s.Generators[v3.SecretType] = NewSecretGen(creds, s.Cache, opts.DefaultClusterName, nil)
 	s.Generators[v3.ExtensionConfigurationType].(*EcdsGenerator).SetCredController(creds)
 
+	// 构建内存中的sync controller
 	configController := memory.NewSyncController(memory.MakeSkipValidation(collections.PilotGatewayAPI()))
 	for k8sCluster, objs := range k8sObjects {
 		client := kubelib.NewFakeClientWithVersion(opts.KubernetesVersion, objs...)
@@ -309,9 +311,11 @@ func NewFakeDiscoveryServer(t test.Failer, opts FakeOptions) *FakeDiscoveryServe
 		_ = listener.Close()
 	})
 	// Start the discovery server
+	// 启动discovery server
 	s.Start(stop)
 	cg.ServiceEntryRegistry.XdsUpdater = s
 	// Now that handlers are added, get everything started
+	// 现在handlers被添加，所有都启动
 	cg.Run()
 	kubelib.WaitForCacheSync("fake", stop,
 		cg.Registry.HasSynced,
@@ -320,15 +324,18 @@ func NewFakeDiscoveryServer(t test.Failer, opts FakeOptions) *FakeDiscoveryServe
 
 	// Send an update. This ensures that even if there are no configs provided, the push context is
 	// initialized.
+	// 发送一个update，这确保即使没有configs提供，push context也能初始化
 	s.ConfigUpdate(&model.PushRequest{Full: true})
 
 	// Wait until initial updates are committed
+	// 等待直到初始的updates被提交
 	c := s.InboundUpdates.Load()
 	retry.UntilOrFail(t, func() bool {
 		return s.CommittedUpdates.Load() >= c
 	}, retry.Delay(time.Millisecond))
 
 	// Mark ourselves ready
+	// 将我们自己标记为ready
 	s.CachesSynced()
 
 	bufListener, _ := listener.(*bufconn.Listener)

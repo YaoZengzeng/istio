@@ -341,6 +341,7 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 		select {
 		case req, ok := <-con.reqChan:
 			if ok {
+				// 处理request
 				if err := s.processRequest(req, con); err != nil {
 					return err
 				}
@@ -688,6 +689,7 @@ func localityFromProxyLabels(proxy *model.Proxy) *core.Locality {
 
 // initializeProxy completes the initialization of a proxy. It is expected to be called only after
 // initProxyMetadata.
+// initializeProxy完成一个proxy的初始化，它期望只在initProxyMetadata之后调用
 func (s *DiscoveryServer) initializeProxy(con *Connection) error {
 	proxy := con.proxy
 	// this should be done before we look for service instances, but after we load metadata
@@ -723,9 +725,12 @@ func (s *DiscoveryServer) computeProxyState(proxy *model.Proxy, request *model.P
 		setTopologyLabels(proxy)
 	}
 	// Precompute the sidecar scope and merged gateways associated with this proxy.
+	// 提前计算和这个proxy相关的sidecar scope和merged gateways
 	// Saves compute cycles in networking code. Though this might be redundant sometimes, we still
 	// have to compute this because as part of a config change, a new Sidecar could become
 	// applicable to this proxy
+	// 节省在networking代码的计算周期，尽管有的时候有些冗余，我们依然需要计算，因为这是config change的一部分
+	// 一个新的Sidecar应该变得适用，对于这个proxy
 	var sidecar, gateway bool
 	push := proxy.LastPushContext
 	if request == nil {
@@ -891,6 +896,7 @@ func (s *DiscoveryServer) ProxyUpdate(clusterID cluster.ID, ip string) {
 
 // AdsPushAll will send updates to all nodes, with a full push.
 // Mainly used in Debug interface.
+// AdsPushAll会发送updates到所有的nodes，有一个full push，主要用于Debug接口
 func AdsPushAll(s *DiscoveryServer) {
 	s.AdsPushAll(&model.PushRequest{
 		Full:   true,
@@ -900,6 +906,7 @@ func AdsPushAll(s *DiscoveryServer) {
 }
 
 // AdsPushAll will send updates to all nodes, for a full config or incremental EDS.
+// AdsPushAll会发送updates到所有的nodes，对于一个full config或者incremental EDS
 func (s *DiscoveryServer) AdsPushAll(req *model.PushRequest) {
 	if !req.Full {
 		log.Infof("XDS: Incremental Pushing ConnectedEndpoints:%d Version:%s",
@@ -911,6 +918,7 @@ func (s *DiscoveryServer) AdsPushAll(req *model.PushRequest) {
 		monServices.Record(float64(totalService))
 
 		// Make sure the ConfigsUpdated map exists
+		// 确保ConfigsUpdated map存在
 		if req.ConfigsUpdated == nil {
 			req.ConfigsUpdated = make(sets.Set[model.ConfigKey])
 		}
@@ -920,8 +928,10 @@ func (s *DiscoveryServer) AdsPushAll(req *model.PushRequest) {
 }
 
 // Send a signal to all connections, with a push event.
+// 发送一个信号到所有连接，等待一个push event
 func (s *DiscoveryServer) startPush(req *model.PushRequest) {
 	// Push config changes, iterating over connected envoys.
+	// Push config发生了改变，迭代连接的envoys
 	if log.DebugEnabled() {
 		currentlyPending := s.pushQueue.Pending()
 		if currentlyPending != 0 {

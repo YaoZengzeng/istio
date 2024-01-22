@@ -57,14 +57,19 @@ import (
 
 const (
 	// Location of K8S CA root.
+	// K8S的CA的root
 	k8sCAPath = "./var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 	// Location of K8s CA root mounted by istio. This is to avoid issues when service account automount is disabled.
+	// 被istio挂在的K8S CA，这来避免issues，当service account的自动挂载被禁止
 	k8sCAIstioMountedPath = "./var/run/secrets/istio/kubernetes/ca.crt"
 
 	// CitadelCACertPath is the directory for Citadel CA certificate.
+	// CitadelCACertPath是用于Citadel CA证书的目录
 	// This is mounted from config map 'istio-ca-root-cert'. Part of startup,
 	// this may be replaced with ./etc/certs, if a root-cert.pem is found, to
 	// handle secrets mounted from non-citadel CAs.
+	// 它从config map 'istio-ca-root-cert'被挂载，作为启动的一部分，可能被./etc/certs
+	// 取代，如果找到root-cert.pem，处理从非citadel CAs的secrets的挂载
 	CitadelCACertPath = "./var/run/secrets/istio"
 )
 
@@ -125,6 +130,7 @@ type Agent struct {
 type AgentOptions struct {
 	// ProxyXDSDebugViaAgent if true will listen on 15004 and forward queries
 	// to XDS istio.io/debug.
+	// ProxyXDSDebugViaAgent如果为true会监听在15004并且转发queries到XDS istio.io/debug
 	ProxyXDSDebugViaAgent bool
 	// Port value for the debugging endpoint.
 	ProxyXDSDebugViaAgentPort int
@@ -393,6 +399,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 		}
 	}
 	if a.proxyConfig.ControlPlaneAuthPolicy != mesh.AuthenticationPolicy_NONE {
+		// 如果认证模式不是NONE
 		rootCAForXDS, err := a.FindRootCAForXDS()
 		if err != nil {
 			return nil, fmt.Errorf("failed to find root XDS CA: %v", err)
@@ -616,9 +623,11 @@ func (a *Agent) Close() {
 }
 
 // FindRootCAForXDS determines the root CA to be configured in bootstrap file.
+// FindRootCAForXDS决定在bootstrap文件中配置的root CA
 // It may be different from the CA for the cert server - which is based on CA_ADDR
 // In addition it deals with the case the XDS server is on port 443, expected with a proper cert.
 // /etc/ssl/certs/ca-certificates.crt
+// 它可能和cert server的CA不一样，它是基于CA_ADDR的，另外它处理XDS server在端口443的情况，期望一个合适的cert
 func (a *Agent) FindRootCAForXDS() (string, error) {
 	var rootCAPath string
 
@@ -635,6 +644,7 @@ func (a *Agent) FindRootCAForXDS() (string, error) {
 		return security.DefaultRootCertFilePath, nil
 	} else if a.secOpts.PilotCertProvider == constants.CertProviderKubernetes {
 		// Using K8S - this is likely incorrect, may work by accident (https://github.com/istio/istio/issues/22161)
+		// 使用K8S - 这可能是不正确的，可能意外能work
 		if fileExists(k8sCAIstioMountedPath) {
 			rootCAPath = k8sCAIstioMountedPath
 		} else {

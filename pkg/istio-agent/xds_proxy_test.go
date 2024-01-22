@@ -101,6 +101,7 @@ func TestXdsProxyBasicFlow(t *testing.T) {
 }
 
 // Validates the proxy health checking updates
+// 校验proxy的健康检查更新
 func TestXdsProxyHealthCheck(t *testing.T) {
 	// TODO: allow fake XDS to be "authenticated"
 	test.SetForTest(t, &features.ValidateWorkloadEntryIdentity, false)
@@ -169,6 +170,7 @@ func TestXdsProxyHealthCheck(t *testing.T) {
 	}
 
 	// send cds before healthcheck, to make wle registered
+	// 在healthcheck之前发送cds，让wle注册
 	coreNode := &core.Node{
 		Id:       "sidecar~1.1.1.1~debug~cluster.local",
 		Metadata: node.ToStruct(),
@@ -183,13 +185,16 @@ func TestXdsProxyHealthCheck(t *testing.T) {
 	}
 
 	// healthcheck before lds will be not sent
+	// lds之前的healthcheck不会被发送
 	proxy.sendHealthCheckRequest(healthy)
 	expectCondition("")
 
 	// simulate envoy send xds requests
+	// 模拟envoy发送xds请求
 	sendDownstreamWithNode(t, downstream, node)
 
 	// after lds sent, the caching healthcheck will be resent
+	// 在lds发送之后，缓存的healthcheck会被重新发送
 	expectCondition(status.StatusTrue)
 
 	// Flip status back and forth, ensure we update
@@ -303,11 +308,13 @@ func setDialOptions(p *XdsProxy, l *bufconn.Listener) {
 var ctx = metadata.AppendToOutgoingContext(context.Background(), "ClusterID", "Kubernetes")
 
 // Validates basic xds proxy flow by proxying one CDS requests end to end.
+// 校验基础的xds proxy flow，通过端到端代理一个CDS请求
 func TestXdsProxyReconnects(t *testing.T) {
 	waitDisconnect := func(proxy *XdsProxy) {
 		retry.UntilSuccessOrFail(t, func() error {
 			proxy.connectedMutex.Lock()
 			defer proxy.connectedMutex.Unlock()
+			// 依然为connected则报错
 			if proxy.connected != nil {
 				return fmt.Errorf("still connected")
 			}
@@ -336,6 +343,7 @@ func TestXdsProxyReconnects(t *testing.T) {
 		})
 	})
 	t.Run("Envoy opens multiple stream", func(t *testing.T) {
+		// 打开多个stream
 		proxy := setupXdsProxy(t)
 		f := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 		setDialOptions(proxy, f.BufListener)
@@ -375,6 +383,7 @@ func TestXdsProxyReconnects(t *testing.T) {
 	t.Run("Envoy sends concurrent requests", func(t *testing.T) {
 		// Envoy doesn't really do this, in reality it should only have a single connection. However,
 		// this ensures we are robust against cases where envoy rapidly disconnects and reconnects
+		// Envoy不会真的这么做，事实上它应该只有单个连接，然而，这确保我们有鲁棒性，当envoy迅速断开以及重连
 		proxy := setupXdsProxy(t)
 		f := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 		setDialOptions(proxy, f.BufListener)
@@ -419,6 +428,7 @@ func TestXdsProxyReconnects(t *testing.T) {
 		go grpcServer.Serve(listener)
 
 		// Send initial request
+		// 发送initial request
 		conn := setupDownstreamConnection(t, proxy)
 		downstream := stream(t, conn)
 		sendDownstreamWithNode(t, downstream, model.NodeMetadata{
@@ -427,6 +437,7 @@ func TestXdsProxyReconnects(t *testing.T) {
 		})
 
 		// Stop server, setup a new one. This simulates an Istiod pod being torn down
+		// 停止server，设置一个新的，这模拟一个Istiod pod被摧毁
 		grpcServer.Stop()
 		listener, err = net.Listen("tcp", listener.Addr().String())
 		if err != nil {
@@ -440,6 +451,7 @@ func TestXdsProxyReconnects(t *testing.T) {
 		go grpcServer.Serve(listener)
 
 		// Send downstream again
+		// 再次发送downstream
 		downstream = stream(t, conn)
 		sendDownstreamWithNode(t, downstream, model.NodeMetadata{
 			Namespace:   "default",
@@ -592,17 +604,21 @@ func sendDownstreamWithNode(t *testing.T, downstream discovery.AggregatedDiscove
 		Id:       "sidecar~1.1.1.1~debug~cluster.local",
 		Metadata: meta.ToStruct(),
 	}
+	// downstream发送一个Discovery Request
 	err := downstream.Send(&discovery.DiscoveryRequest{TypeUrl: v3.ClusterType, Node: node})
 	if err != nil {
 		t.Fatal(err)
 	}
+	// 接收res
 	res, err := downstream.Recv()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res == nil || res.TypeUrl != v3.ClusterType {
+		// 获取Cluster类型
 		t.Fatalf("Expected to get cluster response but got %v", res)
 	}
+	// 发送Listener
 	err = downstream.Send(&discovery.DiscoveryRequest{TypeUrl: v3.ListenerType, Node: node})
 	if err != nil {
 		t.Fatal(err)

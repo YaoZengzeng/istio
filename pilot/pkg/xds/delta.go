@@ -211,6 +211,7 @@ func (s *DiscoveryServer) receiveDelta(con *Connection, identities []string) {
 			return
 		}
 		// This should be only set for the first request. The node id may not be set - for example malicious clients.
+		// 这应该只对第一个request设置，node id可能不为空，例如malicious clients
 		if firstRequest {
 			// probe happens before envoy sends first xDS request
 			if req.TypeUrl == v3.HealthInfoType {

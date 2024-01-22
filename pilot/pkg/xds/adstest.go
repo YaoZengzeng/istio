@@ -174,6 +174,7 @@ func (a *AdsTest) ExpectNoResponse(t test.Failer) {
 }
 
 func (a *AdsTest) fillInRequestDefaults(req *discovery.DiscoveryRequest) *discovery.DiscoveryRequest {
+	// 初始化DiscoveryRequest，填充type url和node
 	if req == nil {
 		req = &discovery.DiscoveryRequest{}
 	}
@@ -198,6 +199,7 @@ func (a *AdsTest) Request(t test.Failer, req *discovery.DiscoveryRequest) {
 }
 
 // RequestResponseAck does a full XDS exchange: Send a request, get a response, and ACK the response
+// RequestResponseAck做一个完整的XDS exchagne：发送一个请求，获取一个response，并且ACK response
 func (a *AdsTest) RequestResponseAck(t test.Failer, req *discovery.DiscoveryRequest) *discovery.DiscoveryResponse {
 	t.Helper()
 	req = a.fillInRequestDefaults(req)
