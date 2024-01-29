@@ -105,6 +105,7 @@ type XdsProxy struct {
 	connectedMutex            sync.RWMutex
 
 	// Wasm cache and ecds channel are used to replace wasm remote load with local file.
+	// Wasm cache以及ecds channel用于替换wasm的remote load，用本地的文件
 	wasmCache wasm.Cache
 
 	// ecds version and nonce uses atomic only to prevent race in testing.
@@ -142,6 +143,7 @@ func initXdsProxy(ia *Agent) (*XdsProxy, error) {
 
 	cache := wasm.NewLocalFileCache(constants.IstioDataDir, ia.cfg.WASMOptions)
 	proxy := &XdsProxy{
+		// 配置istiod的discovery地址
 		istiodAddress:         ia.proxyConfig.DiscoveryAddress,
 		istiodSAN:             ia.cfg.IstiodSAN,
 		clusterID:             ia.secOpts.ClusterID,
@@ -202,6 +204,7 @@ func initXdsProxy(ia *Agent) (*XdsProxy, error) {
 
 	go proxy.healthChecker.PerformApplicationHealthCheck(func(healthEvent *health.ProbeEvent) {
 		// Store the same response as Delta and SotW. Depending on how Envoy connects we will use one or the other.
+		// 存储同样的resopnse，作为Delta和SotW，取决于Envoy如何连接
 		req := &discovery.DiscoveryRequest{TypeUrl: v3.HealthInfoType}
 		if !healthEvent.Healthy {
 			req.ErrorDetail = &google_rpc.Status{
@@ -261,11 +264,13 @@ func (p *XdsProxy) registerStream(c *ProxyConnection) {
 // ProxyConnection represents connection to downstream proxy.
 // ProxyConnection代表到downstream proxy的连接
 type ProxyConnection struct {
-	conID              uint32
-	upstreamError      chan error
-	downstreamError    chan error
-	requestsChan       *channels.Unbounded[*discovery.DiscoveryRequest]
-	responsesChan      chan *discovery.DiscoveryResponse
+	conID           uint32
+	upstreamError   chan error
+	downstreamError chan error
+	// 普通的req channel
+	requestsChan  *channels.Unbounded[*discovery.DiscoveryRequest]
+	responsesChan chan *discovery.DiscoveryResponse
+	// delta req channel
 	deltaRequestsChan  *channels.Unbounded[*discovery.DeltaDiscoveryRequest]
 	deltaResponsesChan chan *discovery.DeltaDiscoveryResponse
 	stopChan           chan struct{}
@@ -323,6 +328,8 @@ func (p *XdsProxy) handleStream(downstream adsStream) error {
 		// However, Recv can fail to be called by Send being blocked. This can be triggered by the two
 		// sources in our system (Envoy request and Istiod pushes) producing more events than we can keep
 		// up with.
+		// Requests cahnnels是unbounded，Envoy<->XDS Proxy<->Istiod系统产生一个正常的Recv和Send的循环，因为gRPC原生引入的
+		// backpressure（就是Send()只能发送这些数据，在没有Recv情况下，在它开始阻塞之前）
 		// See https://github.com/istio/istio/issues/39209 for more information
 		//
 		// To prevent these issues, we need to either:
@@ -359,6 +366,7 @@ func (p *XdsProxy) handleStream(downstream adsStream) error {
 	xds := discovery.NewAggregatedDiscoveryServiceClient(upstreamConn)
 	ctx = metadata.AppendToOutgoingContext(context.Background(), "ClusterID", p.clusterID)
 	for k, v := range p.xdsHeaders {
+		// 将xds headers加入metadata
 		ctx = metadata.AppendToOutgoingContext(ctx, k, v)
 	}
 	// We must propagate upstream termination to Envoy. This ensures that we resume the full XDS sequence on new connection
@@ -366,6 +374,7 @@ func (p *XdsProxy) handleStream(downstream adsStream) error {
 	return p.handleUpstream(ctx, con, xds)
 }
 
+// 构建grpc client connection
 func (p *XdsProxy) buildUpstreamConn(ctx context.Context) (*grpc.ClientConn, error) {
 	p.optsMutex.RLock()
 	opts := p.dialOptions
@@ -670,6 +679,7 @@ func (p *XdsProxy) initIstiodDialOptions(agent *Agent) error {
 	}
 
 	p.optsMutex.Lock()
+	// 初始xds proxy的dial options
 	p.dialOptions = opts
 	p.optsMutex.Unlock()
 	return nil
@@ -680,11 +690,13 @@ func (p *XdsProxy) buildUpstreamClientDialOpts(sa *Agent) ([]grpc.DialOption, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TLS options to talk to upstream: %v", err)
 	}
+	// 构建client options
 	options, err := istiogrpc.ClientOptions(nil, tlsOpts)
 	if err != nil {
 		return nil, err
 	}
 	if sa.secOpts.CredFetcher != nil {
+		// 构建crendentail fetcher
 		options = append(options, grpc.WithPerRPCCredentials(caclient.NewXDSTokenProvider(sa.secOpts)))
 	}
 	return options, nil
@@ -696,6 +708,7 @@ func (p *XdsProxy) getTLSOptions(agent *Agent) (*istiogrpc.TLSOptions, error) {
 	if agent.proxyConfig.ControlPlaneAuthPolicy == meshconfig.AuthenticationPolicy_NONE {
 		return nil, nil
 	}
+	// 找到XDS CA Cert的路径
 	xdsCACertPath, err := agent.FindRootCAForXDS()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find root CA cert for XDS: %v", err)
@@ -811,6 +824,7 @@ func (p *XdsProxy) makeTapHandler() func(w http.ResponseWriter, req *http.Reques
 }
 
 // initDebugInterface() listens on localhost:${PORT} for path /debug/...
+// initDebugInterface监听localhost:${PORT}，对于路径/debug/...，转发到Isitod的路径
 // forwards the paths to Istiod as xDS requests
 // waits for response from Istiod, sends it as JSON
 func (p *XdsProxy) initDebugInterface(port int) error {

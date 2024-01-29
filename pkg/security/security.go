@@ -43,12 +43,14 @@ const (
 	DefaultKeyFilePath = "./etc/certs/key.pem"
 
 	// DefaultRootCertFilePath is the well-known path for an existing root certificate file
+	// DefaultRootCertFilePath是已知的路径，对于一个已经存在的root证书文件
 	DefaultRootCertFilePath = "./etc/certs/root-cert.pem"
 
 	// WorkloadIdentitySocketPath is the well-known path to the Unix Domain Socket for SDS.
 	WorkloadIdentitySocketPath = "./var/run/secrets/workload-spiffe-uds/socket"
 
 	// CredentialNameSocketPath is the well-known path to the Unix Domain Socket for Credential Name.
+	// CredentialNameSocketPath是well-known的UDS路径，对于Credentail Name
 	CredentialNameSocketPath = "./var/run/secrets/credential-uds/socket"
 
 	// CredentialMetaDataName is the name in node meta data.
@@ -70,6 +72,7 @@ const (
 	WorkloadIdentityKeyPath = WorkloadIdentityCredentialsPath + "/key.pem"
 
 	// WorkloadIdentityRootCertPath is the well-known path to a workload root certificate file.
+	// WorkloadIdentityRootCertPath是已知的路径，对于workload root证书文件
 	WorkloadIdentityRootCertPath = WorkloadIdentityCredentialsPath + "/root-cert.pem"
 
 	// GkeWorkloadCertChainFilePath is the well-known path for the GKE workload certificate chain file.
@@ -180,6 +183,7 @@ type Options struct {
 
 	// ProvCert is the directory for client to provide the key and certificate to CA server when authenticating
 	// with mTLS. This is not used for workload mTLS communication, and is
+	// ProvCert是一个给client提供的目录，提供key以及证书到CA server，当用mTLS认证，这不是用于workload mTLS交互
 	ProvCert string
 
 	// ClusterID is the cluster where the agent resides.
@@ -201,10 +205,12 @@ type Options struct {
 	// CA, by updating the Secret or VM file. We will watch the file for changes
 	// or check before the cert expires. This assumes the certs are in the
 	// well-known ./etc/certs location.
+	// FileMountedCerts表明是proxy使用文件挂载的certs，被一个foreign CA创建
 	FileMountedCerts bool
 
 	// PilotCertProvider is the provider of the Pilot certificate (PILOT_CERT_PROVIDER env)
 	// Determines the root CA file to use for connecting to CA gRPC:
+	// 决定用于连接CA gRPC的root CA文件
 	// - istiod
 	// - kubernetes
 	// - custom
@@ -351,9 +357,11 @@ type SecretItem struct {
 
 type CredFetcher interface {
 	// GetPlatformCredential fetches workload credential provided by the platform.
+	// GetPlatformCredential获取platform提供的workload credential
 	GetPlatformCredential() (string, error)
 
 	// GetIdentityProvider returns the name of the IdentityProvider that can authenticate the workload credential.
+	// GetIdentityProvider返回IdentityProvider的名字，可以认证workload credential
 	GetIdentityProvider() string
 
 	// Stop releases resources and cleans up.
@@ -526,6 +534,7 @@ func GetOSRootFilePath() string {
 
 // CheckWorkloadCertificate returns true when the workload certificate
 // files are present under the provided paths. Otherwise, return false.
+// CheckWorkloadCertificate返回true，当workload证书文件在给定的路径存在
 func CheckWorkloadCertificate(certChainFilePath, keyFilePath, rootCertFilePath string) bool {
 	if _, err := os.Stat(certChainFilePath); err != nil {
 		return false

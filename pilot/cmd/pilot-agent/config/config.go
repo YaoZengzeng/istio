@@ -33,6 +33,7 @@ import (
 )
 
 // ConstructProxyConfig returns proxyConfig
+// ConstructProxyConfig返回proxyConfig
 func ConstructProxyConfig(meshConfigFile, serviceCluster, proxyConfigEnv string, concurrency int) (*meshconfig.ProxyConfig, error) {
 	annotations, err := bootstrap.ReadPodAnnotations("")
 	if err != nil {
@@ -79,6 +80,7 @@ func ConstructProxyConfig(meshConfigFile, serviceCluster, proxyConfigEnv string,
 		}
 	}
 	// resolve statsd address
+	// 解析statsd的地址
 	if proxyConfig.StatsdUdpAddress != "" {
 		addr, err := network.ResolveAddr(proxyConfig.StatsdUdpAddress)
 		if err != nil {
@@ -95,10 +97,14 @@ func ConstructProxyConfig(meshConfigFile, serviceCluster, proxyConfigEnv string,
 }
 
 // getMeshConfig gets the mesh config to use for proxy configuration
+// getMeshConfig获取mesh config用于proxy配置
 // 1. First we take the default config
+// 1. 首先获取默认配置
 // 2. Then we apply any settings from file (this comes from gateway mounting configmap)
 // 3. Then we apply settings from environment variable (this comes from sidecar injection sticking meshconfig here)
+// 3. 我们应用来自环境变量的配置
 // 4. Then we apply overrides from annotation (this comes from annotation on gateway, passed through downward API)
+// 4. 之后我们应用来自annotation的配置
 //
 // Merging is done by replacement. Any fields present in the overlay will replace those existing fields, while
 // untouched fields will remain untouched. This means lists will be replaced, not appended to, for example.
@@ -144,6 +150,7 @@ func fileExists(path string) bool {
 // Apply any overrides to proxy config from annotations
 func applyAnnotations(config *meshconfig.ProxyConfig, annos map[string]string) *meshconfig.ProxyConfig {
 	if v, f := annos[annotation.SidecarDiscoveryAddress.Name]; f {
+		// 通过annotation覆盖DiscoveryAddress
 		config.DiscoveryAddress = v
 	}
 	if v, f := annos[annotation.SidecarStatusPort.Name]; f {

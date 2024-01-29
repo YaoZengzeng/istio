@@ -206,6 +206,7 @@ func (s *Server) initK8SConfigStore(args *PilotArgs) error {
 
 // initConfigSources will process mesh config 'configSources' and initialize
 // associated configs.
+// initConfigSources会处理mesh config，'configSources'并且初始化相关的配置
 func (s *Server) initConfigSources(args *PilotArgs) (err error) {
 	for _, configSource := range s.environment.Mesh().ConfigSources {
 		srcAddress, err := url.Parse(configSource.Address)
@@ -242,6 +243,7 @@ func (s *Server) initConfigSources(args *PilotArgs) (err error) {
 					args.KeepaliveOptions.ConvertToClientOption(),
 					// Because we use the custom grpc options for adsc, here we should
 					// explicitly set transport credentials.
+					// 因为我们使用自定义的grpc options，对于adsc，我们应该显式设置transport credentials
 					// TODO: maybe we should use the tls settings within ConfigSource
 					// to secure the connection between istiod and remote xds server.
 					grpc.WithTransportCredentials(insecure.NewCredentials()),

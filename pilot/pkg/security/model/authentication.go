@@ -41,9 +41,11 @@ const (
 	SDSRootResourceName = "ROOTCA"
 
 	// K8sSAJwtFileName is the token volume mount file name for k8s jwt token.
+	// K8sSAJwtFileName是对于k8s jwt token需要的token volume挂载目录
 	K8sSAJwtFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
 	// K8sSATrustworthyJwtFileName is the token volume mount file name for k8s trustworthy jwt token.
+	// K8sSATrustworthyJwtFileName是对于k8s信赖的jwt token
 	K8sSATrustworthyJwtFileName = "/var/run/secrets/tokens/istio-token"
 
 	// K8sSAJwtTokenHeaderKey is the request header key for k8s jwt token.

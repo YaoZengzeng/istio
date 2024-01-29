@@ -73,6 +73,7 @@ const (
 )
 
 // Config for creating a bootstrap file.
+// 创建一个bootstrap文件的配置
 type Config struct {
 	*model.Node
 }
@@ -398,6 +399,7 @@ func getProxyConfigOptions(metadata *model.BootstrapNodeMetadata) ([]option.Inst
 
 	opts = append(opts, option.ProxyConfig(config),
 		option.Cluster(getServiceCluster(metadata)),
+		// 添加options
 		option.PilotGRPCAddress(config.DiscoveryAddress),
 		option.DiscoveryAddress(config.DiscoveryAddress),
 		option.StatsdAddress(config.StatsdUdpAddress),
@@ -562,6 +564,7 @@ const (
 
 // GetNodeMetaData function uses an environment variable contract
 // ISTIO_METAJSON_* env variables contain json_string in the value.
+// GetNodeMetaData函数使用一个环境变量约定，ISTIO_METAJSON_*的环境变量在value中包含json_string
 // The name of variable is ignored.
 // ISTIO_META_* env variables are passed through
 func GetNodeMetaData(options MetadataOptions) (*model.Node, error) {

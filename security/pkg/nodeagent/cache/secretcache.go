@@ -56,6 +56,8 @@ const (
 // usage is to fetch the two specially named resources: `default`, which refers to the workload's
 // spiffe certificate, and ROOTCA, which contains just the root certificate for the workload
 // certificates. These are separated only due to the fact that Envoy has them separated.
+// SecretManagerClient是一个SecretManager，使用提供的security.Client对CSRs进行签名，主要的用途是获取
+// 两个特定名字的资源：`default`，它引用workload的spiffe证书，以及ROOTCAT，包含workload证书的root ca
 // Additionally, arbitrary certificates may be fetched from local files to support DestinationRule
 // and Gateway. Note that certificates stored externally will be sent from Istiod directly; the
 // in-agent SecretManagerClient has low privileges and cannot read Kubernetes Secrets or other
@@ -163,6 +165,7 @@ type FileCert struct {
 }
 
 // NewSecretManagerClient creates a new SecretManagerClient.
+// NewSecretManagerClient创建一个新的SecretManagerClient
 func NewSecretManagerClient(caClient security.Client, options *security.Options) (*SecretManagerClient, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

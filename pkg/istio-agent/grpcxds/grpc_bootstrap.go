@@ -154,6 +154,7 @@ type GenerateBootstrapOptions struct {
 }
 
 // GenerateBootstrap generates the bootstrap structure for gRPC XDS integration.
+// GenerateBootstrap生成bootstrap结构，用于gRPC XDS集成
 func GenerateBootstrap(opts GenerateBootstrapOptions) (*Bootstrap, error) {
 	xdsMeta, err := extractMeta(opts.Node)
 	if err != nil {

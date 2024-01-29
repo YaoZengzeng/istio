@@ -35,6 +35,7 @@ const (
 )
 
 // Server is the gPRC server that exposes SDS through UDS.
+// Server是gRPC server，通过UDS暴露SDS
 type Server struct {
 	workloadSds *sdsservice
 

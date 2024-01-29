@@ -149,11 +149,13 @@ func (e *Environment) PushContext() *PushContext {
 }
 
 // GetDiscoveryAddress parses the DiscoveryAddress specified via MeshConfig.
+// GetDiscoveryAddress解析通过MeshConfig指定的DiscoveryAddress
 func (e *Environment) GetDiscoveryAddress() (host.Name, string, error) {
 	proxyConfig := mesh.DefaultProxyConfig()
 	if e.Mesh().DefaultConfig != nil {
 		proxyConfig = e.Mesh().DefaultConfig
 	}
+	// 分出hostname和端口
 	hostname, port, err := net.SplitHostPort(proxyConfig.DiscoveryAddress)
 	if err != nil {
 		return "", "", fmt.Errorf("invalid Istiod Address: %s, %v", proxyConfig.DiscoveryAddress, err)
@@ -306,10 +308,13 @@ type Proxy struct {
 	// IPAddresses is the IP addresses of the proxy used to identify it and its
 	// co-located service instances. Example: "10.60.1.6". In some cases, the host
 	// where the proxy and service instances reside may have more than one IP address
+	// IPAddresses是proxy使用的IP地址用来识别它以及和他一起的service实例，例如："10.60.1.6"
+	// 在有的情况下，proxy和service实例所在的host有超过一个IP地址
 	IPAddresses []string
 
 	// ID is the unique platform-specific sidecar proxy ID. For k8s it is the pod ID and
 	// namespace <podName.namespace>.
+	// ID是独特的平台特定的sidecar proxy ID，例如对于k8s是pod ID以及ns <podName.namespace>
 	ID string
 
 	// Locality is the location of where Envoy proxy runs. This is extracted from
@@ -319,6 +324,7 @@ type Proxy struct {
 
 	// DNSDomain defines the DNS domain suffix for short hostnames (e.g.
 	// "default.svc.cluster.local")
+	// DNSDomain定义了DNS domain的后缀，对于short hostnames（例如，"default.svc.cluster.local"）
 	DNSDomain string
 
 	// ConfigNamespace defines the namespace where this proxy resides
@@ -549,6 +555,7 @@ type Node struct {
 // we configure in the Envoy bootstrap. This is split out from NodeMetadata to explicitly segment the parameters
 // that are consumed by Pilot from the parameters used only as part of the bootstrap. Fields used by bootstrap only
 // are consumed by Envoy itself, such as the telemetry filters.
+// BootstrapNodeMetadata是NodeMetadata的超集，用于modle整个的node metadata，我配置Envoy bootstrap
 type BootstrapNodeMetadata struct {
 	NodeMetadata
 
@@ -564,6 +571,7 @@ type BootstrapNodeMetadata struct {
 	PilotSubjectAltName []string `json:"PILOT_SAN,omitempty"`
 
 	// XDSRootCert defines the root cert to use for XDS connections
+	// XDSRootCert定义了用于XDS连接的root cert
 	XDSRootCert string `json:"-"`
 
 	// OutlierLogPath is the cluster manager outlier event log path.
@@ -908,6 +916,7 @@ func IsApplicationNodeType(nType NodeType) bool {
 }
 
 // ServiceNode encodes the proxy node attributes into a URI-acceptable string
+// ServiceNode编码proxy node相关的特性到一个URL可接受的string
 func (node *Proxy) ServiceNode() string {
 	ip := ""
 	if len(node.IPAddresses) > 0 {

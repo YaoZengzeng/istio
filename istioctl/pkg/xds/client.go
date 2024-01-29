@@ -41,6 +41,7 @@ const (
 var tokenAudiences = []string{"istio-ca"}
 
 // GetXdsResponse opens a gRPC connection to opts.xds and waits for a single response
+// GetXdsResponse打开一个gRPC连接到opts.xds并且等待单个的response
 func GetXdsResponse(dr *discovery.DiscoveryRequest, ns string, serviceAccount string, opts clioptions.CentralControlPlaneOptions,
 	grpcOpts []grpc.DialOption,
 ) (*discovery.DiscoveryResponse, error) {

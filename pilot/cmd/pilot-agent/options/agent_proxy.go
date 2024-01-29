@@ -15,6 +15,7 @@
 package options
 
 // ProxyArgs provides all of the configuration parameters for the Pilot proxy.
+// ProxyArgs提供了所有配置参数，对于Pilot proxy
 type ProxyArgs struct {
 	DNSDomain          string
 	StsPort            int
@@ -49,6 +50,7 @@ func NewProxyArgs() ProxyArgs {
 
 // applyDefaults apply default value to ProxyArgs
 func (p *ProxyArgs) applyDefaults() {
+	// 直接从环境变量获取
 	p.PodName = PodNameVar.Get()
 	p.PodNamespace = PodNamespaceVar.Get()
 }

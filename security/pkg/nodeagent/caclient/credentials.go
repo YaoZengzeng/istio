@@ -29,6 +29,7 @@ import (
 )
 
 // TokenProvider is a grpc PerRPCCredentials that can be used to attach a JWT token to each gRPC call.
+// TokenProvider是一个grpc PerRPCCredentails，可以用于为每个gRPC call关联一个JWT token
 // TokenProvider can be used for XDS, which may involve token exchange through STS.
 type TokenProvider struct {
 	opts *security.Options
@@ -36,6 +37,8 @@ type TokenProvider struct {
 	// external systems and XDS is not often (yet?), many of the security options only apply to CA
 	// communication. A more proper solution would be to have separate options for CA and XDS, but
 	// this requires API changes.
+	// TokenProvider可以用于XDS，因为CA总是用于外部系统，而XDS则不是，许多的security options只用于CA交互，一个合适的解决方法
+	// 为对于CA和XDS分开选项，但是这需要API的改变
 	forCA bool
 }
 

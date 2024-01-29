@@ -27,6 +27,7 @@ import (
 )
 
 var (
+	// 用户可以指定instance ip
 	InstanceIPVar        = env.Register("INSTANCE_IP", "", "")
 	PodNameVar           = env.Register("POD_NAME", "", "")
 	PodNamespaceVar      = env.Register("POD_NAMESPACE", "", "")
@@ -47,6 +48,8 @@ var (
 	// ProvCert is the environment controlling the use of pre-provisioned certs, for VMs.
 	// May also be used in K8S to use a Secret to bootstrap (as a 'refresh key'), but use short-lived tokens
 	// with extra SAN (labels, etc) in data path.
+	// ProvCert是环境变量，控制提前生成的certs，对于VMs
+	// 可能用于K8S，使用一个Secret来生成，但是使用短期的tokens
 	provCert = env.Register("PROV_CERT", "",
 		"Set to a directory containing provisioned certs, for VMs").Get()
 

@@ -579,6 +579,7 @@ func (s *Server) createIstioRA(opts *caOptions) (ra.RegistrationAuthority, error
 }
 
 // getJwtPath returns jwt path.
+// getJwtPath返回jwt路径
 func getJwtPath() string {
 	log.Infof("JWT policy is %v", features.JwtPolicy)
 	switch features.JwtPolicy {

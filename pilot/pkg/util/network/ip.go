@@ -49,6 +49,7 @@ type lookupIPAddrType = func(ctx context.Context, addr string) ([]netip.Addr, er
 var ErrResolveNoAddress = fmt.Errorf("no address specified")
 
 // GetPrivateIPs blocks until private IP addresses are available, or a timeout is reached.
+// GetPrivateIPs阻塞直到private IP地址可用，或者达到超时
 func GetPrivateIPs(ctx context.Context) ([]string, bool) {
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc

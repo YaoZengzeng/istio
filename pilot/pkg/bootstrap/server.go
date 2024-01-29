@@ -205,6 +205,7 @@ func (w *webhookInfo) addHandler(fn func()) {
 }
 
 // NewServer creates a new Server instance based on the provided arguments.
+// NewServer创建一个新的Server实例，基于提供的参数
 func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	e := model.NewEnvironment()
 	e.DomainSuffix = args.RegistryOptions.KubeOptions.DomainSuffix
@@ -364,6 +365,7 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	caOpts.Authenticators = authenticators
 
 	// Start CA or RA server. This should be called after CA and Istiod certs have been created.
+	// Start CA或者RA server，这应该在CA以及Istiod certs已经被创建之后
 	s.startCA(caOpts)
 
 	// TODO: don't run this if galley is started, one ctlz is enough
@@ -1168,6 +1170,7 @@ func (s *Server) shouldStartNsController() bool {
 }
 
 // StartCA starts the CA or RA server if configured.
+// StartCA启动CA或者RA server，如果配置的话
 func (s *Server) startCA(caOpts *caOptions) {
 	if s.CA == nil && s.RA == nil {
 		return
@@ -1178,6 +1181,7 @@ func (s *Server) startCA(caOpts *caOptions) {
 			grpcServer = s.grpcServer
 		}
 		// Start the RA server if configured, else start the CA server
+		// 启动RA server，如果配置的话，否则启动CA server
 		if s.RA != nil {
 			log.Infof("Starting RA")
 			s.RunCA(grpcServer, s.RA, caOpts)

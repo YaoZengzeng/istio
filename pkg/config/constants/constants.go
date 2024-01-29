@@ -72,6 +72,7 @@ const (
 	IstioIngressNamespace = "istio-system"
 
 	// DefaultClusterLocalDomain the default service domain suffix for Kubernetes, if not overridden in config.
+	// DefaultClusterLocalDomain是默认的service domain后缀，对于Kubernetes，如果没有在config中配置
 	DefaultClusterLocalDomain = "cluster.local"
 
 	// DefaultClusterSetLocalDomain is the default domain suffix for Kubernetes Multi-Cluster Services (MCS)
@@ -96,6 +97,7 @@ const (
 	IstioMeshGateway = "mesh"
 
 	// The data name in the ConfigMap of each namespace storing the root cert of non-Kube CA.
+	// 每个ns的ConfigMap，存储root cert，对于non-Kube CA
 	CACertNamespaceConfigMapDataName = "root-cert.pem"
 
 	// PodInfoLabelsPath is the filepath that pod labels will be stored
@@ -140,18 +142,23 @@ const (
 	RouteSemanticsGateway  = "gateway"
 
 	// TrustworthyJWTPath is the default 3P token to authenticate with third party services
+	// TrustworthyJWTPath是默认的第三方token，用来认证第三方服务
 	TrustworthyJWTPath = "./var/run/secrets/tokens/istio-token"
 
 	// CertProviderIstiod uses istiod self signed DNS certificates for the control plane
+	// CertProviderIstiod使用istiod的自签名DNS证书用于控制面
 	CertProviderIstiod = "istiod"
 	// CertProviderKubernetes uses the Kubernetes CSR API to generate a DNS certificate for the control plane
+	// CertProviderKubernetes使用Kubernetes CSR API来生成一个DNS证书，用于控制面
 	CertProviderKubernetes = "kubernetes"
 	// CertProviderKubernetesSignerPrefix uses the Kubernetes CSR API and the specified signer to generate a DNS certificate for the control plane
 	CertProviderKubernetesSignerPrefix = "k8s.io/"
 	// CertProviderCustom uses the custom root certificate mounted in a well known location for the control plane
+	// CertProviderCustom使用自定义的root证书，挂载在一个well known的地址，对于控制面
 	CertProviderCustom = "custom"
 	// CertProviderNone does not create any certificates for the control plane. It is assumed that some external
 	// load balancer, such as an Istio Gateway, is terminating the TLS.
+	// CertProviderNone不创建任何证书，对于控制面，它假设一些外部的load balancer，例如一个Istio Gateway，终止了TLS
 	CertProviderNone = "none"
 
 	// AlwaysReject is a special internal annotation that is always rejected in the validation webhook. This is used for

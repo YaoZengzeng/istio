@@ -75,10 +75,12 @@ func TestADSC_Run(t *testing.T) {
 
 	descs := []testDesc{
 		{
+			// 没有resources
 			desc:            "stream-no-resources",
 			initialRequests: []*discovery.DiscoveryRequest{},
 		},
 		{
+			// 没有命名的resources
 			desc: "stream-2-unnamed-resources",
 			initialRequests: []*discovery.DiscoveryRequest{
 				{
@@ -90,6 +92,7 @@ func TestADSC_Run(t *testing.T) {
 			},
 		},
 		{
+			// 完成的mcp resources
 			desc:            "stream-3-completed-mcp-resources",
 			initialRequests: ConfigInitialRequests(),
 			validator: func(testCase testCase) error {
@@ -100,9 +103,11 @@ func TestADSC_Run(t *testing.T) {
 			},
 		},
 		{
+			// 没有完成的mcp resrouces
 			desc:            "stream-4-uncompleted-mcp-resources",
 			initialRequests: ConfigInitialRequests(),
 			// XDS Server don't push this kind resource.
+			// XDS Server不push这种类型的资源
 			excludedResource: gvk.ServiceEntry.String(),
 			validator: func(testCase testCase) error {
 				if testCase.inAdsc.HasSynced() {

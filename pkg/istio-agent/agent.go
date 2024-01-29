@@ -148,6 +148,7 @@ type AgentOptions struct {
 	// to include the namespace as well) (for local dns resolution)
 	ProxyDomain string
 	// Node identifier used by Envoy
+	// Envoy使用的Node ID
 	ServiceNode string
 
 	// XDSRootCerts is the location of the root CA for the XDS connection. Used for setting platform certs or
@@ -176,6 +177,7 @@ type AgentOptions struct {
 	ProxyIPAddresses []string
 
 	// Enables dynamic generation of bootstrap.
+	// 使能对于bootstrap的动态生成
 	EnableDynamicBootstrap bool
 
 	// Envoy status port (that circles back to the agent status port). Really belongs to the proxy config.
@@ -242,9 +244,11 @@ func (a *Agent) generateNodeMetadata() (*model.Node, error) {
 	var pilotSAN []string
 	if a.proxyConfig.ControlPlaneAuthPolicy == mesh.AuthenticationPolicy_MUTUAL_TLS {
 		// Obtain Pilot SAN, using DNS.
+		// 获取Pilot SAN，使用DNS
 		pilotSAN = []string{config.GetPilotSan(a.proxyConfig.DiscoveryAddress)}
 	}
 
+	// 检查credential socket存在
 	credentialSocketExists, err := checkSocket(context.TODO(), security.CredentialNameSocketPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check credential SDS socket: %v", err)
@@ -272,6 +276,7 @@ func (a *Agent) generateNodeMetadata() (*model.Node, error) {
 }
 
 func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
+	// 生成node metadata
 	node, err := a.generateNodeMetadata()
 	if err != nil {
 		return fmt.Errorf("failed to generate bootstrap metadata: %v", err)
@@ -282,11 +287,14 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 	// Note: the cert checking still works, the generated file is updated if certs are changed.
 	// We just don't save the generated file, but use a custom one instead. Pilot will keep
 	// monitoring the certs and restart if the content of the certs changes.
+	// 注意：cert的检查依然有效，生成的文件会更新，如果certs发生改变，我们只是不保存生成的文件，而使用自定义的
+	// Pilot会持续监控certs并且重启，如果certs的内容改变
 	if len(a.proxyConfig.CustomConfigFile) > 0 {
 		// there is a custom configuration. Don't write our own config - but keep watching the certs.
 		a.envoyOpts.ConfigPath = a.proxyConfig.CustomConfigFile
 		a.envoyOpts.ConfigCleanup = false
 	} else {
+		// 构建bootstrap
 		out, err := bootstrap.New(bootstrap.Config{
 			Node: node,
 		}).CreateFile()
@@ -324,10 +332,13 @@ func (a *Agent) initializeEnvoyAgent(ctx context.Context) error {
 	if a.cfg.EnableDynamicBootstrap {
 		a.dynamicBootstrapWaitCh = make(chan error, 1)
 		// Simulate an xDS request for a bootstrap
+		// 模拟一个xDS请求，对于一个bootstrap
 		// wait indefinitely and keep retrying with jittered exponential backoff
+		// 一直等待并且保持重试，用jittered exponential backoff
 		b := backoff.NewExponentialBackOff(backoff.DefaultOption())
 		for {
 			// handleStream hands on to request after exit, so create a fresh one instead.
+			// handleStream在退出之后处理request，而是创建一个新的
 			bsStream := &bootstrapDiscoveryStream{
 				node:        node,
 				errCh:       a.dynamicBootstrapWaitCh,
@@ -437,6 +448,7 @@ func (a *Agent) Run(ctx context.Context) (func(), error) {
 
 func (a *Agent) initSdsServer() error {
 	var err error
+	// 检查workload certificate
 	if security.CheckWorkloadCertificate(security.WorkloadIdentityCertChainPath, security.WorkloadIdentityKeyPath, security.WorkloadIdentityRootCertPath) {
 		log.Info("workload certificate files detected, creating secret manager without caClient")
 		a.secOpts.RootCertFilePath = security.WorkloadIdentityRootCertPath
@@ -637,10 +649,13 @@ func (a *Agent) FindRootCAForXDS() (string, error) {
 	} else if a.cfg.XDSRootCerts != "" {
 		// Using specific platform certs or custom roots
 		rootCAPath = a.cfg.XDSRootCerts
+		// 后面的话XDSRootCerts为空，后面都为空
 	} else if fileExists(security.DefaultRootCertFilePath) {
 		// Old style - mounted cert. This is used for XDS auth only,
 		// not connecting to CA_ADDR because this mode uses external
 		// agent (Secret refresh, etc)
+		// 老的方式 - 挂载的证书，这只用于XDS auth，不连接到CA_ADDR，因为这个模式使用
+		// 外部的agent（Secret refresh）
 		return security.DefaultRootCertFilePath, nil
 	} else if a.secOpts.PilotCertProvider == constants.CertProviderKubernetes {
 		// Using K8S - this is likely incorrect, may work by accident (https://github.com/istio/istio/issues/22161)
@@ -660,14 +675,18 @@ func (a *Agent) FindRootCAForXDS() (string, error) {
 		// FileMountedCerts - Load it from Proxy Metadata.
 		rootCAPath = a.proxyConfig.ProxyMetadata[MetadataClientRootCert]
 	} else if a.secOpts.PilotCertProvider == constants.CertProviderNone {
+		// 对于XDS需要root CA文件，但是配置的provider为none
 		return "", fmt.Errorf("root CA file for XDS required but configured provider as none")
 	} else {
 		// PILOT_CERT_PROVIDER - default is istiod
+		// PILOT_CERT_PROVIDER - 默认为istiod
 		// This is the default - a mounted config map on K8S
+		// 这是默认的 - 一个K8S中挂载的config  map
 		rootCAPath = path.Join(CitadelCACertPath, constants.CACertNamespaceConfigMapDataName)
 	}
 
 	// Additional checks for root CA cert existence. Fail early, instead of obscure envoy errors
+	// 额外的检查，对于root CA cert是否存在
 	if fileExists(rootCAPath) {
 		return rootCAPath, nil
 	}
@@ -676,6 +695,7 @@ func (a *Agent) FindRootCAForXDS() (string, error) {
 }
 
 // GetKeyCertsForXDS return the key cert files path for connecting with xds.
+// GetKeyCertsForXDS返回key cert文件路径，对于连接到xds
 func (a *Agent) GetKeyCertsForXDS() (string, string) {
 	var key, cert string
 	if a.secOpts.ProvCert != "" {
@@ -748,6 +768,7 @@ func socketHealthCheck(ctx context.Context, socketPath string) error {
 }
 
 // FindRootCAForCA Find the root CA to use when connecting to the CA (Istiod or external).
+// FindRootCAForCA找到root CA，当用于和CA连接的时候
 func (a *Agent) FindRootCAForCA() (string, error) {
 	var rootCAPath string
 
@@ -758,6 +779,7 @@ func (a *Agent) FindRootCAForCA() (string, error) {
 	} else if a.secOpts.PilotCertProvider == constants.CertProviderKubernetes {
 		// Using K8S - this is likely incorrect, may work by accident.
 		// API is GA.
+		// 使用k8s - 这可能不正确，可能意外运行
 		if fileExists(k8sCAIstioMountedPath) {
 			rootCAPath = k8sCAIstioMountedPath
 		} else {
@@ -803,8 +825,10 @@ func getKeyCertInner(certPath string) (string, string) {
 }
 
 // newSecretManager creates the SecretManager for workload secrets
+// newSecretManager创建SecretManager用于workload secrets
 func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	// If proxy is using file mounted certs, we do not have to connect to CA.
+	// 如果proxy使用文件挂载的certs，我们不需要连接到CA
 	if a.secOpts.FileMountedCerts {
 		log.Info("Workload is using file mounted certificates. Skipping connecting to CA")
 		return cache.NewSecretManagerClient(nil, a.secOpts)
@@ -832,9 +856,11 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	}
 
 	// Using citadel CA
+	// 使用citadel CA
 	var tlsOpts *citadel.TLSOptions
 	var err error
 	// Special case: if Istiod runs on a secure network, on the default port, don't use TLS
+	// 特殊情况：如果Istiod运行在secure network，在默认的端口，不使用TLS
 	// TODO: may add extra cases or explicit settings - but this is a rare use cases, mostly debugging
 	if strings.HasSuffix(a.secOpts.CAEndpoint, ":15010") {
 		log.Warn("Debug mode or IP-secure network")
@@ -857,8 +883,10 @@ func (a *Agent) newSecretManager() (*cache.SecretManagerClient, error) {
 	}
 
 	// Will use TLS unless the reserved 15010 port is used ( istiod on an ipsec/secure VPC)
+	// 会使用TLS，除非使用预留的15010端口（istiod在ipsec/secure VPC运行）
 	// rootCert may be nil - in which case the system roots are used, and the CA is expected to have public key
 	// Otherwise assume the injection has mounted /etc/certs/root-cert.pem
+	// rootCert可能为nil - 万一使用system roots，并且CA期望有public key
 	caClient, err := citadel.NewCitadelClient(a.secOpts, tlsOpts)
 	if err != nil {
 		return nil, err

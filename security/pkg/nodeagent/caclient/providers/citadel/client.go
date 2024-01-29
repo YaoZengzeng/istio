@@ -55,6 +55,7 @@ type TLSOptions struct {
 }
 
 // NewCitadelClient create a CA client for Citadel.
+// NewCitadelClient创建一个CA client，对于Citadel
 func NewCitadelClient(opts *security.Options, tlsOpts *TLSOptions) (*CitadelClient, error) {
 	c := &CitadelClient{
 		tlsOpts:   tlsOpts,
@@ -63,6 +64,7 @@ func NewCitadelClient(opts *security.Options, tlsOpts *TLSOptions) (*CitadelClie
 		usingMtls: atomic.NewBool(false),
 	}
 
+	// 构建connection
 	conn, err := c.buildConnection()
 	if err != nil {
 		citadelClientLog.Errorf("Failed to connect to endpoint %s: %v", opts.CAEndpoint, err)
@@ -128,6 +130,7 @@ func (c *CitadelClient) getTLSOptions() *istiogrpc.TLSOptions {
 }
 
 func (c *CitadelClient) buildConnection() (*grpc.ClientConn, error) {
+	// 获取tls options
 	tlsOpts := c.getTLSOptions()
 	opts, err := istiogrpc.ClientOptions(nil, tlsOpts)
 	if err != nil {

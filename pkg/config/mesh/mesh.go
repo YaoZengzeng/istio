@@ -70,6 +70,7 @@ func DefaultMeshNetworks() *meshconfig.MeshNetworks {
 }
 
 // DefaultMeshConfig returns the default mesh config.
+// DefaultMeshConfig返回默认的mesh config
 // This is merged with values from the mesh config map.
 func DefaultMeshConfig() *meshconfig.MeshConfig {
 	proxyConfig := DefaultProxyConfig()
@@ -140,6 +141,7 @@ func DefaultMeshConfig() *meshconfig.MeshConfig {
 
 // ApplyProxyConfig applies the give proxy config yaml to a mesh config object. The passed in mesh config
 // will not be modified.
+// ApplyProxyConfig应用给定的proxy config yaml到一个mesh config对象，传入的mesh config不会被修改
 func ApplyProxyConfig(yaml string, meshConfig *meshconfig.MeshConfig) (*meshconfig.MeshConfig, error) {
 	mc := proto.Clone(meshConfig).(*meshconfig.MeshConfig)
 	pc, err := MergeProxyConfig(yaml, mc.DefaultConfig)

@@ -34,6 +34,7 @@ type envoy struct {
 }
 
 // Envoy binary flags
+// Envoy二进制的flags
 type ProxyConfig struct {
 	LogLevel          string
 	ComponentLogLevel string

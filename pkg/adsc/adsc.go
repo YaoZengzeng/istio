@@ -69,6 +69,7 @@ const (
 )
 
 // Config for the ADS connection.
+// ADS连接的配置
 type Config struct {
 	// Namespace defaults to 'default'
 	Namespace string
@@ -92,14 +93,18 @@ type Config struct {
 	IP string
 
 	// CertDir is the directory where mTLS certs are configured.
+	// CertDir是目录，当mTLS certs被配置的时候
 	// If CertDir and Secret are empty, an insecure connection will be used.
+	// 如果CertDir和Secret为空，则会使用非安全的连接
 	// TODO: implement SecretManager for cert dir
 	CertDir string
 
 	// Secrets is the interface used for getting keys and rootCA.
+	// Secrets是接口，用于获取keys以及rootCA
 	SecretManager security.SecretManager
 
 	// For getting the certificate, using same code as SDS server.
+	// 为了获取证书，使用同样的代码，作为SDS server
 	// Either the JWTPath or the certs must be present.
 	JWTPath string
 
@@ -107,24 +112,29 @@ type Config struct {
 	XDSSAN string
 
 	// XDSRootCAFile explicitly set the root CA to be used for the XDS connection.
+	// XDSRootCAFile显式设置root CA，为了用于XDS丽娜姐
 	// Mirrors Envoy file.
 	XDSRootCAFile string
 
 	// RootCert contains the XDS root certificate. Used mainly for tests, apps will normally use
 	// XDSRootCAFile
+	// RootCert包含XDS root证书，主要用于测试，apps会主要用XDSRootCAFile
 	RootCert []byte
 
 	// InsecureSkipVerify skips client verification the server's certificate chain and host name.
+	// InsecureSkipVerify跳过client认证，server的证书chain以及host name
 	InsecureSkipVerify bool
 
 	// InitialDiscoveryRequests is a list of resources to watch at first, represented as URLs (for new XDS resource naming)
 	// or type URLs.
+	// InitialDiscoveryRequests是一系列的资源，在第一次watch，代表一个URLs（对于新的XDS资源的命名）或者type URLs
 	InitialDiscoveryRequests []*discovery.DiscoveryRequest
 
 	// BackoffPolicy determines the reconnect policy. Based on MCP client.
 	BackoffPolicy backoff.BackOff
 
 	// ResponseHandler will be called on each DiscoveryResponse.
+	// ResponseHandler会在每个DiscoveryResponse调用
 	// TODO: mirror Generator, allow adding handler per type
 	ResponseHandler ResponseHandler
 
@@ -142,18 +152,23 @@ func DefaultGrpcDialOptions() []grpc.DialOption {
 
 // ADSC implements a basic client for ADS, for use in stress tests and tools
 // or libraries that need to connect to Istio pilot or other ADS servers.
+// ADSC实现了一个基本的client，用于ADS，用于压力测试以及工具或者lib，需要和Istio pilot合作的或者其他的ADS servers
 type ADSC struct {
 	// Stream is the GRPC connection stream, allowing direct GRPC send operations.
 	// Set after Dial is called.
+	// Stream是GRPC conneciton stream，允许直接的GRPC发送操作，在Dial被调用之后设置
 	stream discovery.AggregatedDiscoveryService_StreamAggregatedResourcesClient
 	// xds client used to create a stream
+	// xds client用于创建一个stream
 	client discovery.AggregatedDiscoveryServiceClient
 	conn   *grpc.ClientConn
 
 	// Indicates if the ADSC client is closed
+	// 表明ADSC client被关闭了
 	closed bool
 
 	// NodeID is the node identity sent to Pilot.
+	// NodeID是发送给Pilot的node identity
 	nodeID string
 
 	url string
@@ -164,12 +179,15 @@ type ADSC struct {
 	InitialLoad time.Duration
 
 	// httpListeners contains received listeners with a http_connection_manager filter.
+	// httpListeners包含接受到的listeners，有一个http_connection_manager filter
 	httpListeners map[string]*listener.Listener
 
 	// tcpListeners contains all listeners of type TCP (not-HTTP)
+	// tcpListeners包含TCP类型的所有listeners
 	tcpListeners map[string]*listener.Listener
 
 	// All received clusters of type eds, keyed by name
+	// 所有接收到eds类型的clusters，以name为key
 	edsClusters map[string]*cluster.Cluster
 
 	// All received clusters of no-eds type, keyed by name
@@ -186,12 +204,14 @@ type ADSC struct {
 	Metadata *pstruct.Struct
 
 	// Updates includes the type of the last update received from the server.
+	// Updates包含类型，从server收到的最新的update
 	Updates     chan string
 	errChan     chan error
 	XDSUpdates  chan *discovery.DiscoveryResponse
 	VersionInfo map[string]string
 
 	// Last received message, by type
+	// 上次接受的message，通过类型
 	Received map[string]*discovery.DiscoveryResponse
 
 	mutex sync.RWMutex
@@ -251,12 +271,18 @@ func NewWithBackoffPolicy(discoveryAddr string, opts *Config, backoffPolicy back
 }
 
 // New creates a new ADSC, maintaining a connection to an XDS server.
+// New创建一个新的ADSC，维护一个到XDS server的连接
 // Will:
 // - get certificate using the Secret provider, if CertRequired
+// - 使用Secret Provider获取证书，如果需要证书的话
 // - connect to the XDS server specified in ProxyConfig
+// - 连接在ProxyConfig中指定的XDS server
 // - send initial request for watched resources
+// - 发送初始的request，对于监听的resources
 // - wait for response from XDS server
+// - 等待来自XDS server的response
 // - on success, start a background thread to maintain the connection, with exp. backoff.
+// - 成功的话，启动一个background thread，维护connection，例如，回退
 func New(discoveryAddr string, opts *Config) (*ADSC, error) {
 	if opts == nil {
 		opts = &Config{}
@@ -302,6 +328,7 @@ func New(discoveryAddr string, opts *Config) (*ADSC, error) {
 }
 
 // Dial connects to a ADS server, with optional MTLS authentication if a cert dir is specified.
+// Dial连接一个ADS server，有可选的MTLL认证，如果指定了cert dir
 func (a *ADSC) Dial() error {
 	opts := a.cfg
 
@@ -312,6 +339,7 @@ func (a *ADSC) Dial() error {
 
 	var err error
 	// If we need MTLS - CertDir or Secrets provider is set.
+	// 如果我们需要MTLS - 设置CertDir或者Secrets provider
 	if len(opts.CertDir) > 0 || opts.SecretManager != nil {
 		tlsCfg, err := a.tlsConfig()
 		if err != nil {
@@ -323,6 +351,7 @@ func (a *ADSC) Dial() error {
 
 	if len(grpcDialOptions) == len(defaultGrpcDialOptions) {
 		// Only disable transport security if the user didn't supply custom dial options
+		// 只禁止transport security，如果用户没有提供自定义的dial options
 		grpcDialOptions = append(grpcDialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
@@ -420,6 +449,8 @@ func (a *ADSC) Close() {
 
 // Run will create a new stream using the existing grpc client connection and send the initial xds requests.
 // And then it will run a go routine receiving and handling xds response.
+// Run会创建一个新的stream，使用已经存在的grpc client连接并且发送初始的xds requests，之后它就会运行一个goroutine接收
+// 并且处理xds response
 // Note: it is non blocking
 func (a *ADSC) Run() error {
 	var err error
@@ -431,6 +462,7 @@ func (a *ADSC) Run() error {
 	a.sendNodeMeta = true
 	a.InitialLoad = 0
 	// Send the initial requests
+	// 发送initial requests
 	for _, r := range a.cfg.InitialDiscoveryRequests {
 		if r.TypeUrl == v3.ClusterType {
 			a.watchTime = time.Now()
@@ -443,6 +475,7 @@ func (a *ADSC) Run() error {
 }
 
 // HasSynced returns true if MCP configs have synced
+// HasSynced返回true，如果MCP的configs已经同步了
 func (a *ADSC) HasSynced() bool {
 	if a.cfg == nil || len(a.cfg.InitialDiscoveryRequests) == 0 {
 		return true
@@ -483,6 +516,7 @@ func (a *ADSC) reconnect() {
 
 func (a *ADSC) handleRecv() {
 	// We connected, so reset the backoff
+	// 我们连接了，因此重置backoff
 	if a.cfg.BackoffPolicy != nil {
 		a.cfg.BackoffPolicy.Reset()
 	}
@@ -496,6 +530,7 @@ func (a *ADSC) handleRecv() {
 			default:
 			}
 			// if 'reconnect' enabled - schedule a new Run
+			// 如果使能了'reconnect' - 调度一个新的Run
 			if a.cfg.BackoffPolicy != nil {
 				time.AfterFunc(a.cfg.BackoffPolicy.NextBackOff(), a.reconnect)
 			} else {
@@ -509,6 +544,7 @@ func (a *ADSC) handleRecv() {
 		}
 
 		// Group-value-kind - used for high level api generator.
+		// Group-value-kind - 作为高级版的api generator使用
 		resourceGvk, isMCP := convertTypeURLToMCPGVK(msg.TypeUrl)
 
 		adscLog.WithLabels("type", msg.TypeUrl, "count", len(msg.Resources), "nonce", msg.Nonce).Info("Received")
@@ -539,6 +575,7 @@ func (a *ADSC) handleRecv() {
 		}
 
 		// Process the resources.
+		// 处理resources
 		a.VersionInfo[msg.TypeUrl] = msg.VersionInfo
 		switch msg.TypeUrl {
 		case v3.ListenerType:
@@ -585,6 +622,8 @@ func (a *ADSC) handleRecv() {
 
 		// If we got no resource - still save to the store with empty name/namespace, to notify sync
 		// This scheme also allows us to chunk large responses !
+		// 如果我们没有resource - 依然保存store，用空的name/namespace，通知sync
+		// 这个scheme也允许我们分块大的reponses
 
 		// TODO: add hook to inject nacks
 
@@ -595,6 +634,7 @@ func (a *ADSC) handleRecv() {
 			}
 		}
 		a.Received[msg.TypeUrl] = msg
+		// 进行ACK
 		a.ack(msg)
 		a.mutex.Unlock()
 
@@ -902,6 +942,7 @@ func (a *ADSC) node() *core.Node {
 }
 
 // Raw send of a request.
+// 裸的发送一个request
 func (a *ADSC) Send(req *discovery.DiscoveryRequest) error {
 	if a.sendNodeMeta {
 		req.Node = a.node()
@@ -1052,6 +1093,7 @@ func (a *ADSC) Wait(to time.Duration, updates ...string) ([]string, error) {
 }
 
 // WaitVersion waits for a new or updated for a typeURL.
+// WaitVersion等待对于一个typeURL的一个新的或者更新
 func (a *ADSC) WaitVersion(to time.Duration, typeURL, lastVersion string) (*discovery.DiscoveryResponse, error) {
 	t := time.NewTimer(to)
 	a.mutex.Lock()
@@ -1097,6 +1139,7 @@ func (a *ADSC) EndpointsJSON() string {
 
 // Watch will start watching resources, starting with CDS. Based on the CDS response
 // it will start watching RDS and LDS.
+// Watch会开始监听resources，从CDS开始，基于CDS的response会开始监听RDS和LDS
 func (a *ADSC) Watch() {
 	a.watchTime = time.Now()
 	_ = a.stream.Send(&discovery.DiscoveryRequest{
@@ -1146,11 +1189,13 @@ func (a *ADSC) ack(msg *discovery.DiscoveryResponse) {
 	}
 
 	if msg.TypeUrl == v3.EndpointType {
+		// 如果是endpoint，则resources返回clusters
 		for c := range a.edsClusters {
 			resources = append(resources, c)
 		}
 	}
 	if msg.TypeUrl == v3.RouteType {
+		// 如果是route，则返回routes
 		for r := range a.routes {
 			resources = append(resources, r)
 		}
@@ -1166,6 +1211,7 @@ func (a *ADSC) ack(msg *discovery.DiscoveryResponse) {
 }
 
 // GetHTTPListeners returns all the http listeners.
+// GetHTTPListeners返回所有的http listeners
 func (a *ADSC) GetHTTPListeners() map[string]*listener.Listener {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
@@ -1201,6 +1247,7 @@ func (a *ADSC) GetRoutes() map[string]*route.RouteConfiguration {
 }
 
 // GetEndpoints returns all the routes.
+// 返回所有的endpoints
 func (a *ADSC) GetEndpoints() map[string]*endpoint.ClusterLoadAssignment {
 	a.mutex.RLock()
 	defer a.mutex.RUnlock()

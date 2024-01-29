@@ -174,6 +174,7 @@ func newProxyCommand() *cobra.Command {
 			go cmd.WaitSignalFunc(cancel)
 
 			// Start in process SDS, dns server, xds proxy, and Envoy.
+			// 启动进程中的SDS，dns server，xds proxy以及Envoy
 			wait, err := agent.Run(ctx)
 			if err != nil {
 				return err
@@ -187,6 +188,7 @@ func newProxyCommand() *cobra.Command {
 func addFlags(proxyCmd *cobra.Command) {
 	proxyArgs = options.NewProxyArgs()
 	proxyCmd.PersistentFlags().StringVar(&proxyArgs.DNSDomain, "domain", "",
+		// 如果没有提供，默认使用${POD_NAMESPACE}.svc.cluster.local
 		"DNS domain suffix. If not provided uses ${POD_NAMESPACE}.svc.cluster.local")
 	proxyCmd.PersistentFlags().StringVar(&proxyArgs.MeshConfigFile, "meshConfig", "./etc/istio/config/mesh",
 		"File name for Istio mesh configuration. If not specified, a default mesh will be used. This may be overridden by "+
@@ -282,11 +284,13 @@ func initProxy(args []string) (*model.Proxy, error) {
 	}
 
 	// Obtain all the IPs from the node
+	// 从node获取所有可用的IPs
 	if ipAddrs, ok := network.GetPrivateIPs(context.Background()); ok {
 		if len(proxy.IPAddresses) == 1 {
 			for _, ip := range ipAddrs {
 				// prevent duplicate ips, the first one must be the pod ip
 				// as we pick the first ip as pod ip in istiod
+				// 防止重复的ips，第一个必须是pod ip，因为我们选择第一个ip作为istiod中的pod ip
 				if proxy.IPAddresses[0] != ip {
 					proxy.IPAddresses = append(proxy.IPAddresses, ip)
 				}
@@ -297,6 +301,7 @@ func initProxy(args []string) (*model.Proxy, error) {
 	}
 
 	// No IP addresses provided, append 127.0.0.1 for ipv4 and ::1 for ipv6
+	// 没有提供IP地址，用127.0.0.1扩展ipv4以及::1扩展ipv6
 	if len(proxy.IPAddresses) == 0 {
 		proxy.IPAddresses = append(proxy.IPAddresses, localHostIPv4, localHostIPv6)
 	}
@@ -308,10 +313,12 @@ func initProxy(args []string) (*model.Proxy, error) {
 	proxy.DiscoverIPMode()
 
 	// Extract pod variables.
+	// 抽取pod变量
 	proxy.ID = proxyArgs.PodName + "." + proxyArgs.PodNamespace
 
 	// If not set, set a default based on platform - podNamespace.svc.cluster.local for
 	// K8S
+	// 如果没有设置，设置基于platform的默认值 - podNamespace.svc.cluster.local对于K8S
 	proxy.DNSDomain = getDNSDomain(proxyArgs.PodNamespace, proxyArgs.DNSDomain)
 	log.WithLabels("ips", proxy.IPAddresses, "type", proxy.Type, "id", proxy.ID, "domain", proxy.DNSDomain).Info("Proxy role")
 

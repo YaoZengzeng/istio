@@ -36,8 +36,10 @@ type Controller struct {
 }
 
 // NewController return an implementation of ConfigStoreController
+// NewController返回一个ConfigStoreController的实现
 // This is a client-side monitor that dispatches events as the changes are being
 // made on the client.
+// 这是一个客户端的监控，分发事件，当client发生变更时
 func NewController(cs model.ConfigStore) *Controller {
 	out := &Controller{
 		configStore: cs,

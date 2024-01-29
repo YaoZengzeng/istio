@@ -94,6 +94,7 @@ func SetupSecurityOptions(proxyConfig *meshconfig.ProxyConfig, secOpt *security.
 	o := secOpt
 
 	// If not set explicitly, default to the discovery address.
+	// 如果没有显式配置，默认使用discovery address
 	if o.CAEndpoint == "" {
 		o.CAEndpoint = proxyConfig.DiscoveryAddress
 		o.CAEndpointSAN = istiodSAN.Get()

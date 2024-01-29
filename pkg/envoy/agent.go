@@ -35,6 +35,7 @@ const errOutOfMemory = "signal: killed"
 var activeConnectionCheckDelay = 1 * time.Second
 
 // NewAgent creates a new proxy agent for the proxy start-up and clean-up functions.
+// NewAgent创建一个新的proxy agent，用于proxy的启动以及清理功能
 func NewAgent(proxy Proxy, terminationDrainDuration, minDrainDuration time.Duration, localhost string,
 	adminPort, statusPort, prometheusPort int, exitOnZeroActiveConnections bool,
 ) *Agent {
@@ -58,6 +59,7 @@ func NewAgent(proxy Proxy, terminationDrainDuration, minDrainDuration time.Durat
 }
 
 // Proxy defines command interface for a proxy
+// Proxy定义了一个proxy的command interface
 type Proxy interface {
 	// Run command with an abort channel
 	Run(<-chan error) error
