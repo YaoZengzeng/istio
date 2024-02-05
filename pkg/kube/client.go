@@ -201,6 +201,7 @@ type CLIClient interface {
 	DeleteYAMLFilesDryRun(namespace string, yamlFiles ...string) error
 
 	// CreatePerRPCCredentials creates a gRPC bearer token provider that can create (and renew!) Istio tokens
+	// CreatePerRPCCredentials创建一个gRPC bearer token的provider，可以创建（更新）Istio tokens
 	CreatePerRPCCredentials(ctx context.Context, tokenNamespace, tokenServiceAccount string, audiences []string,
 		expirationSeconds int64) (credentials.PerRPCCredentials, error)
 

@@ -68,6 +68,7 @@ func NewSecurityOptions(proxyConfig *meshconfig.ProxyConfig, stsPort int, tokenM
 	var tokenManager security.TokenManager
 	if stsPort > 0 || xdsAuthProvider.Get() != "" {
 		// tokenManager is gcp token manager when using the default token manager plugin.
+		// tokenManager是gcp token manager，当使用默认的token manager插件
 		tokenManager, err = tokenmanager.CreateTokenManager(tokenManagerPlugin,
 			tokenmanager.Config{CredFetcher: o.CredFetcher, TrustDomain: o.TrustDomain})
 	}
@@ -83,6 +84,7 @@ func SetupSecurityOptions(proxyConfig *meshconfig.ProxyConfig, secOpt *security.
 	switch jwtPolicy {
 	case jwt.PolicyThirdParty:
 		log.Info("JWT policy is third-party-jwt")
+		// 设置JWT policy
 		jwtPath = constants.TrustworthyJWTPath
 	case jwt.PolicyFirstParty:
 		log.Info("JWT policy is first-party-jwt")
@@ -101,6 +103,7 @@ func SetupSecurityOptions(proxyConfig *meshconfig.ProxyConfig, secOpt *security.
 	}
 
 	o.CredIdentityProvider = credIdentityProvider
+	// 构建cred fetcher
 	credFetcher, err := credentialfetcher.NewCredFetcher(credFetcherTypeEnv, o.TrustDomain, jwtPath, o.CredIdentityProvider)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create credential fetcher: %v", err)
@@ -126,6 +129,7 @@ func SetupSecurityOptions(proxyConfig *meshconfig.ProxyConfig, secOpt *security.
 	}
 
 	// Default the CA provider where possible
+	// 默认的CA provider，当可能的时候
 	if strings.Contains(o.CAEndpoint, "googleapis.com") {
 		o.CAProviderName = security.GoogleCAProvider
 	}

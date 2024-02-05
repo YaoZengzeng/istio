@@ -102,15 +102,18 @@ const (
 	GCE = "GoogleComputeEngine"
 
 	// JWT is a Credential fetcher type that reads from a JWT token file
+	// JWT是一个Credential fetcher的类型，从一个JWT token文件读取
 	JWT = "JWT"
 
 	// Mock is Credential fetcher type of mock plugin
 	Mock = "Mock" // testing only
 
 	// GoogleCAProvider uses the Google CA for workload certificate signing
+	// GoogleCAProvider使用google CA用于workload证书签名
 	GoogleCAProvider = "GoogleCA"
 
 	// GoogleCASProvider uses the Google certificate Authority Service to sign workload certificates
+	// GoogleCASProvider使用Google certificate Authority Service用于签名workload证书
 	GoogleCASProvider = "GoogleCAS"
 
 	// GkeWorkloadCertificateProvider uses the GKE workload certificates
@@ -160,12 +163,14 @@ type ImpersonatedIdentityContextKey struct{}
 // (as source of truth)
 type Options struct {
 	// CAEndpoint is the CA endpoint to which node agent sends CSR request.
+	// CAEndpoint是CA endpoint，node agents发送CSR请求
 	CAEndpoint string
 
 	// CAEndpointSAN overrides the ServerName extracted from CAEndpoint.
 	CAEndpointSAN string
 
 	// The CA provider name.
+	// CA provider的名字
 	CAProviderName string
 
 	// TrustDomain corresponds to the trust root of a system.
@@ -229,8 +234,11 @@ type Options struct {
 
 	// authentication provider specific plugins, will exchange the token
 	// For example exchange long lived refresh with access tokens.
+	// authentication provider特定的plugins，会交换token，例如交换long lived refresh的access tokens
 	// Used by the secret fetcher when signing CSRs.
+	// 被secret fetcher使用，当签名CSRs时
 	// Optional; if not present the token will be used directly
+	// 可选地，如果不存在，token会被直接使用
 	TokenExchanger TokenExchanger
 
 	// credential fetcher.
@@ -249,6 +257,7 @@ type Options struct {
 	XdsAuthProvider string
 
 	// Token manager for the token exchange of XDS
+	// Token manager用于XDS的token exchange
 	TokenManager TokenManager
 
 	// Cert signer info
@@ -270,11 +279,14 @@ type Options struct {
 }
 
 // TokenManager contains methods for generating token.
+// TokenManager包含方法用于生成token
 type TokenManager interface {
 	// GenerateToken takes STS request parameters and generates token. Returns
 	// StsResponseParameters in JSON.
+	// GenerateToken获取STS请求参数并且生成token，返回JSON格式的StsResponseParameters
 	GenerateToken(parameters StsRequestParameters) ([]byte, error)
 	// DumpTokenStatus dumps status of all generated tokens and returns status in JSON.
+	// DumpTokenStatus dump所有生成的token并且返回status，以JSON的格式
 	DumpTokenStatus() ([]byte, error)
 	// GetMetadata returns the metadata headers related to the token
 	GetMetadata(forCA bool, xdsAuthProvider, token string) (map[string]string, error)
@@ -334,8 +346,10 @@ type SecretManager interface {
 }
 
 // TokenExchanger provides common interfaces so that authentication providers could choose to implement their specific logic.
+// TokenExchanger提供公共的接口，这样authentication providers会选择实现特定的逻辑
 type TokenExchanger interface {
 	// ExchangeToken provides a common interface to exchange an existing token for a new one.
+	// ExchangeToken提供了一个公共的接口用于将一个已经存在的token交换为新的
 	ExchangeToken(serviceAccountToken string) (string, error)
 }
 
@@ -365,6 +379,7 @@ type CredFetcher interface {
 	GetIdentityProvider() string
 
 	// Stop releases resources and cleans up.
+	// 停止释放资源并且清理
 	Stop()
 }
 
@@ -410,6 +425,7 @@ func (ac *AuthContext) Header(header string) []string {
 }
 
 // Caller carries the identity and authentication source of a caller.
+// Caller携带id以及一个caller的authentication source
 type Caller struct {
 	AuthSource AuthSource
 	Identities []string
@@ -431,19 +447,23 @@ func (k KubernetesInfo) String() string {
 }
 
 // Authenticator determines the caller identity based on request context.
+// Authenticator决定caller的id，基于请求的上下文
 type Authenticator interface {
 	Authenticate(ctx AuthContext) (*Caller, error)
 	AuthenticatorType() string
 }
 
 // authenticationManager orchestrates all authenticators to perform authentication.
+// authenticationManager编排所有的authenticators来执行认证
 type authenticationManager struct {
 	Authenticators []Authenticator
 	// authFailMsgs contains list of messages that authenticator wants to record - mainly used for logging.
+	// authFailMsgs保存一系列的messages，authenticators想要记录
 	authFailMsgs []string
 }
 
 // Authenticate loops through all the configured Authenticators and returns if one of the authenticator succeeds.
+// Authenticate遍历所有配置的Authenticators，并且返回如果一个authenticator成功
 func (am *authenticationManager) authenticate(ctx context.Context) *Caller {
 	req := AuthContext{GrpcContext: ctx}
 	for _, authn := range am.Authenticators {

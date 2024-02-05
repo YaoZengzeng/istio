@@ -31,6 +31,7 @@ import (
 // TokenProvider is a grpc PerRPCCredentials that can be used to attach a JWT token to each gRPC call.
 // TokenProvider是一个grpc PerRPCCredentails，可以用于为每个gRPC call关联一个JWT token
 // TokenProvider can be used for XDS, which may involve token exchange through STS.
+// TokenProvider可以用于XDS，可能会包含通过STS的token exchange
 type TokenProvider struct {
 	opts *security.Options
 	// TokenProvider can be used for XDS. Because CA is often used with
@@ -51,9 +52,11 @@ func NewCATokenProvider(opts *security.Options) *TokenProvider {
 }
 
 func NewXDSTokenProvider(opts *security.Options) *TokenProvider {
+	// 对于XDS, forCA为false
 	return &TokenProvider{opts, false}
 }
 
+// grpc所需接口
 func (t *TokenProvider) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	if t == nil {
 		return nil, nil
@@ -75,6 +78,7 @@ func (t *TokenProvider) GetRequestMetadata(ctx context.Context, uri ...string) (
 
 // Allow the token provider to be used regardless of transport security; callers can determine whether
 // this is safe themselves.
+// grpc所需接口
 func (t *TokenProvider) RequireTransportSecurity() bool {
 	return false
 }
@@ -95,6 +99,7 @@ func (t *TokenProvider) GetToken() (string, error) {
 	}
 
 	// Regardless of where the token came from, we (optionally) can exchange the token for a different
+	// 无论token来自哪里，我们（可选地）可以交换token
 	if t.forCA {
 		return t.exchangeCAToken(token)
 	}
@@ -103,6 +108,7 @@ func (t *TokenProvider) GetToken() (string, error) {
 
 // exchangeCAToken exchanges the provided token using TokenExchanger, if configured. If not, the
 // original token is returned.
+// exchangeCAToken使用TokenExchangeer交换系统的token，如果配置了的话，如果没有，则返回原始的token
 func (t *TokenProvider) exchangeCAToken(token string) (string, error) {
 	if t.opts.TokenExchanger == nil {
 		return token, nil
@@ -116,6 +122,7 @@ func (t *TokenProvider) exchangeXDSToken(token string) (string, error) {
 	}
 
 	// For XDS flow, the token exchange is different from that of the CA flow.
+	// 对于XDS flow，token exchange和CA flow是不同的
 	if t.opts.TokenManager == nil {
 		return "", fmt.Errorf("XDS token exchange is enabled but token manager is nil")
 	}

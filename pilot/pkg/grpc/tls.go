@@ -49,6 +49,7 @@ func getTLSDialOption(opts *TLSOptions) (grpc.DialOption, error) {
 		return nil, err
 	}
 	config := tls.Config{
+		// 获取客户端的证书
 		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
 			var certificate tls.Certificate
 			key, cert := opts.Key, opts.Cert
@@ -77,6 +78,7 @@ func getTLSDialOption(opts *TLSOptions) (grpc.DialOption, error) {
 		MinVersion: tls.VersionTLS12,
 	}
 
+	// 分割server address
 	if host, _, err := net.SplitHostPort(opts.ServerAddress); err == nil {
 		config.ServerName = host
 	}
@@ -85,10 +87,13 @@ func getTLSDialOption(opts *TLSOptions) (grpc.DialOption, error) {
 	if strings.Contains(config.ServerName, "localhost") {
 		config.ServerName = "istiod.istio-system.svc"
 	}
+	// 如果配置了SAN
 	if opts.SAN != "" {
 		config.ServerName = opts.SAN
 	}
+	// 构建transport creds
 	transportCreds := credentials.NewTLS(&config)
+	// grpc option，有transport credentials
 	return grpc.WithTransportCredentials(transportCreds), nil
 }
 

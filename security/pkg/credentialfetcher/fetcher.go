@@ -28,6 +28,7 @@ func NewCredFetcher(credtype, trustdomain, jwtPath, identityProvider string) (se
 		return plugin.CreateGCEPlugin(trustdomain, jwtPath, identityProvider), nil
 	case security.JWT, "":
 		// If unset, also default to JWT for backwards compatibility
+		// 如果未设置，也是默认为JWT，为了后向兼容
 		if jwtPath == "" {
 			return nil, nil // no cred fetcher - using certificates only
 		}

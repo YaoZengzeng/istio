@@ -34,6 +34,7 @@ import (
 
 const (
 	// defaultExpirationSeconds is how long-lived a token to request (an hour)
+	// defaultExpirationSeconds为一个请求的token存活的时间
 	defaultExpirationSeconds = 60 * 60
 )
 

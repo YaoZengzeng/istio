@@ -75,10 +75,13 @@ const (
 
 const (
 	// MetadataClientCertKey is ISTIO_META env var used for client key.
+	// MetadataClientCertKey是ISTIO_META环境变量，用于作为client key
 	MetadataClientCertKey = "ISTIO_META_TLS_CLIENT_KEY"
 	// MetadataClientCertChain is ISTIO_META env var used for client cert chain.
+	// MetadataClientCertChain是ISTIO_META环境变量，用于client cert chain
 	MetadataClientCertChain = "ISTIO_META_TLS_CLIENT_CERT_CHAIN"
 	// MetadataClientRootCert is ISTIO_META env var used for client root cert.
+	// MetadataClientRootCert是ISTIO_META环境变量，用于client root cert
 	MetadataClientRootCert = "ISTIO_META_TLS_CLIENT_ROOT_CERT"
 )
 

@@ -369,6 +369,7 @@ var (
 		"If this is set to true, dangerous admin endpoints will be exposed on the debug interface. Not recommended for production.").Get()
 
 	XDSAuth = env.Register("XDS_AUTH", true,
+		// 如果为true，会认证XDS clients
 		"If true, will authenticate XDS clients.").Get()
 
 	EnableXDSIdentityCheck = env.Register(

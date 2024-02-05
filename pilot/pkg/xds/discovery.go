@@ -123,6 +123,7 @@ type DiscoveryServer struct {
 	StatusReporter DistributionStatusCache
 
 	// Authenticators for XDS requests. Should be same/subset of the CA authenticators.
+	// 对于XDS请求的Authenticators，应该是CA authenticators相同/子集
 	Authenticators []security.Authenticator
 
 	// StatusGen is notified of connect/disconnect/nack on all connections

@@ -41,6 +41,7 @@ var (
 	serviceAccountVar = env.Register("SERVICE_ACCOUNT", "", "Name of service account")
 	clusterIDVar      = env.Register("ISTIO_META_CLUSTER_ID", "", "")
 	// Provider for XDS auth, e.g., gcp. By default, it is empty, meaning no auth provider.
+	// 对于XDS auth的Provider，默认为空，意味着没有auth provider
 	xdsAuthProvider = env.Register("XDS_AUTH_PROVIDER", "", "Provider for XDS auth")
 
 	jwtPolicy = env.Register("JWT_POLICY", jwt.PolicyThirdParty,
@@ -87,8 +88,10 @@ var (
 	eccCurvEnv          = env.Register("ECC_CURVE", "P256", "The elliptic curve to use when ECC_SIGNATURE_ALGORITHM is set to ECDSA").Get()
 	fileMountedCertsEnv = env.Register("FILE_MOUNTED_CERTS", false, "").Get()
 	credFetcherTypeEnv  = env.Register("CREDENTIAL_FETCHER_TYPE", security.JWT,
+		// credential fetcher的类型，当前支持的类型包括GoogleComputeEngine
 		"The type of the credential fetcher. Currently supported types include GoogleComputeEngine").Get()
 	credIdentityProvider = env.Register("CREDENTIAL_IDENTITY_PROVIDER", "GoogleComputeEngine",
+		// identity providr用于credential，当前默认支持的identity provider为GoogleComputeEngine
 		"The identity provider for credential. Currently default supported identity provider is GoogleComputeEngine").Get()
 	proxyXDSDebugViaAgent = env.Register("PROXY_XDS_DEBUG_VIA_AGENT", true,
 		"If set to true, the agent will listen on tap port and offer pilot's XDS istio.io/debug debug API there.").Get()
@@ -148,7 +151,9 @@ var (
 		"The cert signer info for workload cert")
 
 	istiodSAN = env.Register("ISTIOD_SAN", "",
+		// 覆盖ServerName用于校验Istiod证书
 		"Override the ServerName used to validate Istiod certificate. "+
+			// 可以作为为VM设置/etc/hosts的另外一种方法 - 服务发现地址可以为IP:port
 			"Can be used as an alternative to setting /etc/hosts for VMs - discovery address will be an IP:port")
 
 	minimumDrainDurationEnv = env.Register("MINIMUM_DRAIN_DURATION",
