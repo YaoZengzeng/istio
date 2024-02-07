@@ -30,6 +30,7 @@ import (
 
 const (
 	// TypeURLConnect generate connect event.
+	// TypeURLConnect生成connect event
 	TypeURLConnect = "istio.io/connect"
 
 	// TypeURLDisconnect generate disconnect event.

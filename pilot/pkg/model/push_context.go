@@ -254,6 +254,7 @@ type PushContext struct {
 	PushVersion string
 
 	// LedgerVersion is the version of the configuration ledger
+	// LedgerVersion是configuration ledger的版本
 	LedgerVersion string
 
 	// JwtKeyResolver holds a reference to the JWT key resolver instance.
@@ -341,12 +342,16 @@ type XDSUpdater interface {
 // 它用于发送updates到config update debouncer并且传递给PushQueue
 type PushRequest struct {
 	// Full determines whether a full push is required or not. If false, an incremental update will be sent.
+	// Full决定是否需要一个full push，如果为false，则会发送一个incremental update
 	// Incremental pushes:
 	// * Do not recompute the push context
+	// * 不要重新计算push context
 	// * Do not recompute proxy state (such as ServiceInstances)
+	// * 不要重新计算proxy state
 	// * Are not reported in standard metrics such as push time
 	// As a result, configuration updates should never be incremental. Generally, only EDS will set this, but
 	// in the future SDS will as well.
+	// 作为结果，configuration udpates不应该为增量的，一般只有EDS会设置，但是在未来SDS也会
 	Full bool
 
 	// ConfigsUpdated keeps track of configs that have changed.
@@ -358,6 +363,7 @@ type PushRequest struct {
 
 	// Push stores the push context to use for the update. This may initially be nil, as we will
 	// debounce changes before a PushContext is eventually created.
+	// Push存储push context用于更新，这可能初始的时候是nil，因为我们会对changes去抖，在一个PushContext被最终创造之前
 	Push *PushContext
 
 	// Start represents the time a push was started. This represents the time of adding to the PushQueue.

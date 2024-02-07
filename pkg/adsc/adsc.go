@@ -912,6 +912,7 @@ func (a *ADSC) handleCDS(ll []*cluster.Cluster) {
 
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
+	// 设置eds clusters和clusters
 	a.edsClusters = edscds
 	a.clusters = cds
 
@@ -1070,7 +1071,9 @@ func (a *ADSC) WaitSingle(to time.Duration, want string, reject string) error {
 }
 
 // Wait for an updates for all the specified types
+// Wait等待所有指定类型的更新
 // If updates is empty, this will wait for any update
+// 如果updates为空，它会等待任何更新
 func (a *ADSC) Wait(to time.Duration, updates ...string) ([]string, error) {
 	t := time.NewTimer(to)
 	want := sets.New[string](updates...)

@@ -69,6 +69,7 @@ func TestStatusEvents(t *testing.T) {
 	}
 
 	// Create a second connection - we should get an event.
+	// 创建第二个连接 - 我们应该获取一个event
 	ads2 := s.Connect(nil, nil, nil)
 	defer ads2.Close()
 
@@ -88,11 +89,13 @@ func TestAdsReconnectAfterRestart(t *testing.T) {
 	ads := s.ConnectADS().WithType(v3.EndpointType)
 	res := ads.RequestResponseAck(t, &discovery.DiscoveryRequest{ResourceNames: []string{"fake-cluster"}})
 	// Close the connection and reconnect
+	// 关闭连接并且重新连接
 	ads.Cleanup()
 
 	ads = s.ConnectADS().WithType(v3.EndpointType)
 
 	// Reconnect with the same resources
+	// 用同样的resources重连
 	ads.RequestResponseAck(t, &discovery.DiscoveryRequest{
 		ResourceNames: []string{"fake-cluster"},
 		ResponseNonce: res.Nonce,
@@ -102,36 +105,44 @@ func TestAdsReconnectAfterRestart(t *testing.T) {
 
 // TestAdsReconnectRequests provides a regression test for a case where Envoy sends an EDS request as the first
 // request on a connection.
+// TestAdsReconnectRequests提供一个回归测试，当Envoy发送一个EDS请求，作为一个连接的第一个请求
 func TestAdsReconnectRequests(t *testing.T) {
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 
 	ads := s.ConnectADS()
 	// Send normal CDS and EDS requests
+	// 发送正常的CDS和EDS请求
 	_ = ads.RequestResponseAck(t, &discovery.DiscoveryRequest{TypeUrl: v3.ClusterType})
 	eres := ads.RequestResponseAck(t, &discovery.DiscoveryRequest{TypeUrl: v3.EndpointType, ResourceNames: []string{"my-resource"}})
 
 	// A push should get a response for both
+	// 一个push应该获取两者的response
 	s.Discovery.ConfigUpdate(&model.PushRequest{Full: true})
 	ads.ExpectResponse(t)
 	ads.ExpectResponse(t)
 	// Close the connection and reconnect
+	// 关闭连接并且重新连接
 	ads.Cleanup()
 	ads = s.ConnectADS()
 
 	// Send a request for EDS version 1 - we do not explicitly ACK this.
+	// 发送一个request，对于EDS version 1 - 我们不要显式ACK它
 	ads.Request(t, &discovery.DiscoveryRequest{
 		TypeUrl:       v3.EndpointType,
 		ResourceNames: []string{"my-resource"},
 		ResponseNonce: eres.Nonce,
 	})
 	// We should get a response
+	// 我们应该获取一个reponse
 	eres3 := ads.ExpectResponse(t)
 	// Now send our CDS request
+	// 现在发送我们的CDS请求
 	ads.RequestResponseAck(t, &discovery.DiscoveryRequest{
 		TypeUrl:       v3.ClusterType,
 		ResponseNonce: eres.Nonce,
 	})
 	// Send another request. This is essentially an ACK of eres3. However, envoy expects a response
+	// 发送另一个请求，本质上这是eres3的一个ACK，然而，envoy期望一个response
 	ads.RequestResponseAck(t, &discovery.DiscoveryRequest{
 		TypeUrl:       v3.EndpointType,
 		ResourceNames: []string{"my-resource"},
@@ -150,28 +161,34 @@ func TestAdsUnsubscribe(t *testing.T) {
 		ResponseNonce: res.Nonce,
 		VersionInfo:   res.VersionInfo,
 	})
+	// 期望没有reponse
 	ads.ExpectNoResponse(t)
 }
 
 // Regression for envoy restart and overlapping connections
+// 回归对于envoy的重启以及overlapping连接
 func TestAdsReconnect(t *testing.T) {
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 	ads := s.ConnectADS().WithType(v3.ClusterType)
 	ads.RequestResponseAck(t, nil)
 
 	// envoy restarts and reconnects
+	// envoy重启并且重新丽娜姐
 	ads2 := s.ConnectADS().WithType(v3.ClusterType)
 	ads2.RequestResponseAck(t, nil)
 
 	// closes old process
+	// 清理老的程序
 	ads.Cleanup()
 
 	// event happens, expect push to the remaining connection
+	// 时间发生，期望push到剩余的连接
 	xds.AdsPushAll(s.Discovery)
 	ads2.ExpectResponse(t)
 }
 
 // Regression for connection with a bad ID
+// 回归，有着bad ID的连接
 func TestAdsBadId(t *testing.T) {
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 	ads := s.ConnectADS().WithID("").WithType(v3.ClusterType)
@@ -183,12 +200,16 @@ func TestVersionNonce(t *testing.T) {
 	s := xds.NewFakeDiscoveryServer(t, xds.FakeOptions{})
 	ads := s.ConnectADS().WithType(v3.ClusterType)
 	resp1 := ads.RequestResponseAck(t, nil)
+	// 全量推送
 	fullPush(s)
+	// 期待获得response
 	resp2 := ads.ExpectResponse(t)
 	if !(resp1.VersionInfo < resp2.VersionInfo) {
+		// version应该增加
 		t.Fatalf("version should be incrementing: %v -> %v", resp1.VersionInfo, resp2.VersionInfo)
 	}
 	if resp1.Nonce == resp2.Nonce {
+		// nonce应该改变
 		t.Fatalf("nonce should change %v -> %v", resp1.Nonce, resp2.Nonce)
 	}
 }
@@ -857,6 +878,7 @@ func TestEnvoyRDSProtocolError(t *testing.T) {
 	res := ads.ExpectResponse(t)
 
 	// send empty response and validate no response is returned.
+	// 发送空的response并且校验没有response返回
 	ads.Request(t, &discovery.DiscoveryRequest{
 		ResourceNames: nil,
 		VersionInfo:   res.VersionInfo,
@@ -865,6 +887,7 @@ func TestEnvoyRDSProtocolError(t *testing.T) {
 	ads.ExpectNoResponse(t)
 
 	// Refresh routes
+	// 刷新routes
 	ads.Request(t, &discovery.DiscoveryRequest{
 		ResourceNames: []string{routeA, routeB},
 		VersionInfo:   res.VersionInfo,

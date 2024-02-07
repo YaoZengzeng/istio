@@ -87,6 +87,7 @@ type AdsTest struct {
 
 func (a *AdsTest) Cleanup() {
 	// Place in once to avoid race when two callers attempt to cleanup
+	// 放到once里面来避免race，当两个callers试着清理
 	a.cancelOnce.Do(func() {
 		a.cancelContext()
 		_ = a.client.CloseSend()
@@ -122,6 +123,7 @@ func (a *AdsTest) adsReceiveChannel() {
 }
 
 // DrainResponses reads all responses, but does nothing to them
+// DrainResponses读取所有的reponses，但是对他们什么都不做
 func (a *AdsTest) DrainResponses() {
 	for {
 		select {
@@ -134,6 +136,7 @@ func (a *AdsTest) DrainResponses() {
 }
 
 // ExpectResponse waits until a response is received and returns it
+// ExpectResponse等待，直到收到一个reponse并且返回
 func (a *AdsTest) ExpectResponse(t test.Failer) *discovery.DiscoveryResponse {
 	t.Helper()
 	select {
@@ -163,6 +166,7 @@ func (a *AdsTest) ExpectError(t test.Failer) error {
 }
 
 // ExpectNoResponse waits a short period of time and ensures no response is received
+// ExpectNoResponse等待一小段时间并且确保没有获得response
 func (a *AdsTest) ExpectNoResponse(t test.Failer) {
 	t.Helper()
 	select {
@@ -202,11 +206,13 @@ func (a *AdsTest) Request(t test.Failer, req *discovery.DiscoveryRequest) {
 // RequestResponseAck做一个完整的XDS exchagne：发送一个请求，获取一个response，并且ACK response
 func (a *AdsTest) RequestResponseAck(t test.Failer, req *discovery.DiscoveryRequest) *discovery.DiscoveryResponse {
 	t.Helper()
+	// 填充request
 	req = a.fillInRequestDefaults(req)
 	a.Request(t, req)
 	resp := a.ExpectResponse(t)
 	req.ResponseNonce = resp.Nonce
 	req.VersionInfo = resp.VersionInfo
+	// 再次请求
 	a.Request(t, req)
 	return resp
 }

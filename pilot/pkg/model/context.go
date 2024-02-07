@@ -382,6 +382,7 @@ type Proxy struct {
 	XdsResourceGenerator XdsResourceGenerator
 
 	// WatchedResources contains the list of watched resources for the proxy, keyed by the DiscoveryRequest TypeUrl.
+	// WatchedResources包含一系列watched resources，对于proxy，以DiscoveryRequest TypeUrl作为key
 	WatchedResources map[string]*WatchedResource
 
 	// XdsNode is the xDS node identifier
@@ -404,37 +405,51 @@ type Proxy struct {
 }
 
 // WatchedResource tracks an active DiscoveryRequest subscription.
+// WatchedResource追踪一个active DiscoveryRequest的订阅
 type WatchedResource struct {
 	// TypeUrl is copied from the DiscoveryRequest.TypeUrl that initiated watching this resource.
+	// TypeUrl拷贝自DiscoveryRequest.TypeUrl，初始化监听这个资源
 	// nolint
 	TypeUrl string
 
 	// ResourceNames tracks the list of resources that are actively watched.
+	// ResourceNames追踪一系列被actively watched资源
 	// For LDS and CDS, all resources of the TypeUrl type are watched if it is empty.
+	// 对于LDS和CDS，所有TypeUrl类型的资源都会被监听，如果它为空
 	// For endpoints the resource names will have list of clusters and for clusters it is empty.
+	// 对于endpoints，resource names会有一系列的clusters，对于clusters，它为空
 	// For Delta Xds, all resources of the TypeUrl that a client has subscribed to.
+	// 对于Delta Xds，所有TypeUrl类型的资源，一个client已经订阅
 	ResourceNames []string
 
 	// Wildcard indicates the subscription is a wildcard subscription. This only applies to types that
 	// allow both wildcard and non-wildcard subscriptions.
+	// Wildcard表明订阅是一个wildcard订阅，这只应用到同时允许wildcard和非wildcard订阅的类型
 	Wildcard bool
 
 	// NonceSent is the nonce sent in the last sent response. If it is equal with NonceAcked, the
 	// last message has been processed. If empty: we never sent a message of this type.
+	// NonceSent是上一个发送的response的nonce，如果它等于NonceAcked，最后一个message被处理，如果为空，我们从未
+	// 发送这个类型的message
 	NonceSent string
 
 	// NonceAcked is the last acked message.
+	// NonceAcked是最后acked message
 	NonceAcked string
 
 	// AlwaysRespond, if true, will ensure that even when a request would otherwise be treated as an
 	// ACK, it will be responded to. This typically happens when a proxy reconnects to another instance of
 	// Istiod. In that case, Envoy expects us to respond to EDS/RDS/SDS requests to finish warming of
 	// clusters/listeners.
+	// AlwaysRespond，如果为true，会确保即使一个request被认为是一个ACK，它会被回复，这通常会发生，当一个proxy连接到另一个Istiod的实例
+	// 这种情况下，Envoy期望我们回复EDS/RDS/SDS请求来结束对于clusters/listeners的warming
 	// Typically, this should be set to 'false' after response; keeping it true would likely result in an endless loop.
 	AlwaysRespond bool
 
 	// LastResources tracks the contents of the last push.
+	// LastResources追踪上一次push的内容
 	// This field is extremely expensive to maintain and is typically disabled
+	// 这个字段的维持非常昂贵并且通常被禁止
 	LastResources Resources
 }
 

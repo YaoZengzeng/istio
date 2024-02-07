@@ -132,6 +132,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, w *model.WatchedResource, req
 	}
 	if err != nil || res == nil {
 		// If we have nothing to send, report that we got an ACK for this version.
+		// 如果我们没有东西要发送，报告我们获取了这个版本的ACK
 		if s.StatusReporter != nil {
 			s.StatusReporter.RegisterEvent(con.conID, w.TypeUrl, req.Push.LedgerVersion)
 		}
@@ -154,8 +155,9 @@ func (s *DiscoveryServer) pushXds(con *Connection, w *model.WatchedResource, req
 		TypeUrl:      w.TypeUrl,
 		// TODO: send different version for incremental eds
 		VersionInfo: req.Push.PushVersion,
-		Nonce:       nonce(req.Push.LedgerVersion),
-		Resources:   model.ResourcesToAny(res),
+		// 设置Nonce
+		Nonce:     nonce(req.Push.LedgerVersion),
+		Resources: model.ResourcesToAny(res),
 	}
 
 	configSize := ResourceSize(res)
@@ -166,6 +168,7 @@ func (s *DiscoveryServer) pushXds(con *Connection, w *model.WatchedResource, req
 		ptype = "PUSH INC"
 	}
 
+	// 发送response
 	if err := con.send(resp); err != nil {
 		if recordSendError(w.TypeUrl, err) {
 			log.Warnf("%s: Send failure for node:%s resources:%d size:%s%s: %v",

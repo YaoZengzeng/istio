@@ -434,11 +434,14 @@ func (f *FakeDiscoveryServer) ConnectUnstarted(p *model.Proxy, watch []string) *
 // Connect starts an ADS connection to the server using adsc. It will automatically be cleaned up when the test ends
 // watch can be configured to determine the resources to watch initially, and wait can be configured to determine what
 // resources we should initially wait for.
+// Connect开始一个到server的ADS连接，使用adsc，它会自动清理，当test结束的时候，watch可以被配置，决定开始的时候watch的资源，并且wait可以配置
+// 决定什么资源我们一开始等待
 func (f *FakeDiscoveryServer) Connect(p *model.Proxy, watch []string, wait []string) *adsc.ADSC {
 	f.t.Helper()
 	if watch == nil {
 		watch = []string{v3.ClusterType}
 	}
+	// 构建ads连接
 	adscConn := f.ConnectUnstarted(p, watch)
 	if err := adscConn.Run(); err != nil {
 		f.t.Fatalf("ADSC: failed running: %v", err)

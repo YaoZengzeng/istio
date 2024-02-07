@@ -217,6 +217,7 @@ func (f *ConfigGenTest) Run() {
 
 // SetupProxy initializes a proxy for the current environment. This should generally be used when creating
 // any proxy. For example, `p := SetupProxy(&model.Proxy{...})`.
+// SetupProxy初始一个proxy，对于当前的环境，这应该在创建任何的proxy的时候使用，例如，`p := SetupProxy(&model.Proxy{...})`
 func (f *ConfigGenTest) SetupProxy(p *model.Proxy) *model.Proxy {
 	// Setup defaults
 	if p == nil {

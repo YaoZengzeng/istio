@@ -87,6 +87,7 @@ type Connection struct {
 	proxy *model.Proxy
 
 	// Sending on this channel results in a push.
+	// 在这个channel发送导致一个push
 	pushChannel chan *Event
 
 	// Both ADS and SDS streams implement this interface
@@ -133,11 +134,13 @@ func (conn *Connection) Stop() {
 }
 
 // Event represents a config or registry event that results in a push.
+// Event代表一个config或者registry event，导致一个push
 type Event struct {
 	// pushRequest PushRequest to use for the push.
 	pushRequest *model.PushRequest
 
 	// function to call once a push is finished. This must be called or future changes may be blocked.
+	// 一旦push完成调用的函数，这必须被调用，否则未来的changes可能被阻塞
 	done func()
 }
 
@@ -224,6 +227,7 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 	}
 
 	// For now, don't let xDS piggyback debug requests start watchers.
+	// 现在，不要让xDS piggybakc debug请求，开始watchers
 	if strings.HasPrefix(req.TypeUrl, v3.DebugType) {
 		return s.pushXds(con,
 			&model.WatchedResource{TypeUrl: req.TypeUrl, ResourceNames: req.ResourceNames},
@@ -232,8 +236,10 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 	if s.StatusReporter != nil {
 		s.StatusReporter.RegisterEvent(con.conID, req.TypeUrl, req.ResponseNonce)
 	}
+	// 是否应该回复
 	shouldRespond, delta := s.shouldRespond(con, req)
 	if !shouldRespond {
+		// 不response则直接返回
 		return nil
 	}
 
@@ -250,9 +256,12 @@ func (s *DiscoveryServer) processRequest(req *discovery.DiscoveryRequest, con *C
 	}
 
 	// SidecarScope for the proxy may not have been updated based on this pushContext.
+	// SidecarScope对于proxy可能没有基于这个pushContext更新
 	// It can happen when `processRequest` comes after push context has been updated(s.initPushContext),
+	// 这可能发生，在`processRequest`在push context已经被更新之后发生
 	// but proxy's SidecarScope has been updated(s.computeProxyState -> SetSidecarScope) due to optimizations that skip sidecar scope
 	// computation.
+	// 但是proxy的SidecarScope已经被更新（s.computeProxyState -> SetSidecarScope），因为优化，跳过了sidecar scope的计算
 	if con.proxy.SidecarScope != nil && con.proxy.SidecarScope.Version != request.Push.PushVersion {
 		s.computeProxyState(con.proxy, request)
 	}
@@ -339,6 +348,8 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 		// Go select{} statements are not ordered; the same channel can be chosen many times.
 		// For requests, these are higher priority (client may be blocked on startup until these are done)
 		// and often very cheap to handle (simple ACK), so we check it first.
+		// Go select{}声明不是有序的；同样的channel可以被选择多次，对于requests，有高优先级（client可能在启动的时候被阻塞，直到他们完成）
+		//并且通常处理起来非常便宜（简单的ACK），因此我们首先检查
 		select {
 		case req, ok := <-con.reqChan:
 			if ok {
@@ -358,6 +369,9 @@ func (s *DiscoveryServer) Stream(stream DiscoveryStream) error {
 		// amount of incoming requests, we may still send some pushes, as we do not `continue` above;
 		// however, requests will be handled ~2x as much as pushes. This ensures a wave of requests
 		// cannot completely starve pushes. However, this scenario is unlikely.
+		// 如果不是已经有一个request，轮询requests并且推送，注意：如果我们有大量的incoming requests，我们可能
+		// 依然会发送一些pushes，因为我们不会"continue"上面，然而requests会是pushes处理的两倍，这确保一波请求不会
+		// 完全让pushes饥饿，然而这个场景不太可能
 		select {
 		case req, ok := <-con.reqChan:
 			if ok {
@@ -384,12 +398,15 @@ var emptyResourceDelta = model.ResourceDelta{}
 
 // shouldRespond determines whether this request needs to be responded back. It applies the ack/nack rules as per xds protocol
 // using WatchedResource for previous state and discovery request for the current state.
+// shouldRespond决定是否这个requests应该回复，它应用ack/nack规则，对于每个xds协议，使用WatchedResource，对于之前的state以及discovery requests
+// 对于当前的状态
 func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.DiscoveryRequest) (bool, model.ResourceDelta) {
 	stype := v3.GetShortType(request.TypeUrl)
 
 	// If there is an error in request that means previous response is erroneous.
 	// We do not have to respond in that case. In this case request's version info
 	// will be different from the version sent. But it is fragile to rely on that.
+	// 如果request中有一个error，这意味着之前的response有错误
 	if request.ErrorDetail != nil {
 		errCode := codes.Code(request.ErrorDetail.Code)
 		log.Warnf("ADS:%s: ACK ERROR %s %s:%s", stype, con.conID, errCode.String(), request.ErrorDetail.GetMessage())
@@ -409,17 +426,22 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	}
 
 	con.proxy.RLock()
+	// 判断之前是不是有请求资源
 	previousInfo := con.proxy.WatchedResources[request.TypeUrl]
 	con.proxy.RUnlock()
 
 	// This can happen in two cases:
+	// 这可能在两种情况发生：
 	// 1. When Envoy starts for the first time, it sends an initial Discovery request to Istiod.
+	// 1. 当Envoy第一次启动的时候，它发送一个初始的Discovery request到Istiod
 	// 2. When Envoy reconnects to a new Istiod that does not have information about this typeUrl
+	// 2. 当Envoy重新连接到一个新的Istiod，没有关于这个typeUrl的信息，例如空的response nonce
 	// i.e. non empty response nonce.
 	// We should always respond with the current resource names.
 	if request.ResponseNonce == "" || previousInfo == nil {
 		log.Debugf("ADS:%s: INIT/RECONNECT %s %s %s", stype, con.conID, request.VersionInfo, request.ResponseNonce)
 		con.proxy.Lock()
+		// 添加WatchedResources
 		con.proxy.WatchedResources[request.TypeUrl] = &model.WatchedResource{TypeUrl: request.TypeUrl, ResourceNames: request.ResourceNames}
 		// For all EDS requests that we have already responded with in the same stream let us
 		// force the response. It is important to respond to those requests for Envoy to finish
@@ -441,8 +463,11 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	}
 
 	// If there is mismatch in the nonce, that is a case of expired/stale nonce.
+	// 如果nonce有不匹配，这是一个过期的nonce的情况
 	// A nonce becomes stale following a newer nonce being sent to Envoy.
+	// 一个nonce可能变为stale，跟随一个新的nonce被发送给Envoy
 	// previousInfo.NonceSent can be empty if we previously had shouldRespond=true but didn't send any resources.
+	// previousInfo.NonceSent可以为空，如果我们之前有 shouldRespond=true，但是没有发送任何的resources
 	if request.ResponseNonce != previousInfo.NonceSent {
 		if features.EnableUnsafeAssertions && previousInfo.NonceSent == "" {
 			// Assert we do not end up in an invalid state
@@ -456,6 +481,7 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	}
 
 	// If it comes here, that means nonce match.
+	// 到了这里，意味着nonce匹配
 	con.proxy.Lock()
 	previousResources := con.proxy.WatchedResources[request.TypeUrl].ResourceNames
 	con.proxy.WatchedResources[request.TypeUrl].NonceAcked = request.ResponseNonce
@@ -465,7 +491,9 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	con.proxy.Unlock()
 
 	// Envoy can send two DiscoveryRequests with same version and nonce.
+	// Envoy可以发送两个DiscoveryRequests，有着同样的version和nonce
 	// when it detects a new resource. We should respond if they change.
+	// 当检测到一个新的resource，我们应该回复，如果他们改变了的话
 	prev := sets.New(previousResources...)
 	cur := sets.New(request.ResourceNames...)
 	removed := prev.Difference(cur)
@@ -474,6 +502,7 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 	if len(removed) == 0 && len(added) == 0 {
 		// We should always respond "alwaysRespond" marked requests to let Envoy finish warming
 		// even though Nonce match and it looks like an ACK.
+		// 我们应该总是回复标记了"alwaysRespond"的请求，让Envoy结束warming，即使Nonce匹配并且它看着像一个ACK
 		if alwaysRespond {
 			log.Infof("ADS:%s: FORCE RESPONSE %s for warming.", stype, con.conID)
 			return true, emptyResourceDelta
@@ -496,11 +525,15 @@ func (s *DiscoveryServer) shouldRespond(con *Connection, request *discovery.Disc
 // unsubscribe from RDS. NOTE: This may happen as part of the initial request. If
 // there are no routes needed, Envoy will send an empty request, which this
 // properly handles by not adding it to the watched resource list.
+// shouldUnsubscribe检查是否我们应该unsubscribe，当Envoy不再监听的时候完成，例如，我们移除所有的RDS引用
+// 我们会unsubscribe RDS，注意：这可能作为initial request的一部分发生，入股不需要routes，Envoy
+// 会发送一个空的request，这能被恰当地处理，同步不将它加入到watched resource list
 func shouldUnsubscribe(request *discovery.DiscoveryRequest) bool {
 	return len(request.ResourceNames) == 0 && !isWildcardTypeURL(request.TypeUrl)
 }
 
 // isWildcardTypeURL checks whether a given type is a wildcard type
+// isWildcardTypeURL检查是否给定的类型是一个wildcard类型
 // https://www.envoyproxy.io/docs/envoy/latest/api-docs/xds_protocol#how-the-client-specifies-what-resources-to-return
 // If the list of resource names becomes empty, that means that the client is no
 // longer interested in any resources of the specified type. For Listener and
@@ -514,9 +547,11 @@ func isWildcardTypeURL(typeURL string) bool {
 		return false
 	case v3.ClusterType, v3.ListenerType:
 		// By XDS spec, these are wildcard
+		// 根据XDS spec，这些是wildcard
 		return true
 	default:
 		// All of our internal types use wildcard semantics
+		// 所有内部的类型都使用wildcard
 		return true
 	}
 }
@@ -798,11 +833,13 @@ func (s *DiscoveryServer) DeltaAggregatedResources(stream discovery.AggregatedDi
 }
 
 // Compute and send the new configuration for a connection.
+// 计算并且发送新的配置，对于一个连接
 func (s *DiscoveryServer) pushConnection(con *Connection, pushEv *Event) error {
 	pushRequest := pushEv.pushRequest
 
 	if pushRequest.Full {
 		// Update Proxy with current information.
+		// 用当前的信息更新Proxy
 		s.computeProxyState(con.proxy, pushRequest)
 	}
 
@@ -816,7 +853,9 @@ func (s *DiscoveryServer) pushConnection(con *Connection, pushEv *Event) error {
 	}
 
 	// Send pushes to all generators
+	// 发送pushes到所有的generators
 	// Each Generator is responsible for determining if the push event requires a push
+	// 每个generator负责决定是否push event需要一个push
 	wrl, ignoreEvents := con.pushDetails()
 	for _, w := range wrl {
 		if err := s.pushXds(con, w, pushRequest); err != nil {
