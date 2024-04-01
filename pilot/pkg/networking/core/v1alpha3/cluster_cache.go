@@ -33,6 +33,7 @@ var (
 )
 
 // clusterCache includes the variables that can influence a Cluster Configuration.
+// clusterCache包含变量，可以影响一个Cluster的配置
 // Implements XdsCacheEntry interface.
 type clusterCache struct {
 	clusterName string

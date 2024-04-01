@@ -622,6 +622,7 @@ func (cb *ClusterBuilder) getAllCachedSubsetClusters(clusterKey clusterCache) ([
 }
 
 // build does any final build operations needed, like marshaling etc.
+// build做任何需要的final build操作，例如marshaling
 func (mc *clusterWrapper) build() *cluster.Cluster {
 	if mc == nil {
 		return nil

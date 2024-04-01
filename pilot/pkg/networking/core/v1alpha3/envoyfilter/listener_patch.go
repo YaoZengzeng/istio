@@ -828,6 +828,7 @@ func httpFilterMatch(filter *hcm.HttpFilter, lp *model.EnvoyFilterConfigPatchWra
 func patchContextMatch(patchContext networking.EnvoyFilter_PatchContext,
 	lp *model.EnvoyFilterConfigPatchWrapper,
 ) bool {
+	// lp的context为any或者和patchContext匹配
 	return lp.Match.Context == patchContext || lp.Match.Context == networking.EnvoyFilter_ANY
 }
 

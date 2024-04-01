@@ -74,7 +74,9 @@ func (configgen *ConfigGeneratorImpl) buildWaypointInboundClusters(
 ) []*cluster.Cluster {
 	clusters := make([]*cluster.Cluster, 0)
 	// Creates "main_internal" cluster to route to the main internal listener.
+	// 创建"main_internal" clsuter来路由到main internal listener
 	// Creates "encap" cluster to route to the encap listener.
+	// 创建"encap" cluster来路由到encap listener
 	clusters = append(clusters, MainInternalCluster, EncapCluster)
 	// Creates per-VIP load balancing upstreams.
 	clusters = append(clusters, cb.buildWaypointInboundVIP(proxy, svcs)...)

@@ -235,7 +235,10 @@ func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *mod
 		// Setup inbound clusters
 		inboundPatcher := clusterPatcher{efw: envoyFilterPatches, pctx: networking.EnvoyFilter_SIDECAR_INBOUND}
 		clusters = append(clusters, configgen.buildWaypointInboundClusters(cb, proxy, req.Push, wps.services)...)
+		log.Debug("--- WAYPOINT inboundPatcher.insertedClusters()")
 		clusters = append(clusters, inboundPatcher.insertedClusters()...)
+		log.Debug("--- WAYPOINT outboundPatcher.insertedClusters()")
+		clusters = append(clusters, outboundPatcher.insertedClusters()...)
 	default: // Gateways
 		patcher := clusterPatcher{efw: envoyFilterPatches, pctx: networking.EnvoyFilter_GATEWAY}
 		ob, cs := configgen.buildOutboundClusters(cb, proxy, patcher, services)
@@ -289,6 +292,7 @@ func (configgen *ConfigGeneratorImpl) buildOutboundClusters(cb *ClusterBuilder, 
 ) ([]*discovery.Resource, cacheStats) {
 	resources := make([]*discovery.Resource, 0)
 	efKeys := cp.efw.KeysApplyingTo(networking.EnvoyFilter_CLUSTER)
+	log.Debugf("--- OUTBOUND CLUSTER proxy.ID is %s, efKeys is %v", proxy.ID, efKeys)
 	hit, miss := 0, 0
 	for _, service := range services {
 		if service.Resolution == model.Alias {

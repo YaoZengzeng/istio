@@ -31,6 +31,7 @@ import (
 )
 
 // ApplyClusterMerge processes the MERGE operation and merges the supplied configuration to the matched clusters.
+// ApplyClusterMerge处理MERGE操作并且合并提供的配置到匹配的clusters
 func ApplyClusterMerge(pctx networking.EnvoyFilter_PatchContext, efw *model.EnvoyFilterWrapper,
 	c *cluster.Cluster, hosts []host.Name,
 ) (out *cluster.Cluster) {
@@ -121,6 +122,7 @@ func mergeTransportSocketCluster(c *cluster.Cluster, cp *model.EnvoyFilterConfig
 }
 
 // ShouldKeepCluster checks if there is a REMOVE patch on the cluster, returns false if there is one so that it is removed.
+// ShouldKeepCluster检查是否有一个REMOVE操作，在cluster上，返回false，如果有一个需要被移除
 func ShouldKeepCluster(pctx networking.EnvoyFilter_PatchContext, efw *model.EnvoyFilterWrapper, c *cluster.Cluster, hosts []host.Name) bool {
 	if efw == nil {
 		return true
@@ -137,21 +139,30 @@ func ShouldKeepCluster(pctx networking.EnvoyFilter_PatchContext, efw *model.Envo
 }
 
 // InsertedClusters collects all clusters that are added via ADD operation and match the patch context.
+// InsertedClusters收集所有clusters，通过ADD操作添加并且匹配patch context
 func InsertedClusters(pctx networking.EnvoyFilter_PatchContext, efw *model.EnvoyFilterWrapper) []*cluster.Cluster {
 	if efw == nil {
 		return nil
 	}
 	var result []*cluster.Cluster
 	// Add cluster if the operation is add, and patch context matches
+	// 添加cluster，如果operation是add，以及patch的context匹配
 	for _, cp := range efw.Patches[networking.EnvoyFilter_CLUSTER] {
+		log.Debugf("--- InsertedClusters iterate, name: %s", cp.Name)
 		if cp.Operation == networking.EnvoyFilter_Patch_ADD {
+			log.Debugf("--- InsertedClusters iterate, OPERATION ADD name: %s", cp.Name)
 			// If cluster ADD patch does not specify a patch context, only add for sidecar outbound and gateway.
+			// 如果cluster ADD patch不声明一个patch context，只对sidecar outbound以及gateway添加
 			if cp.Match.Context == networking.EnvoyFilter_ANY && pctx != networking.EnvoyFilter_SIDECAR_OUTBOUND &&
 				pctx != networking.EnvoyFilter_GATEWAY {
+				log.Debugf("--- InsertedClusters CONTINUE, name: %s", cp.Name)
 				continue
 			}
 			if commonConditionMatch(pctx, cp) {
+				log.Debugf("--- InsertedClusters commonConditionMatch, name: %s", cp.Name)
 				result = append(result, proto.Clone(cp.Value).(*cluster.Cluster))
+			} else {
+				log.Debugf("--- InsertedClusters commonConditionMatch DISMATCH, name: %s", cp.Name)
 			}
 		}
 	}
