@@ -91,6 +91,7 @@ type Suite interface {
 	// Skip marks a suite as skipped with the given reason. This will prevent any setup functions from occurring.
 	Skip(reason string) Suite
 	// RequireMinClusters ensures that the current environment contains at least the given number of clusters.
+	// RequireMinClusters确保当前的环境包含给定数目的clusters
 	// Otherwise it stops test execution.
 	//
 	// Deprecated: Tests should not make assumptions about number of clusters.
@@ -113,15 +114,19 @@ type Suite interface {
 	// RequireExternalControlPlaneTopology requires the environment to be external control plane topology
 	RequireExternalControlPlaneTopology() Suite
 	// RequireMinVersion validates the environment meets a minimum version
+	// RequireMinVersion校验环境满足最低版本
 	RequireMinVersion(minorVersion uint) Suite
 	// RequireMaxVersion validates the environment meets a maximum version
 	RequireMaxVersion(minorVersion uint) Suite
 	// Setup runs enqueues the given setup function to run before test execution.
+	// Setup运行，将给定的setup函数入队运行，在test执行之前
 	Setup(fn resource.SetupFn) Suite
 	Teardown(fn resource.TeardownFn) Suite
 	// SetupParallel runs the given setup functions in parallel before test execution.
+	// SetupParallel并行地运行给定的setup函数，在测试执行之前
 	SetupParallel(fns ...resource.SetupFn) Suite
 	// Run the suite. This method calls os.Exit and does not return.
+	// 运行suite，这个方法调用os.Exit并且不返回
 	Run()
 }
 

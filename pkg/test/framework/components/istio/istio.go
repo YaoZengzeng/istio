@@ -75,6 +75,7 @@ func (v OperatorValues) GetConfigValue(path string) *structpb.Value {
 }
 
 // Instance represents a deployed Istio instance
+// Instance代表一个部署的Istio实例
 type Instance interface {
 	resource.Resource
 
@@ -185,6 +186,7 @@ func IngressesOrFail(t test.Failer, ctx resource.Context) ingress.Instances {
 }
 
 // Setup is a setup function that will deploy Istio on Kubernetes environment
+// Setup是一个setup函数会部署Istio到K8S环境
 func Setup(i *Instance, cfn SetupConfigFn, ctxFns ...SetupContextFn) resource.SetupFn {
 	return func(ctx resource.Context) error {
 		cfg, err := DefaultConfig(ctx)

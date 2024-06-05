@@ -109,6 +109,7 @@ var (
 )
 
 // Config provide kube-specific Config from flags.
+// Config提供了基于flags的kube特定的配置
 type Config struct {
 	// The namespace where the Istio components (<=1.1) reside in a typical deployment (default: "istio-system").
 	SystemNamespace string
@@ -262,6 +263,7 @@ func Indent(text, indent string) string {
 }
 
 // DefaultConfig creates a new Config from defaults, environments variables, and command-line parameters.
+// DefaultConfig从defaults创建一个新的Config，环境变量以及命令行参数
 func DefaultConfig(ctx resource.Context) (Config, error) {
 	// Make a local copy.
 	s := *settingsFromCommandline

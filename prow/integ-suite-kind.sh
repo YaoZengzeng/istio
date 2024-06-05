@@ -34,6 +34,7 @@ source "${ROOT}/prow/lib.sh"
 setup_and_export_git_sha
 
 # shellcheck source=common/scripts/kind_provisioner.sh
+# 执行kind provisioner
 source "${ROOT}/common/scripts/kind_provisioner.sh"
 
 TOPOLOGY=SINGLE_CLUSTER
@@ -119,7 +120,9 @@ export TEST_ENV=kind-metallb
 export PULL_POLICY=IfNotPresent
 
 # We run a local-registry in a docker container that KinD nodes pull from
+# 我们运行一个local-registry，在docker container，kinD nodes可以从中拉取
 # These values are must match what is in config/trustworthy-jwt.yaml
+# 这些值必须匹配config/trustworthy-jwt.yaml中的配置
 export KIND_REGISTRY_NAME="kind-registry"
 export KIND_REGISTRY_PORT="5000"
 export KIND_REGISTRY="localhost:${KIND_REGISTRY_PORT}"
@@ -129,6 +132,7 @@ export TAG="${TAG:-"istio-testing"}"
 export VARIANT
 
 # If we're not intending to pull from an actual remote registry, use the local kind registry
+# 如果我们不打算从一个真正的remote registry中拉取，使用local kind registry
 if [[ -z "${SKIP_BUILD:-}" ]]; then
   HUB="${KIND_REGISTRY}"
   export HUB
@@ -169,16 +173,20 @@ if [[ -z "${SKIP_SETUP:-}" ]]; then
 fi
 
 if [[ -z "${SKIP_BUILD:-}" ]]; then
+  # 构建kind registry
   trace "setup kind registry" setup_kind_registry
+  # 构建image
   trace "build images" build_images "${PARAMS[*]}"
 fi
 
 # Run the test target if provided.
+# 运行test target，如果提供了的话
 if [[ -n "${PARAMS:-}" ]]; then
   trace "test" make "${PARAMS[*]}"
 fi
 
 # Check if the user is running the clusters in manual mode.
+# 检查是否用户在manual模式运行clusters
 if [[ -n "${MANUAL:-}" ]]; then
   echo "Running cluster(s) in manual mode. Press any key to shutdown and exit..."
   read -rsn1

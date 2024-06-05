@@ -253,6 +253,7 @@ func newKube(ctx resource.Context, cfg Config) (Instance, error) {
 	}
 
 	// Generate common IstioOperator yamls for different cluster types (primary, remote, remote-config)
+	// 生成公共的IstioOperator yamls，对于不同的cluster类型（primary, remote以及remote-config）
 	iopFiles, err := genCommonOperatorFiles(ctx, cfg, workDir)
 	if err != nil {
 		return nil, err
@@ -264,6 +265,7 @@ func newKube(ctx resource.Context, cfg Config) (Instance, error) {
 	}
 
 	// Populate the revisions for the control plane.
+	// 填充revisions对于control plane
 	var revisions resource.RevVerMap
 	if !cfg.DeployIstio {
 		// Using a pre-installed control plane. Get the revisions from the

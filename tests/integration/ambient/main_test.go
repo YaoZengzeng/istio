@@ -86,8 +86,10 @@ type EchoDeployments struct {
 }
 
 // TestMain defines the entrypoint for pilot tests using a standard Istio installation.
+// TestMain定义了对于pilot tests的entrypoint，使用标准的Istio安装
 // If a test requires a custom install it should go into its own package, otherwise it should go
 // here to reuse a single install across tests.
+// 如果一个测试需要一个自定义的安装，它应该到自己的package，否则它应该在这里，重新使用单个的install
 func TestMain(m *testing.M) {
 	// nolint: staticcheck
 	framework.
