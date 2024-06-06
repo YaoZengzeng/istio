@@ -2459,12 +2459,16 @@ func (ps *PushContext) SupportsTunnel(n network.ID, ip string) bool {
 
 // WorkloadsForWaypoint returns all workloads associated with a given waypoint identified by it's WaypointKey
 // Used when calculating the workloads which should be configured for a specific waypoint proxy
+// WorkloadsForWaypoint返回所有和给定waypoint关联的workloads，通过WaypointKey标识
+// 当计算和特定的waypoint proxy关联的workloads时使用
 func (ps *PushContext) WorkloadsForWaypoint(key WaypointKey) []WorkloadInfo {
 	return ps.ambientIndex.WorkloadsForWaypoint(key)
 }
 
 // ServicesForWaypoint returns all services associated with a given waypoint identified by it's WaypointKey
+// ServicesForWaypoint返回所有的services，和给定的waypoint相关，通过WaypointKey识别
 // Used when calculating the services which should be configured for a specific waypoint proxy
+// 当计算哪些services和给定的waypoint相关联的时候使用
 func (ps *PushContext) ServicesForWaypoint(key WaypointKey) []ServiceInfo {
 	return ps.ambientIndex.ServicesForWaypoint(key)
 }

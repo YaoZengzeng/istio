@@ -72,6 +72,7 @@ type Context interface {
 
 	// ConfigKube returns a Context that writes config to the provided clusters. If
 	// no clusters are provided, writes to all clusters in the mesh.
+	// ConfigKube返回一个Context，写入配置到提供的clusters，如果没有clusters提供，写入mesh的所有配置
 	ConfigKube(clusters ...cluster.Cluster) config.Factory
 
 	// ConfigIstio returns a Context that writes config to all Istio config clusters.

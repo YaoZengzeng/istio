@@ -233,6 +233,7 @@ func (configgen *ConfigGeneratorImpl) buildClusters(proxy *model.Proxy, req *mod
 	case model.Waypoint:
 		_, wps := findWaypointResources(proxy, req.Push)
 		// Waypoint proxies do not need outbound clusters in most cases, unless we have a route pointing to something
+		// Waypoint proxies不需要outbound clusters，在大多数情况下，除非我们有一个路由指向一些东西
 		outboundPatcher := clusterPatcher{efw: envoyFilterPatches, pctx: networking.EnvoyFilter_SIDECAR_OUTBOUND}
 		ob, cs := configgen.buildOutboundClusters(cb, proxy, outboundPatcher, filterWaypointOutboundServices(
 			req.Push.ServicesAttachedToMesh(), wps.services, req.Push.ExtraWaypointServices(proxy), services))

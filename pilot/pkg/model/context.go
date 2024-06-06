@@ -362,10 +362,12 @@ type Proxy struct {
 	MergedGateway *MergedGateway
 
 	// ServiceTargets contains a list of all Services associated with the proxy, contextualized for this particular proxy.
+	// ServiceTargets包含和这个proxy相关的所有一系列Services，针对此代理的上下文
 	// These are unique to this proxy, as the port information is specific to it - while a ServicePort is shared with the
 	// service, the target port may be distinct per-endpoint. So this maintains a view specific to this proxy.
 	// ServiceTargets will maintain a list entry for each Service-port, so if we have 2 services each with 3 ports, we
 	// would have 6 entries.
+	// ServiceTargets会维护一个entry的列表，对于每个Service-port，因此如果我们有2个services，每个有3个ports，我们会有6个entries
 	ServiceTargets []ServiceTarget
 
 	// Istio version associated with the Proxy

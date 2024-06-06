@@ -54,6 +54,7 @@ type Trace struct {
 }
 
 // New returns a new instance of zipkin.
+// New返回zipkin的一个新实例
 func New(ctx resource.Context, c Config) (i Instance, err error) {
 	return newKube(ctx, c)
 }

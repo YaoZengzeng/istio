@@ -186,6 +186,7 @@ func newKube(ctx resource.Context, cfgIn Config) (Instance, error) {
 	c.id = ctx.TrackResource(c)
 
 	// Find the zipkin pod and service, and start forwarding a local port.
+	// 找到zipkin pod和service，并且开始转发一个local port
 	cfg, err := istio.DefaultConfig(ctx)
 	if err != nil {
 		return nil, err

@@ -872,6 +872,7 @@ type WaypointKey struct {
 }
 
 // WaypointKey contains all of the VIPs that the Proxy serves.
+// WaypointKey包含所有的VIPs，这个Proxy服务的
 func WaypointKeyForProxy(node *Proxy) WaypointKey {
 	// TODO IP based lookup should switch to looking up services by name/ns
 	key := WaypointKey{

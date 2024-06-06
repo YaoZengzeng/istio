@@ -1,7 +1,7 @@
 //go:build integ
 // +build integ
 
-package mysuite
+package kmesh
 
 import (
 	"testing"

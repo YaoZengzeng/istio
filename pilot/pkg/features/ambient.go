@@ -27,6 +27,7 @@ var (
 
 	EnableAmbientWaypoints = registerAmbient("PILOT_ENABLE_AMBIENT_WAYPOINTS",
 		true, false,
+		// 如果使能，ambient需要的controllers会运行，这是运行ambient mesh需要的
 		"If enabled, controllers required for ambient will run. This is required to run ambient mesh.")
 
 	EnableHBONESend = registerAmbient(

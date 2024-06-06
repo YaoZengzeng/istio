@@ -44,6 +44,7 @@ type waypointServices struct {
 }
 
 // findWaypointResources returns workloads and services associated with the waypoint proxy
+// findWaypointResources返回workloads和services，和waypoint proxy相关
 func findWaypointResources(node *model.Proxy, push *model.PushContext) ([]model.WorkloadInfo, *waypointServices) {
 	key := model.WaypointKeyForProxy(node)
 	workloads := push.WorkloadsForWaypoint(key)
@@ -70,8 +71,10 @@ func findWaypointResources(node *model.Proxy, push *model.PushContext) ([]model.
 }
 
 // filterWaypointOutboundServices is used to determine the set of outbound clusters we need to build for waypoints.
+// filterWaypointOutboundServices用于决定构建waypoints时我们需要的一系列clusters
 // Waypoints typically only have inbound clusters, except in cases where we have a route from
 // a service owned by the waypoint to a service not owned by the waypoint.
+// Waypoints通常只有inbound clusters，除了那些我们有路由，从waypoint所有的service转向不归waypoint所有的service的情况
 // It looks at:
 // * referencedServices: all services referenced by mesh virtual services
 // * waypointServices: all services owned by this waypoint
