@@ -33,6 +33,7 @@ import (
 )
 
 // Cluster that can deploy echo instances.
+// Cluster可以部署echo instances
 // TODO putting this here for now to deal with circular imports, needs to be moved
 type Cluster interface {
 	cluster.Cluster
@@ -80,18 +81,21 @@ const (
 )
 
 // Config defines the options for creating an Echo component.
+// Config定义了创建一个Echo component的options
 // nolint: maligned
 type Config struct {
 	// Namespace of the echo Instance. If not provided, a default namespace "apps" is used.
 	Namespace namespace.Instance
 
 	// DefaultHostHeader overrides the default Host header for calls (`service.namespace.svc.cluster.local`)
+	// DefaultHostHeader覆盖默认调用的Host headers
 	DefaultHostHeader string
 
 	// Domain of the echo Instance. If not provided, a default will be selected.
 	Domain string
 
 	// Service indicates the service name of the Echo application.
+	// Service表明Echo application的service name
 	Service string
 
 	// Version indicates the version path for calls to the Echo application.
@@ -105,14 +109,17 @@ type Config struct {
 
 	// StatefulSet indicates that the pod should be backed by a StatefulSet. This implies Headless=true
 	// as well.
+	// StatefulSet表明pod后端是不是应该有一个StatefulSet，这也意味着Headless=true
 	StatefulSet bool
 
 	// StaticAddress for some echo implementations is an address locally reachable within
 	// the test framework and from the echo Cluster's network.
+	// StaticAddress是对于一些echo实现，是一个在test frame work以及echo Cluster的network本地可访问的
 	StaticAddresses []string
 
 	// ServiceAccount (k8s only) indicates that a service account should be created
 	// for the deployment.
+	// ServiceAccount表明对于deployment需要创建的service account
 	ServiceAccount bool
 
 	// DisableAutomountSAToken indicates to opt out of auto mounting ServiceAccount's API credentials
@@ -120,16 +127,20 @@ type Config struct {
 
 	// Ports for this application. Port numbers may or may not be used, depending
 	// on the implementation.
+	// 对于和这个应用的端口，Ports numbers可能被使用，也可能不被使用，取决于实现
 	Ports Ports
 
 	// ServiceAnnotations is annotations on service object.
+	// ServiceAnnotations是对于service对象的annotations
 	ServiceAnnotations map[string]string
 
 	// ServiceLabels is the labels on service object.
+	// ServiceLabels是service对象的labels
 	ServiceLabels map[string]string
 
 	// ReadinessTimeout specifies the timeout that we wait the application to
 	// become ready.
+	// ReadinessTimeout声明了我们等待应用变为ready的时间
 	ReadinessTimeout time.Duration
 
 	// ReadinessTCPPort if set, use this port for the TCP readiness probe (instead of using a HTTP probe).
@@ -140,12 +151,15 @@ type Config struct {
 
 	// Subsets contains the list of Subsets config belonging to this echo
 	// service instance.
+	// Subsets定义了一系列属于这个echo的subsets的配置
 	Subsets []SubsetConfig
 
 	// Cluster to be used in a multicluster environment
+	// Cluster用于一个多集群的环境
 	Cluster cluster.Cluster
 
 	// TLS settings for echo server
+	// 对于echo server的TLS设置
 	TLSSettings *common.TLSSettings
 
 	// If enabled, echo will be deployed as a "VM". This means it will run Envoy in the same pod as echo,
@@ -178,9 +192,11 @@ type Config struct {
 	DualStack bool
 
 	// ServiceWaypointProxy specifies if this workload should have an associated Waypoint for service-addressed traffic
+	// ServiceWaypointProxy指定是否这个worklaod应该有一个对应的waypoint，对于service-addressed流量
 	ServiceWaypointProxy string
 
 	// WorkloadWaypointProxy specifies if this workload should have an associated Waypoint for workload-addressed traffic
+	// WorkloadWaypointProxy指定是否这个workload应该有一个对应的waypoint，对于workload-addressed流量
 	WorkloadWaypointProxy string
 }
 
@@ -226,14 +242,18 @@ func (c Config) ServiceAccountName() string {
 }
 
 // SubsetConfig is the config for a group of Subsets (e.g. Kubernetes deployment).
+// SubsetConfig是config，对于一系列的Subsets（k8s deployment）
 type SubsetConfig struct {
 	// The version of the deployment.
+	// deployment的版本
 	Version string
 	// Annotations provides metadata hints for deployment of the instance.
 	Annotations map[string]string
 	// Labels provides metadata hints for deployment of the instance.
+	// Labels提供关于这个deployment的实例的元数据
 	Labels map[string]string
 	// Replicas of this deployment
+	// 这个deployment的Replicas
 	Replicas int
 
 	// TODO: port more into workload config.

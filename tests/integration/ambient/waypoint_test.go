@@ -170,6 +170,7 @@ func TestWaypoint(t *testing.T) {
 			}, retry.Timeout(15*time.Second), retry.BackoffDelay(time.Millisecond*100))
 
 			// delete all waypoints in namespace, so w3 should be deleted
+			// 删除ns中的所有waypoints，这样w3应该被删除
 			istioctl.NewOrFail(t, t, istioctl.Config{}).InvokeOrFail(t, []string{
 				"x",
 				"waypoint",

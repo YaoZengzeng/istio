@@ -22,6 +22,7 @@ import (
 )
 
 // Clusters is an ordered list of Cluster instances.
+// Clusters是一系列的Cluster instances实例
 type Clusters []Cluster
 
 func (c Clusters) Len() int {

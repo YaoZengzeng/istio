@@ -22,11 +22,14 @@ import (
 )
 
 // Instance represents a zipkin deployment on kube
+// Instance代表在kube中的一个zipkin deployment
 type Instance interface {
 	resource.Resource
 
 	// QueryTraces gets at most number of limit most recent available traces from zipkin.
+	// QueryTraces获取最大数目的limit，大多数从zipkin中可用
 	// spanName filters that only trace with the given span name will be included.
+	// spanName进行过滤，只有给定的span name的会被包含
 	QueryTraces(limit int, spanName, annotationQuery string) ([]Trace, error)
 }
 
@@ -60,6 +63,7 @@ func New(ctx resource.Context, c Config) (i Instance, err error) {
 }
 
 // NewOrFail returns a new zipkin instance or fails test.
+// NewOrFail返回一个新的zipkin实例或者测试失败
 func NewOrFail(t *testing.T, ctx resource.Context, c Config) Instance {
 	t.Helper()
 	i, err := New(ctx, c)

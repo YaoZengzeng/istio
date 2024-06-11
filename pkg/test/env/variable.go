@@ -17,6 +17,7 @@ package env
 import "os"
 
 // Variable is a wrapper for an environment variable.
+// Variable是对于环境变量的封装
 type Variable string
 
 // Name of the environment variable.

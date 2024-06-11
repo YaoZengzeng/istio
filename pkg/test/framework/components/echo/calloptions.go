@@ -76,9 +76,11 @@ type HBONE struct {
 	Address string
 	Headers http.Header
 	// If non-empty, make the request with the corresponding cert and key.
+	// 如果非空，用对应的cert和key构建请求
 	Cert string
 	Key  string
 	// If non-empty, verify the server CA
+	// 如果非空，校验server CA
 	CaCert string
 	// If non-empty, make the request with the corresponding cert and key file.
 	CertFile string
@@ -105,28 +107,38 @@ type TCP struct {
 }
 
 // Target of a call.
+// 一次调用的Target
 type Target interface {
 	Configurable
 	WorkloadContainer
 
 	// Instances in this target.
+	// 这个target的Instances
 	Instances() Instances
 }
 
 // CallOptions defines options for calling a Endpoint.
+// CallOptions定义了调用一个Endpoint的options
 type CallOptions struct {
 	// To is the Target to be called.
+	// To是被调用的Target
 	To Target
 
 	// ToWorkload will call a specific workload in this instance, rather than the Service.
+	// ToWorkload会调用这个instance中一个特定的workload，而不是Service
 	// If there are multiple workloads in the Instance, the first is used.
+	// 如果Instance中有多个workloads，使用第一个
 	// Can be used with `ToWorkload: to.WithWorkloads(someWl)` to send to a specific workload.
 	// When using the Port field, the ServicePort should be used.
+	// 可以和`ToWorkload: to.WithWorkloads(someWl)`一起使用来发送到特定的workload，当使用Port字段
+	// ServicePort应该被使用
 	ToWorkload Instance
 
 	// Port to be used for the call. Ignored if Scheme == DNS. If the Port.ServicePort is set,
 	// either Port.Protocol or Scheme must also be set. If Port.ServicePort is not set,
 	// the port is looked up in To by either Port.Name or Port.Protocol.
+	// 用于调用的Port，忽略，如果Scheme == DNS，如果设置了Port.ServicePort，Port.Protocol or Scheme必须被设置
+	// 如果Port.ServicePort没有被设置，port通过Port.Name或者Port.Protocol查找
 	Port Port
 
 	// Scheme to be used when making the call. If not provided, the Scheme will be selected
@@ -140,6 +152,8 @@ type CallOptions struct {
 	// Count indicates the number of exchanges that should be made with the service endpoint.
 	// If Count <= 0, a default will be selected. If To is specified, the value will be set to
 	// the numWorkloads * DefaultCallsPerWorkload. Otherwise, defaults to 1.
+	// Count表明和service endpoint交互的次数，如果Count <= 0，则选择默认值，如果To制定了，value会被
+	// 设置为numWorkloads * DefaultCallsPerWorkload，否则默认为1
 	Count int
 
 	// Timeout used for each individual request. Must be > 0, otherwise 5 seconds is used.
@@ -169,6 +183,7 @@ type CallOptions struct {
 	TLS TLS
 
 	// HBONE settings.
+	// HBONE的设置
 	HBONE HBONE
 
 	// Message to be sent.
@@ -176,6 +191,7 @@ type CallOptions struct {
 
 	// Check the server responses. If none is provided, only the number of responses received
 	// will be checked.
+	// 检查server response，如果没有提供，只会检查接收到的repsonse的数目
 	Check Checker
 
 	// If we have been asked to do TCP comms with a PROXY protocol header,

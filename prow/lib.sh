@@ -115,6 +115,7 @@ function build_images() {
   SELECT_TEST="${1}"
 
   # Build just the images needed for tests
+  # 构建测试需要的镜像
   targets="docker.pilot docker.proxyv2 "
 
   # use ubuntu:jammy to test vms by default
@@ -131,8 +132,10 @@ function build_images() {
   if [[ "${SELECT_TEST}" == "test.integration.ambient.kube" || "${SELECT_TEST}" == "test.integration.kube" || "${JOB_TYPE:-postsubmit}" == "postsubmit" ]]; then
     targets+="docker.ztunnel "
   fi
+  # 加入install-cni
   targets+="docker.install-cni "
   # Integration tests are always running on local architecture (no cross compiling), so find out what that is.
+  # 集成测试总是在本地架构运行（不会交叉编译），因此查出这是什么
   arch="linux/amd64"
   if [[ "$(uname -m)" == "aarch64" ]]; then
       arch="linux/arm64"
@@ -146,23 +149,30 @@ function build_images() {
 }
 
 # Creates a local registry for kind nodes to pull images from. Expects that the "kind" network already exists.
+# 创建一个local registry，这样kin nodes可以拉取镜像，确保"kind" network已经存在
 function setup_kind_registry() {
   # create a registry container if it not running already
+  # 创建一个registry container，如果它没有在运行
   running="$(docker inspect -f '{{.State.Running}}' "${KIND_REGISTRY_NAME}" 2>/dev/null || true)"
   if [[ "${running}" != 'true' ]]; then
+      # 创建registry容器
       docker run \
         -d --restart=always -p "${KIND_REGISTRY_PORT}:5000" --name "${KIND_REGISTRY_NAME}" \
         gcr.io/istio-testing/registry:2
 
     # Allow kind nodes to reach the registry
+    # 允许kind nodes访问registry
     docker network connect "kind" "${KIND_REGISTRY_NAME}"
   fi
 
   # https://docs.tilt.dev/choosing_clusters.html#discovering-the-registry
   for cluster in $(kind get clusters); do
+    # 遍历clusters
     # TODO get context/config from existing variables
     kind export kubeconfig --name="${cluster}"
     for node in $(kind get nodes --name="${cluster}"); do
+      # 遍历节点中的各个nodes
+      # 设置registry
       kubectl annotate node "${node}" "kind.x-k8s.io/registry=localhost:${KIND_REGISTRY_PORT}" --overwrite;
     done
   done

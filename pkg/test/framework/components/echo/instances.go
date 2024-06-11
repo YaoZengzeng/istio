@@ -27,6 +27,7 @@ import (
 var _ Target = Instances{}
 
 // Instances contains the instances created by the builder with methods for filtering
+// Instances包含builder创建的instances，有方法用于过滤
 type Instances []Instance
 
 func (i Instances) ServiceName() string {

@@ -26,6 +26,7 @@ import (
 const NoServicePort = -1
 
 // Port exposed by an Echo Instance
+// 一个Echo Instance暴露的Port
 type Port struct {
 	// Name of this port
 	Name string
@@ -47,6 +48,7 @@ type Port struct {
 	TLS bool
 
 	// ServerFirst determines whether the port will use server first communication, meaning the client will not send the first byte.
+	// ServerFirst决定是否port会使用server first的交互，意味着client不会发送第一个字节
 	ServerFirst bool
 
 	// InstanceIP determines if echo will listen on the instance IP; otherwise, it will listen on wildcard

@@ -23,12 +23,15 @@ import (
 )
 
 // Instance represents "istioctl"
+// Instance代表"istioctl"
 type Instance interface {
 	// WaitForConfig will wait until all passed in config has been distributed
 	WaitForConfig(defaultNamespace string, configs string) error
 
 	// Invoke invokes an istioctl command and returns the output and exception.
+	// Invoke调用一个istioclt命令并且返回output以及exception
 	// stdout and stderr will be returned as different strings
+	// stdout以及stderr会作为不同的strings返回
 	Invoke(args []string) (string, string, error)
 
 	// InvokeOrFail calls Invoke and fails tests if it returns en err
@@ -36,12 +39,14 @@ type Instance interface {
 }
 
 // Config is structured config for the istioctl component
+// Config是结构化的配置，对于isitoclt组件
 type Config struct {
 	// Cluster to be used in a multicluster environment
 	Cluster cluster.Cluster
 }
 
 // New returns a new instance of "istioctl".
+// New返回一个新的"istioclt"的实例
 func New(ctx resource.Context, cfg Config) (i Instance, err error) {
 	return newKube(ctx, cfg)
 }

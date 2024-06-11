@@ -203,9 +203,11 @@ const (
 	AmbientRedirectionEnabled = "enabled"
 
 	// AmbientUseWaypointLabelLabel is the label used to specify which waypoint should be used for a given pod, service, etc...
+	// AmbientUseWaypointLabelLabel是label用于指定对于哪个给定的pod, service, ...应该使用哪个waypoint
 	AmbientUseWaypointLabel = "istio.io/use-waypoint"
 	// AmbientWaypointForTrafficTypeLabel is the label used to specify which traffic is allowed through the Waypoint.
 	// This label is applied to the Waypoint. Valid traffic types are "service", "workload", "all", and "none".
+	// AmbientWaypointForTrafficTypeLabel是label用于指定哪个traffic应该允许通过Waypoint，这个label被应用到waypoint，合法的traffic类型为"service", "workload", "all"以及"none"
 	AmbientWaypointForTrafficTypeLabel = "istio.io/waypoint-for"
 
 	// AmbientWaypointInboundBinding has the format `<protocol>` or `<protocol>/<port>`. If the waypoint is

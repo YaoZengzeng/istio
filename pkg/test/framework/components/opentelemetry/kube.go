@@ -124,10 +124,12 @@ func getYaml() (string, error) {
 }
 
 func install(ctx resource.Context, ns string) error {
+	// 获取yaml
 	y, err := getYaml()
 	if err != nil {
 		return err
 	}
+	// 应用yaml
 	return ctx.ConfigKube().YAML(ns, y).Apply()
 }
 

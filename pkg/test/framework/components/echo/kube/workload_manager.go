@@ -126,6 +126,7 @@ func (m *workloadManager) readyWorkloads() (echo.Workloads, error) {
 }
 
 // ReadyWorkloads returns all ready workloads in ascending order by pod name.
+// ReadyWorkloads返回所有准备好的workloads，按照升序排列，通过pod name
 func (m *workloadManager) ReadyWorkloads() (echo.Workloads, error) {
 	m.mutex.Lock()
 	out, err := m.readyWorkloads()

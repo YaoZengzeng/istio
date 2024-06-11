@@ -69,6 +69,7 @@ var (
 	KUBECONFIG Variable = "KUBECONFIG"
 
 	// IstioSrc is the location of istio source ($TOP/src/istio.io/istio
+	// IstioSrc是istio source的位置（$TOP/src/istio.io/istio）
 	IstioSrc = REPO_ROOT.ValueOrDefaultFunc(getDefaultIstioSrc)
 
 	// IstioOut is the location of the output directory ($TOP/out)
@@ -79,6 +80,7 @@ var (
 	LocalOut = verifyFile(LOCAL_OUT, LOCAL_OUT.ValueOrDefaultFunc(getDefaultIstioOut))
 
 	// OtelCollectorInstallFilePath is the OpenTelemetry installation file.
+	// OtelCollectorInstallFilePath是OpenTelemetry的安装文件
 	OtelCollectorInstallFilePath = path.Join(IstioSrc, getSampleFile("open-telemetry/otel.yaml"))
 
 	// StackdriverInstallFilePath is the stackdriver installation file.

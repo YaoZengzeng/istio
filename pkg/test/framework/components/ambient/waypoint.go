@@ -86,16 +86,19 @@ type WaypointProxy interface {
 }
 
 // NewWaypointProxy creates a new WaypointProxy.
+// NewWaypointProxy创建一个新的WaypointProxy
 func NewWaypointProxy(ctx resource.Context, ns namespace.Instance, name string) (WaypointProxy, error) {
 	server := &kubeComponent{
 		ns: ns,
 	}
 	server.id = ctx.TrackResource(server)
+	// 部署GatewayAPI
 	if err := crd.DeployGatewayAPI(ctx); err != nil {
 		return nil, err
 	}
 
 	// TODO support multicluster
+	// 创建一个新的isitoctl
 	ik, err := istioctl.New(ctx, istioctl.Config{})
 	if err != nil {
 		return nil, err
@@ -118,6 +121,7 @@ func NewWaypointProxy(ctx resource.Context, ns namespace.Instance, name string) 
 
 	cls := ctx.Clusters().Kube().Default()
 	// Find the Waypoint pod and service, and start forwarding a local port.
+	// 找到waypoint pod和service，并且开始转发一个local port
 	fetchFn := testKube.NewSinglePodFetch(cls, ns.Name(), fmt.Sprintf("%s=%s", constants.GatewayNameLabel, name))
 	pods, err := testKube.WaitUntilPodsAreReady(fetchFn)
 	if err != nil {

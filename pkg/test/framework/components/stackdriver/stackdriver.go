@@ -26,6 +26,7 @@ import (
 )
 
 // Instance represents a deployed Stackdriver app instance in a Kubernetes cluster.
+// Instance代表在K8S集群中部署的Stackdriver app的实例
 type Instance interface {
 	Address() string
 	// Gets the namespace in which stackdriver is deployed.
@@ -41,6 +42,7 @@ type Config struct {
 }
 
 // New returns a new instance of stackdriver.
+// New返回一个stackdriver的新实例
 func New(ctx resource.Context, c Config) (i Instance, err error) {
 	if UseRealStackdriver() {
 		return newRealStackdriver(ctx, c)

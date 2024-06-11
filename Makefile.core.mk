@@ -121,6 +121,7 @@ $(TARGET_OUT):
 	@mkdir -p $@
 
 # If the hub is not explicitly set, use default to istio.
+# 如果hub没有显式设置，默认为istio
 HUB ?=istio
 ifeq ($(HUB),)
   $(error "HUB cannot be empty")
@@ -476,6 +477,7 @@ clean: ## Cleans all the intermediate files and folders previously generated.
 # for now docker is limited to Linux compiles - why ?
 include tools/istio-docker.mk
 
+# 构建并且推送镜像到registry，由$HUB和$TAG定义
 push: docker.push ## Build and push docker images to registry defined by $HUB and $TAG
 
 #-----------------------------------------------------------------------------

@@ -17,8 +17,10 @@ package common
 import "istio.io/istio/pkg/config/protocol"
 
 // TLSSettings defines TLS configuration for Echo server
+// TLSSettings定义了对于Echo server的TLS配置
 type TLSSettings struct {
 	// If not empty, RootCert supplies the extra root cert that will be appended to the system cert pool.
+	// 如果为空，RootCert表明extra root cert会被扩展为system cert pool
 	RootCert   string
 	ClientCert string
 	Key        string

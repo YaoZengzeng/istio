@@ -37,6 +37,7 @@ type Instance interface {
 }
 
 // New creates and returns a new instance of otel.
+// New创建并且返回otel的一个新实例
 func New(ctx resource.Context, c Config) (Instance, error) {
 	return newCollector(ctx, c)
 }

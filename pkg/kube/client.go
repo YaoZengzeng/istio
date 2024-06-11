@@ -192,6 +192,7 @@ type CLIClient interface {
 	NewPortForwarder(podName string, ns string, localAddress string, localPort int, podPort int) (PortForwarder, error)
 
 	// ApplyYAMLFiles applies the resources in the given YAML files.
+	// ApplyYAMLFiles应用给定YAML文件的resources
 	ApplyYAMLFiles(namespace string, yamlFiles ...string) error
 
 	// ApplyYAMLContents applies the resources in the given YAML strings.

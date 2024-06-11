@@ -21,12 +21,14 @@ import (
 )
 
 // Cluster in a multicluster environment.
+// 在多集群环境中的Cluster
 type Cluster interface {
 	fmt.Stringer
 	kube.CLIClient
 
 	// Name of this cluster. Use for interacting with the cluster or validation against clusters.
 	// Use StableName instead of Name when creating subtests.
+	// cluster的名字，用于和cluster交互或者校验clusters，使用StableName而不是创建subtests的名字
 	Name() string
 
 	// StableName gives a deterministic name for the cluster. Use this for test/subtest names to

@@ -47,6 +47,8 @@ var (
 	// Below are various preconfigured echo deployments. Whenever possible, tests should utilize these
 	// to avoid excessive creation/tear down of deployments. In general, a test should only deploy echo if
 	// its doing something unique to that specific test.
+	// 下面是各种提前配置的echo deployments，无论何时，有可能的话，tests应该利用这些来避免deployments的额外创建/关闭
+	// 一般来说，一个测试只应该部署echo，如果它做了一些独特的事情，对于特定的测试
 	apps = &EchoDeployments{}
 
 	// used to validate telemetry in-cluster
@@ -55,30 +57,42 @@ var (
 
 type EchoDeployments struct {
 	// Namespace echo apps will be deployed
+	// echo apps部署的Namespace
 	Namespace namespace.Instance
 
 	// AllWaypoint is a waypoint for all types
+	// AllWaypoint是一个waypoint，对于所有的类型
 	AllWaypoint echo.Instances
 	// WorkloadAddressedWaypoint is a workload only waypoint
+	// WorkloadAddressedWaypoint是只针对workload的waypoint
 	WorkloadAddressedWaypoint echo.Instances
 	// ServiceAddressedWaypoint is a serviceonly waypoint
+	// ServiceAddressedWaypoint是一个只针对service的waypoint
 	ServiceAddressedWaypoint echo.Instances
 	// Captured echo service
+	// 捕获echo service
 	Captured echo.Instances
 	// Uncaptured echo Service
+	// 不捕获的echo Service
 	Uncaptured echo.Instances
 	// SidecarWaypoint is a sidecar with a waypoint
+	// SidecarWaypoint是有一个waypoint的sidecar
 	SidecarWaypoint echo.Instances
 	// SidecarCaptured echo services with sidecar and ambient capture
+	// SidecarCaptured是echo services，有sidecar和ambient capture
 	SidecarCaptured echo.Instances
 	// SidecarUncaptured echo services with sidecar and no ambient capture
+	// SidecarUncaptured是echo services，有sidecar并且没有ambient capture
 	SidecarUncaptured echo.Instances
 
 	// All echo services
+	// 所有的echo services
 	All echo.Instances
 	// Echo services that are in the mesh
+	// Echo services在mesh里
 	Mesh echo.Instances
 	// Echo services that are not in mesh
+	// Echo services不在mesh里
 	MeshExternal echo.Instances
 
 	// WaypointProxies by
@@ -164,6 +178,7 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 	}
 
 	// Headless services don't work with targetPort, set to same port
+	// Headless services对targetPort不work，设置为同样的port
 	headlessPorts := make([]echo.Port, len(ports.All()))
 	for i, p := range ports.All() {
 		p.ServicePort = p.WorkloadPort
@@ -172,10 +187,11 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 	builder := deployment.New(t).
 		WithClusters(t.Clusters()...).
 		WithConfig(echo.Config{
-			Service:               WorkloadAddressedWaypoint,
-			Namespace:             apps.Namespace,
-			Ports:                 ports.All(),
-			ServiceAccount:        true,
+			Service:        WorkloadAddressedWaypoint,
+			Namespace:      apps.Namespace,
+			Ports:          ports.All(),
+			ServiceAccount: true,
+			// Workload级别的waypoint
 			WorkloadWaypointProxy: "waypoint",
 			Subsets: []echo.SubsetConfig{
 				{
@@ -191,18 +207,20 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 					Replicas: 1,
 					Version:  "v2",
 					Labels: map[string]string{
-						"app":                             WorkloadAddressedWaypoint,
-						"version":                         "v2",
+						"app":     WorkloadAddressedWaypoint,
+						"version": "v2",
+						// pod需要加上use waypoint label
 						constants.AmbientUseWaypointLabel: "waypoint",
 					},
 				},
 			},
 		}).
 		WithConfig(echo.Config{
-			Service:              ServiceAddressedWaypoint,
-			Namespace:            apps.Namespace,
-			Ports:                ports.All(),
-			ServiceLabels:        map[string]string{constants.AmbientUseWaypointLabel: "waypoint"},
+			Service:       ServiceAddressedWaypoint,
+			Namespace:     apps.Namespace,
+			Ports:         ports.All(),
+			ServiceLabels: map[string]string{constants.AmbientUseWaypointLabel: "waypoint"},
+			// Service级别的waypoint
 			ServiceAccount:       true,
 			ServiceWaypointProxy: "waypoint",
 			Subsets: []echo.SubsetConfig{
@@ -266,6 +284,7 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 		return whErr
 	}
 	// Only setup sidecar tests if webhook is installed
+	// 只有在webhook安装的时候才设置sidecar测试
 	if whErr == nil {
 		// TODO(https://github.com/istio/istio/issues/43244) support sidecars that are captured
 		//builder = builder.WithConfig(echo.Config{
@@ -314,6 +333,7 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 		//			},
 		//		},
 		//	})
+		// 构建新的builder
 		builder = builder.WithConfig(echo.Config{
 			Service:        SidecarUncaptured,
 			Namespace:      apps.Namespace,
@@ -364,11 +384,14 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 		apps.WaypointProxies = make(map[string]ambient.WaypointProxy)
 	}
 
+	// 遍历echos
 	for _, echo := range echos {
 		svcwp := echo.Config().ServiceWaypointProxy
 		wlwp := echo.Config().WorkloadWaypointProxy
 		if svcwp != "" {
+			// 配置了service waypoint
 			if _, found := apps.WaypointProxies[svcwp]; !found {
+				// 构建新的waypoint，建立svc名字和waypoint的映射关系
 				apps.WaypointProxies[svcwp], err = ambient.NewWaypointProxy(t, apps.Namespace, svcwp)
 				if err != nil {
 					return err
@@ -376,7 +399,9 @@ func SetupApps(t resource.Context, i istio.Instance, apps *EchoDeployments) erro
 			}
 		}
 		if wlwp != "" {
+			// 配置了workload waypoint
 			if _, found := apps.WaypointProxies[wlwp]; !found {
+				// 构建新的waypoint，建立workload名字和waypoint的映射关系
 				apps.WaypointProxies[wlwp], err = ambient.NewWaypointProxy(t, apps.Namespace, wlwp)
 				if err != nil {
 					return err

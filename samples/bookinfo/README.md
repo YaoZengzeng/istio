@@ -8,12 +8,14 @@ See <https://istio.io/docs/examples/bookinfo/>.
 
 ```bash
 # This defines the docker hub to use when running integration tests and building docker images
+# 这定义了在运行集成测试以及构建Images时使用的docker hub
 # eg: HUB="docker.io/istio", HUB="gcr.io/istio-testing"
 export HUB="docker.io/$USER"
 
 # This defines the docker tag to use when running integration tests and
 # building docker images to be your user id. You may also set this variable
 # this to any other legitimate docker tag.
+# 这定义了使用的docker tag，在运行集成测试和构建docker镜像时
 export TAG=<version number>
 ```
 

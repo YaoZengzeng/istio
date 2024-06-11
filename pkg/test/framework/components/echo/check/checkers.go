@@ -40,6 +40,7 @@ func Each(v Visitor) echo.Checker {
 }
 
 // And is an aggregate Checker that requires all Checkers succeed. Any nil Checkers are ignored.
+// And是一个Checker的聚合，需要所有Checker成功，任何的nil Checker都会被忽略
 func And(checkers ...echo.Checker) echo.Checker {
 	return func(result echo.CallResult, err error) error {
 		for _, c := range filterNil(checkers) {
@@ -118,6 +119,7 @@ func ErrorOrNotStatus(expected int) echo.Checker {
 }
 
 // OK is shorthand for NoErrorAndStatus(200).
+// OK是对于NoErrorAndStatus(200)的缩写
 func OK() echo.Checker {
 	return NoErrorAndStatus(http.StatusOK)
 }

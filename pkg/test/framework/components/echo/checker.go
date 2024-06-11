@@ -15,10 +15,12 @@
 package echo
 
 var noChecker Checker = func(_ CallResult, err error) error {
+	// 直接返回error
 	return err
 }
 
 // Checker inspects echo call results for errors.
+// Checker检查echo的调用结果，对于errors
 type Checker func(CallResult, error) error
 
 func (c Checker) Check(result CallResult, err error) error {
@@ -26,6 +28,7 @@ func (c Checker) Check(result CallResult, err error) error {
 }
 
 // NoChecker provides a Checker that returns the original raw call error, unaltered.
+// NoChecker提供了一个Checker，返回原始的调用错误，未改变
 func NoChecker() Checker {
 	return noChecker
 }

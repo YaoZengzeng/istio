@@ -35,6 +35,7 @@ import (
 )
 
 // TestContext is a test-level context that can be created as part of test executing tests.
+// TestContext是测试级别的context，可以作为test executing tests的一部分被创建
 type TestContext interface {
 	resource.Context
 	test.Failer
@@ -44,8 +45,11 @@ type TestContext interface {
 	// NewSubTest creates a new sub-test under the current running Test. The lifecycle of a sub-Test is scoped to the
 	// parent. Calls to Done() will block until all children are also Done(). When Run, sub-Tests will automatically
 	// create their own Golang *testing.T with the name provided.
+	// NewSubTest创建一个新的sub-test，在当前运行的Test之下，一个sub-Test的生命周期被限制在parent，调用Done()会阻塞，直到所有的
+	// children也调用Done()，当运行的时候，sub-Tests会自动创建他们自己的Golang *testing.T，用提供的名字
 	//
 	// If this TestContext was not created by a Test or if that Test is not running, this method will panic.
+	// 如果这个TestContext没有被一个Test创建，或者这个Test不在运行，这个方法会panic
 	NewSubTest(name string) Test
 	NewSubTestf(format string, a ...any) Test
 

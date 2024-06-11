@@ -23,6 +23,7 @@ type Factory interface {
 	YAML(ns string, yamlText ...string) Plan
 
 	// File reads the given files and calls YAML.
+	// File读取给定文件并且调用YAML
 	File(ns string, paths ...string) Plan
 
 	// Eval the same as YAML, but it evaluates the template parameters.

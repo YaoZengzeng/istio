@@ -219,6 +219,7 @@ func (c *instance) Cluster() cluster.Cluster {
 
 func (c *instance) Call(opts echo.CallOptions) (echo.CallResult, error) {
 	// Setup default check. This is done here rather than in echo core package to avoid import loops
+	// 设置默认的check，在这里操作而不是echo core package来避免导入loops
 	if opts.Check == nil {
 		opts.Check = check.OK()
 	}
@@ -315,20 +316,24 @@ func (c *instance) Restart() error {
 }
 
 // aggregateResponses forwards an echo request from all workloads belonging to this echo instance and aggregates the results.
+// aggregateResponses转发一个echo request到所有属于这个echo instance的workloads并且聚合结果
 func (c *instance) aggregateResponses(opts echo.CallOptions) (echo.CallResult, error) {
 	// TODO put this somewhere else, or require users explicitly set the protocol - quite hacky
 	if c.Config().IsProxylessGRPC() && (opts.Scheme == scheme.GRPC || opts.Port.Name == "grpc" || opts.Port.Protocol == protocol.GRPC) {
 		// for gRPC calls, use XDS resolver
+		// 对于gRPC调用，使用XDS resolver
 		opts.Scheme = scheme.XDS
 	}
 
 	resps := make(echoClient.Responses, 0)
+	// 获取Workloads
 	workloads, err := c.Workloads()
 	if err != nil {
 		return echo.CallResult{}, err
 	}
 	aggErr := istiomultierror.New()
 	for _, w := range workloads {
+		// 遍历workloads
 		clusterName := w.(*workload).cluster.Name()
 		serviceName := fmt.Sprintf("%s (cluster=%s)", c.cfg.Service, clusterName)
 
@@ -343,6 +348,7 @@ func (c *instance) aggregateResponses(opts echo.CallOptions) (echo.CallResult, e
 		return echo.CallResult{}, aggErr
 	}
 
+	// 返回调用结果
 	return echo.CallResult{
 		From:      c,
 		Opts:      opts,

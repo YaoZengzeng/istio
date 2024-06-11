@@ -74,6 +74,7 @@ func IsL7() echo.Checker {
 		// TODO: response headers?
 		_, f := r.RequestHeaders[http.CanonicalHeaderKey("X-Request-Id")]
 		if !f {
+			// 如果没有设置X-Request-Id，则表明L7处理没有开启
 			return fmt.Errorf("X-Request-Id not set, is L7 processing enabled?")
 		}
 		return nil
@@ -85,6 +86,7 @@ func IsL4() echo.Checker {
 		// TODO: response headers?
 		_, f := r.RequestHeaders[http.CanonicalHeaderKey("X-Request-Id")]
 		if f {
+			// 如果X-Request_id被设置了，则L7处理不按预期打开？
 			return fmt.Errorf("X-Request-Id set, is L7 processing enabled unexpectedly?")
 		}
 		return nil
@@ -96,6 +98,7 @@ var (
 	tcpValidator  = check.And(check.OK(), IsL4())
 	callOptions   = []echo.CallOptions{
 		{
+			// 指定端口，scheme以及Count
 			Port:   echo.Port{Name: "http"},
 			Scheme: scheme.HTTP,
 			Count:  10, // TODO use more
@@ -140,7 +143,9 @@ func OriginalSourceCheck(t framework.TestContext, src echo.Instance) echo.Checke
 func supportsL7(opt echo.CallOptions, src, dst echo.Instance) bool {
 	s := src.Config().HasSidecar()
 	d := dst.Config().HasSidecar() || dst.Config().HasAnyWaypointProxy()
+	// schem是L7的schem
 	isL7Scheme := opt.Scheme == scheme.HTTP || opt.Scheme == scheme.GRPC || opt.Scheme == scheme.WebSocket
+	// src有sidecar或者dst有sidecar或者waypoint
 	return (s || d) && isL7Scheme
 }
 
@@ -169,6 +174,7 @@ func TestServices(t *testing.T) {
 		}
 
 		// Non-HBONE clients will attempt to bypass the waypoint
+		// 没有HBONE的clients会试着bypass the waypoint
 		if !src.Config().WaypointClient() && dst.Config().HasAnyWaypointProxy() && !src.Config().HasSidecar() {
 			// TODO currently leads to no L7 processing, in the future it might be denied
 			// opt.Check = check.Error()
@@ -177,6 +183,8 @@ func TestServices(t *testing.T) {
 
 		// Any client will attempt to bypass a workload waypoint (not both service and workload waypoint)
 		// because this test always addresses by service.
+		// 任何client会试着bypass一个workload waypoint（不是同时对于service和workload waypoint），因为这个
+		// test总是通过service寻址
 		if dst.Config().HasWorkloadAddressedWaypointProxy() && !dst.Config().HasServiceAddressedWaypointProxy() {
 			// TODO currently leads to no L7 processing, in the future it might be denied
 			// opt.Check = check.Error()
@@ -333,10 +341,12 @@ func TestWaypointChanges(t *testing.T) {
 			return false
 		}
 		// check that waypoint deployment is unmodified
+		// 检查waypoint deployment是未修改的
 		retry.UntilOrFail(t, func() bool {
 			return getGracePeriod(2)
 		})
 		// change the waypoint template
+		// 改变waypoint template
 		istio.GetOrFail(t, t).UpdateInjectionConfig(t, func(cfg *inject.Config) error {
 			mainTemplate := file.MustAsString(filepath.Join(env.IstioSrc, templateFile))
 			cfg.RawTemplates["waypoint"] = strings.ReplaceAll(mainTemplate, "terminationGracePeriodSeconds: 2", "terminationGracePeriodSeconds: 3")
@@ -648,16 +658,19 @@ spec:
 func TestTrafficSplit(t *testing.T) {
 	runTest(t, func(t framework.TestContext, src echo.Instance, dst echo.Instance, opt echo.CallOptions) {
 		// Need at least one waypoint proxy and HTTP
+		// 需要至少一个waypoint和HTTP
 		if opt.Scheme != scheme.HTTP {
 			return
 		}
 		if !dst.Config().HasServiceAddressedWaypointProxy() {
+			// 要有一个Service Addressed waypoint
 			return
 		}
 		if src.Config().IsUncaptured() {
 			// TODO: fix this and remove this skip
 			t.Skip("https://github.com/istio/istio/issues/43238")
 		}
+		// 配置vs和dr
 		t.ConfigIstio().Eval(apps.Namespace.Name(), map[string]string{
 			"Destination": dst.Config().Service,
 		}, `apiVersion: networking.istio.io/v1alpha3
@@ -701,9 +714,11 @@ spec:
 			opt = opt.DeepCopy()
 			opt.Count = 5
 			opt.Timeout = time.Second * 10
+			// 设置Check
 			opt.Check = check.And(
 				check.OK(),
 				func(result echo.CallResult, _ error) error {
+					// 校验result的版本
 					for _, r := range result.Responses {
 						if r.Version != "v1" {
 							return fmt.Errorf("expected service version %q, got %q", "v1", r.Version)
@@ -721,11 +736,13 @@ spec:
 			if opt.HTTP.Headers == nil {
 				opt.HTTP.Headers = map[string][]string{}
 			}
+			// 设置Headers
 			opt.HTTP.Headers.Set("user", "istio-custom-user")
 			opt.Check = check.And(
 				check.OK(),
 				func(result echo.CallResult, _ error) error {
 					for _, r := range result.Responses {
+						// 预期版本为v2
 						if r.Version != "v2" {
 							return fmt.Errorf("expected service version %q, got %q", "v2", r.Version)
 						}
@@ -2276,17 +2293,23 @@ func runTest(t *testing.T, f func(t framework.TestContext, src echo.Instance, ds
 }
 
 func runTestContext(t framework.TestContext, f func(t framework.TestContext, src echo.Instance, dst echo.Instance, opt echo.CallOptions)) {
+	// 遍历app中所有的svcs
 	svcs := apps.All
 	for _, src := range svcs {
 		t.NewSubTestf("from %v", src.Config().Service).Run(func(t framework.TestContext) {
+			// 再次遍历svcs
 			for _, dst := range svcs {
+				// 遍历svcs
 				t.NewSubTestf("to %v", dst.Config().Service).Run(func(t framework.TestContext) {
 					for _, opt := range callOptions {
 						src, dst, opt := src, dst, opt
 						t.NewSubTestf("%v", opt.Scheme).Run(func(t framework.TestContext) {
 							opt = opt.DeepCopy()
+							// 将opt.To设为dst
 							opt.To = dst
+							// 检查Check
 							opt.Check = check.OK()
+							// 运行函数
 							f(t, src, dst, opt)
 						})
 					}

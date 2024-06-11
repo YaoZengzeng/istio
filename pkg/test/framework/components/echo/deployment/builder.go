@@ -42,33 +42,43 @@ import (
 
 // Builder for a group of collaborating Echo Instances. Once built, all Instances in the
 // group:
+// Builder对于一系列合作的Echo Instances，一旦构建完成，所有在group中的Instances：
 //
 //  1. Are ready to receive traffic, and
+//  1. 准备好接受流量
 //  2. Can call every other Instance in the group (i.e. have received Envoy config
 //     from Pilot).
+//  2. 可以调用group中任何其他的Instance，（已经从Pilot获取Envoy配置）
 //
 // If a test needs to verify that one Instance is NOT reachable from another, there are
 // a couple of options:
+// 如果一个测试需要校验一个Instances从另一个实例不能访问，这里有一系列选项
 //
 //  1. Build a group while all Instances ARE reachable. Then apply a policy
 //     disallowing the communication.
+//  1. 构建一个group，所有的Intances都是可访问的，之后应用一个策略，禁止交互
 //  2. Build the source and destination Instances in separate groups and then
 //     call `source.WaitUntilCallable(destination)`.
+//  2. 构建source以及destination Instances，在不同的groups，之后调用`source.WaitUntilCallable(destination)`
 type Builder interface {
 	// With adds a new Echo configuration to the Builder. Once built, the instance
 	// pointer will be updated to point at the new Instance.
+	// With添加一个新的Echo配置到Builder，一旦构建完成，instance pointer会被更新指向新的Intance
 	With(i *echo.Instance, cfg echo.Config) Builder
 
 	// WithConfig mimics the behavior of With, but does not allow passing a reference
 	// and returns an echoboot builder rather than a generic echo builder.
+	// WithConfig模仿With的行为，但是不允许传入一个引用，返回一个echoboot builder而不是一个通用的echo builder
 	// TODO rename this to With, and the old method to WithInstance
 	WithConfig(cfg echo.Config) Builder
 
 	// WithClusters will cause subsequent With or WithConfig calls to be applied to the given clusters.
+	// WithClusters会导致后续的With或者WithConfig调用到给定的clusters
 	WithClusters(...cluster.Cluster) Builder
 
 	// Build and initialize all Echo Instances. Upon returning, the Instance pointers
 	// are assigned and all Instances are ready to communicate with each other.
+	// Build会初始化所有的Echo Instances，在返回后，Instances pointer会被赋值并且所有的Instances准备好和其他进行交互
 	Build() (echo.Instances, error)
 	BuildOrFail(t test.Failer) echo.Instances
 }
@@ -76,8 +86,10 @@ type Builder interface {
 var _ Builder = builder{}
 
 // New builder for echo deployments.
+// New一个builder，对于echo deployments
 func New(ctx resource.Context, clusters ...cluster.Cluster) Builder {
 	// use all workload clusters unless otherwise specified
+	// 使用所有的workload clusters，除非声明
 	if len(clusters) == 0 {
 		clusters = ctx.Clusters()
 	}
@@ -102,6 +114,7 @@ type builder struct {
 
 	// clusters contains the current set of clusters that subsequent With calls will be applied to,
 	// if the Config passed to With does not explicitly choose a cluster.
+	// clusters包含当前的一系列clusters，后续的With调用可以应用
 	clusters cluster.Clusters
 
 	// configs contains configurations to be built, expanded per-cluster and grouped by cluster Kind.
@@ -112,8 +125,10 @@ type builder struct {
 	refs map[cluster.Kind][]*echo.Instance
 	// namespaces caches namespaces by their prefix; used for converting Static namespace from configs into actual
 	// namespaces
+	// namespaces通过他们的前缀返回ns
 	namespaces map[string]namespace.Instance
 	// the set of injection templates for each cluster
+	// 对于每个clsuter的一系列injection templates
 	templates map[string]sets.String
 	// errs contains a multierror for failed validation during With calls
 	errs error
@@ -126,6 +141,8 @@ func (b builder) WithConfig(cfg echo.Config) Builder {
 // With adds a new Echo configuration to the Builder. When a cluster is provided in the Config, it will only be applied
 // to that cluster, otherwise the Config is applied to all WithClusters. Once built, if being built for a single cluster,
 // the instance pointer will be updated to point at the new Instance.
+// With添加一个新的Echo配置到Builder，当一个cluster在Config中提供时，它会被应用到这个cluster，否则Config被应用到所有的WithClusters
+// 一旦被构建，如果对于单个的cluster构建，instance pointer会被更新指向一个新的Instance
 func (b builder) With(i *echo.Instance, cfg echo.Config) Builder {
 	if b.ctx.Settings().SkipWorkloadClassesAsSet().Contains(cfg.WorkloadClass()) {
 		return b
@@ -143,6 +160,7 @@ func (b builder) With(i *echo.Instance, cfg echo.Config) Builder {
 	}
 
 	// cache the namespace, so manually added echo.Configs can be a part of it
+	// 缓存ns，这样手动添加的echo.Configs可以变成它的一部分
 	b.namespaces[cfg.Namespace.Prefix()] = cfg.Namespace
 
 	targetClusters := b.clusters

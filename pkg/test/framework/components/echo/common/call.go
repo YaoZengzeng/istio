@@ -182,6 +182,7 @@ func getProtoALPN(alpn []string) *proto.Alpn {
 
 // EchoClientProvider provides dynamic creation of Echo clients. This allows retries to potentially make
 // use of different (ready) workloads for forward requests.
+// EchoClientProvider提供了对于Echo clients的冬天创建，这允许潜在地使用不同的（准备好的）workloads来转发请求
 type EchoClientProvider func() (*echoclient.Client, error)
 
 func ForwardEcho(srcName string, from echo.Caller, opts echo.CallOptions, clientProvider EchoClientProvider) (echo.CallResult, error) {

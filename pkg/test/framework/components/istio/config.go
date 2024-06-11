@@ -115,6 +115,7 @@ type Config struct {
 	SystemNamespace string
 
 	// The namespace in which kiali, tracing providers, graphana, prometheus are deployed.
+	// kiali, tracing provdiers, grafana, prometheus部署的ns
 	TelemetryNamespace string
 
 	// The IstioOperator spec file to be used for Control plane cluster by default

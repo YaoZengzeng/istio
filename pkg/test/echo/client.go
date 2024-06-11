@@ -36,6 +36,7 @@ import (
 var _ io.Closer = &Client{}
 
 // Client of an Echo server that simplifies request/response processing for Forward commands.
+// 一个Echo server的Client，简化了reqeust/reponse的处理，对于Forward命令
 type Client struct {
 	conn   *grpc.ClientConn
 	client proto.EchoTestServiceClient

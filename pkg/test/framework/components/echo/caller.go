@@ -20,6 +20,7 @@ import (
 )
 
 // CallResult the result of a call operation.
+// CallResult是一个call操作的结果
 type CallResult struct {
 	From      Caller
 	Opts      CallOptions

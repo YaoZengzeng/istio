@@ -26,23 +26,29 @@ import (
 )
 
 // WorkloadContainer is container for a number of Workload objects.
+// WorkloadContainer是一系列的workload objects的container
 type WorkloadContainer interface {
 	// Workloads retrieves the list of all deployed workloads for this Echo service.
+	// Workloads获取一系列部署的workloads，对于这个Echo service
 	// Guarantees at least one workload, if error == nil.
 	Workloads() (Workloads, error)
 	WorkloadsOrFail(t test.Failer) Workloads
 	MustWorkloads() Workloads
 
 	// Clusters where the workloads are deployed.
+	// workloads部署的Clusters
 	Clusters() cluster.Clusters
 }
 
 // Workload provides an interface for a single deployed echo server.
+// Workload提供了一个interface，对于单个部署的
 type Workload interface {
 	// PodName gets the original pod name for the workload.
+	// PodName获取workload original pod name
 	PodName() string
 
 	// Address returns the network address of the endpoint.
+	// Address返回endpoint的network address
 	Address() string
 
 	// Addresses returns the network addresses of the endpoint.

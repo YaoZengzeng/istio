@@ -37,6 +37,7 @@ setup_and_export_git_sha
 # 执行kind provisioner
 source "${ROOT}/common/scripts/kind_provisioner.sh"
 
+# 默认为SINGLE_CLUSTER
 TOPOLOGY=SINGLE_CLUSTER
 NODE_IMAGE="gcr.io/istio-testing/kind-node:v1.30.0"
 KIND_CONFIG=""
@@ -125,6 +126,7 @@ export PULL_POLICY=IfNotPresent
 # 这些值必须匹配config/trustworthy-jwt.yaml中的配置
 export KIND_REGISTRY_NAME="kind-registry"
 export KIND_REGISTRY_PORT="5000"
+# 设置KIND REGISTRY，镜像最终都推到这个仓库
 export KIND_REGISTRY="localhost:${KIND_REGISTRY_PORT}"
 
 export HUB=${HUB:-"istio-testing"}

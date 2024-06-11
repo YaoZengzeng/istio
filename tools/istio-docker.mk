@@ -34,6 +34,7 @@ docker.save: ## Build docker images and save to tar.gz
 	./tools/docker --save
 
 docker.push: ## Build all docker images and push to
+    # 构建所有的docker images并且推送
 	./tools/docker --push
 
 # Legacy command aliases

@@ -141,12 +141,15 @@ function setup_kind_cluster_retry() {
 }
 
 # setup_kind_cluster creates new KinD cluster with given name, image and configuration
+# setup_kind_cluster创建新的KinD cluster，用给定的名字，镜像以及配置
 # 1. NAME: Name of the Kind cluster (optional)
 # 2. IMAGE: Node image used by KinD (optional)
 # 3. CONFIG: KinD cluster configuration YAML file. If not specified then DEFAULT_CLUSTER_YAML is used
 # 4. NOMETALBINSTALL: Dont install matllb if set.
+# 4. NOMETALBINSTALL: 不要安装metallb如果设置的话
 # This function returns 0 when everything goes well, or 1 otherwise
 # If Kind cluster was already created then it would be cleaned up in case of errors
+# 如果kind cluster已经存在了，那么它会被清理，防止错误
 function setup_kind_cluster() {
   local NAME="${1:-istio-testing}"
   local IMAGE="${2:-"${DEFAULT_KIND_IMAGE}"}"
@@ -157,24 +160,28 @@ function setup_kind_cluster() {
   check_default_cluster_yaml
 
   # Delete any previous KinD cluster
+  # 删除任何之前的KinD集群
   echo "Deleting previous KinD cluster with name=${NAME}"
   if ! (kind delete cluster --name="${NAME}" -v9) > /dev/null; then
     echo "No existing kind cluster with name ${NAME}. Continue..."
   fi
 
   # explicitly disable shellcheck since we actually want $NAME to expand now
+  # 显式地禁止shellchekc，因为我们真的想要$NAME扩展
   # shellcheck disable=SC2064
   if [[ "${CLEANUP}" == "true" ]]; then
     trap "cleanup_kind_cluster ${NAME}" EXIT
   fi
 
     # If config not explicitly set, then use defaults
+    # 如果config没有显式设置，使用默认
   if [[ -z "${CONFIG}" ]]; then
     # Kubernetes 1.15+
     CONFIG=${DEFAULT_CLUSTER_YAML}
   fi
 
   # Configure the cluster IP Family if explicitly set
+  # 配置cluster IP Family，如果显式设置的话
   if [ "${IP_FAMILY}" != "ipv4" ]; then
     grep "ipFamily: ${IP_FAMILY}" "${CONFIG}" || \
     cat <<EOF >> "${CONFIG}"
@@ -191,6 +198,7 @@ EOF
   fi
 
   # Create KinD cluster
+  # 创建KinD cluster
   if ! (yq eval "${CONFIG}" --expression ".networking.disableDefaultCNI = ${KIND_DISABLE_CNI}" | \
     kind create cluster --name="${NAME}" -v4 --retain --image "${IMAGE}" ${KIND_WAIT_FLAG:+"$KIND_WAIT_FLAG"} --config -); then
     echo "Could not setup KinD environment. Something wrong with KinD setup. Exporting logs."
@@ -200,6 +208,7 @@ EOF
   kubectl taint nodes "${NAME}"-control-plane node-role.kubernetes.io/control-plane- 2>/dev/null || true
 
   # Determine what CNI to install
+  # 决定安装的CNI
   case "${KUBERNETES_CNI:-}" in 
 
     "calico")
@@ -220,27 +229,34 @@ EOF
 
   # If metrics server configuration directory is specified then deploy in
   # the cluster just created
+  # 如果声明了metrics server的配置文件，之后部署在新创建的cluster
   if [[ -n ${METRICS_SERVER_CONFIG_DIR:-} ]]; then
     retry kubectl apply -f "${METRICS_SERVER_CONFIG_DIR}"
   fi
 
   # Install Metallb if not set to install explicitly
+  # 安装Metallb，如果没有显式设置的话
   if [[ -z "${NOMETALBINSTALL}" ]]; then
     retry install_metallb ""
   fi
 
   # IPv6 clusters need some CoreDNS changes in order to work in CI:
+  # IPv6 clusters需要一些CoreDNS的变更，为了能在CI中work
   # Istio CI doesn't offer IPv6 connectivity, so CoreDNS should be configured
   # to work in an offline environment:
+  # Istio CI不需要提供IPv6的connectivity，这样CoreDNS需要被配置在离线环境运行
   # https://github.com/coredns/coredns/issues/2494#issuecomment-457215452
   # CoreDNS should handle those domains and answer with NXDOMAIN instead of SERVFAIL
   # otherwise pods stops trying to resolve the domain.
+  # CoreDNS需要处理这些domains并且回复NXDOMAIN，而不是SERVFAIL，否则pods停止尝试解析domain
   if [ "${IP_FAMILY}" = "ipv6" ] || [ "${IP_FAMILY}" = "dual" ]; then
     # Get the current config
+    # 获取当前的配置
     original_coredns=$(kubectl get -oyaml -n=kube-system configmap/coredns)
     echo "Original CoreDNS config:"
     echo "${original_coredns}"
     # Patch it
+    # 进行Patch
     fixed_coredns=$(
       printf '%s' "${original_coredns}" | sed \
         -e 's/^.*kubernetes cluster\.local/& internal/' \
