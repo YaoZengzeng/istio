@@ -32,6 +32,7 @@ import (
 )
 
 // SupportsGatewayAPI checks if the gateway API is supported.
+// SupportsGatewayAPI检查gateway API是否支持
 func SupportsGatewayAPI(t resource.Context) bool {
 	for _, cluster := range t.Clusters() {
 		if !cluster.MinKubeVersion(23) { // API uses CEL which requires 1.23
@@ -63,16 +64,19 @@ func DeployGatewayAPI(ctx resource.Context) error {
 		return err
 	}
 	// Wait until our GatewayClass is ready
+	// 等待直到我们的GatewayClass处于ready状态
 	return retry.UntilSuccess(func() error {
 		for _, c := range ctx.Clusters().Configs() {
 			_, err := c.GatewayAPI().GatewayV1beta1().GatewayClasses().Get(context.Background(), "istio", metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
+			// 遍历获得crds
 			crdl, err := c.Ext().ApiextensionsV1().CustomResourceDefinitions().List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				return err
 			}
+			// 获取crd的items
 			for _, crd := range crdl.Items {
 				if !strings.HasSuffix(crd.Name, "gateway.networking.k8s.io") {
 					continue

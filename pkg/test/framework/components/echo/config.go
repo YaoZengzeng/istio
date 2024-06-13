@@ -385,6 +385,7 @@ func (c Config) HasSidecar() bool {
 
 func (c Config) IsUncaptured() bool {
 	// TODO this can be more robust to not require labeling initial echo config (check namespace + isWaypoint + not sidecar)
+	// deployment中表示dataplane mode未None
 	return len(c.Subsets) > 0 && c.Subsets[0].Labels != nil && c.Subsets[0].Labels[constants.DataplaneModeLabel] == constants.DataplaneModeNone
 }
 

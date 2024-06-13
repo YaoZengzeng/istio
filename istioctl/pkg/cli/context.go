@@ -38,6 +38,7 @@ type Context interface {
 	// IstioNamespace returns the Istio namespace specified by the user
 	IstioNamespace() string
 	// NamespaceOrDefault returns the namespace specified by the user, or the default namespace if none was specified
+	// NamespaceOrDefault返回用户指定的namespace，或者默认的namespace，如果没有指定
 	NamespaceOrDefault(namespace string) string
 }
 

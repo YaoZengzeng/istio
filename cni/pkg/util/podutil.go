@@ -54,6 +54,7 @@ func PodRedirectionEnabled(namespace *corev1.Namespace, pod *corev1.Pod) bool {
 	}
 	if pod.GetLabels()[constants.DataplaneModeLabel] == constants.DataplaneModeNone {
 		// Pod explicitly asked to not have ambient redirection enabled
+		// Pod显式声明不使用ambient redirection
 		return false
 	}
 	return true

@@ -189,6 +189,8 @@ type CLIClient interface {
 
 	// NewPortForwarder creates a new PortForwarder configured for the given pod. If localPort=0, a port will be
 	// dynamically selected. If localAddress is empty, "localhost" is used.
+	// NewPortForwarder创建一个新的PortForwarder，配置给定的pod，如果localPort=0，一个端口会被动态选择，如果localAddress为空
+	// "localhost"被使用
 	NewPortForwarder(podName string, ns string, localAddress string, localPort int, podPort int) (PortForwarder, error)
 
 	// ApplyYAMLFiles applies the resources in the given YAML files.

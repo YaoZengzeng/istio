@@ -56,10 +56,12 @@ func (k kubeComponent) PodIP() string {
 }
 
 func (k kubeComponent) Inbound() string {
+	// 返回inbound地址
 	return k.inbound.Address()
 }
 
 func (k kubeComponent) Outbound() string {
+	// 返回outbound地址
 	return k.outbound.Address()
 }
 
@@ -78,6 +80,7 @@ func (k kubeComponent) Close() error {
 }
 
 // WaypointProxy describes a waypoint proxy deployment
+// WaypointProxy描述了一个waypoint proxy deployment
 type WaypointProxy interface {
 	Namespace() namespace.Instance
 	Inbound() string
@@ -104,6 +107,7 @@ func NewWaypointProxy(ctx resource.Context, ns namespace.Instance, name string) 
 		return nil, err
 	}
 	// TODO: detect from UseWaypointProxy in echo.Config
+	// 创建waypoint
 	_, _, err = ik.Invoke([]string{
 		"x",
 		"waypoint",
@@ -123,6 +127,7 @@ func NewWaypointProxy(ctx resource.Context, ns namespace.Instance, name string) 
 	// Find the Waypoint pod and service, and start forwarding a local port.
 	// 找到waypoint pod和service，并且开始转发一个local port
 	fetchFn := testKube.NewSinglePodFetch(cls, ns.Name(), fmt.Sprintf("%s=%s", constants.GatewayNameLabel, name))
+	// 等待直到Pods处于Ready状态
 	pods, err := testKube.WaitUntilPodsAreReady(fetchFn)
 	if err != nil {
 		return nil, err
@@ -147,6 +152,7 @@ func NewWaypointProxy(ctx resource.Context, ns namespace.Instance, name string) 
 	server.inbound = inbound
 	server.outbound = outbound
 	server.pod = pod
+
 	return server, nil
 }
 
@@ -166,19 +172,25 @@ func SetWaypointForService(t framework.TestContext, ns namespace.Instance, servi
 	}
 
 	cs := t.AllClusters().Kube()
+	// 遍历所有的clusters
 	for _, c := range cs {
+		// 获取svc
 		oldSvc, err := c.Kube().CoreV1().Services(ns.Name()).Get(t.Context(), service, metav1.GetOptions{})
 		if err != nil {
 			t.Fatalf("error getting svc %s, err %v", service, err)
 		}
+		// 获取svc的labels
 		oldLabels := oldSvc.ObjectMeta.GetLabels()
 		if oldLabels == nil {
 			oldLabels = make(map[string]string, 1)
 		}
+		// 复制old labels，构建新的labels
 		newLabels := maps.Clone(oldLabels)
 		if waypoint != "" {
+			// 添加waypoint proxy
 			newLabels[constants.AmbientUseWaypointLabel] = waypoint
 		} else {
+			// waypoint为""，则从labels中删除
 			delete(newLabels, constants.AmbientUseWaypointLabel)
 		}
 
@@ -188,16 +200,19 @@ func SetWaypointForService(t framework.TestContext, ns namespace.Instance, servi
 			if err != nil {
 				return err
 			}
+			// 设置对象的labels
 			svc.ObjectMeta.SetLabels(labels)
 			_, err = c.Kube().CoreV1().Services(ns.Name()).Update(t.Context(), svc, metav1.UpdateOptions{})
 			return err
 		}
 
 		if err = doLabel(newLabels); err != nil {
+			// 更新svc
 			t.Fatalf("error updating svc %s, err %v", service, err)
 		}
 		t.Cleanup(func() {
 			if err := doLabel(oldLabels); err != nil {
+				// 重新设置waypoint失败，因为它可能会破坏其他的测试
 				scopes.Framework.Errorf("failed resetting waypoint for %s/%s; this will likely break other tests", ns.Name(), service)
 			}
 		})

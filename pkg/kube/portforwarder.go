@@ -32,6 +32,7 @@ import (
 )
 
 // PortForwarder manages the forwarding of a single port.
+// PortForwarder管理单个port的转发
 type PortForwarder interface {
 	// Start runs this forwarder.
 	Start() error

@@ -100,6 +100,7 @@ while (( "$#" )); do
       exit 1
       ;;
     *) # preserve positional arguments
+    # 保留位置参数
       PARAMS+=("$1")
       shift
       ;;

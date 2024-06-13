@@ -65,6 +65,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 			ns = ""
 		}
 		// If a user sets the waypoint name to an empty string, set it to the default namespace waypoint name.
+		// 如果一个用户将waypoint name指定为空字符串，将它设置为默认的ns waypoint name
 		if waypointName == "" {
 			waypointName = constants.DefaultNamespaceWaypoint
 		}
@@ -74,6 +75,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 				APIVersion: gvk.KubernetesGateway_v1.GroupVersion(),
 			},
 			ObjectMeta: metav1.ObjectMeta{
+				// 构建gateway对象
 				Name:      waypointName,
 				Namespace: ns,
 			},
@@ -88,6 +90,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 		}
 		// Determine which traffic address type to apply the waypoint to, if none is provided it will default to "service"
 		// as the waypoint-for traffic type.
+		// 决定哪种类型的流量地址类型应用到waypoint，如果没有提供，它默认到"service"，作为waypoint-for流量类型
 		if !validTrafficTypes.Contains(trafficType) {
 			return nil, fmt.Errorf("invalid traffic type: %s. Valid options are: %s", trafficType, validTrafficTypes.String())
 		}
@@ -167,11 +170,13 @@ func Cmd(ctx cli.Context) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to create gateway: %v", err)
 			}
+			// 调用gateway api
 			gwc := kubeClient.GatewayAPI().GatewayV1().Gateways(ctx.NamespaceOrDefault(ctx.Namespace()))
 			b, err := yaml.Marshal(gw)
 			if err != nil {
 				return err
 			}
+			// 对gwc进行Patch
 			_, err = gwc.Patch(context.Background(), gw.Name, types.ApplyPatchType, b, metav1.PatchOptions{
 				Force:        nil,
 				FieldManager: "istioctl",
@@ -182,6 +187,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 				}
 				return err
 			}
+			// 等待处于Ready
 			if waitReady {
 				startTime := time.Now()
 				ticker := time.NewTicker(1 * time.Second)
@@ -191,6 +197,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 					gwc, err := kubeClient.GatewayAPI().GatewayV1().Gateways(ctx.NamespaceOrDefault(ctx.Namespace())).Get(context.TODO(), gw.Name, metav1.GetOptions{})
 					if err == nil {
 						// Check if gateway has Programmed condition set to true
+						// 校验是否gateway已经将Programmed condition设置为true
 						for _, cond := range gwc.Status.Conditions {
 							if cond.Type == string(gateway.GatewayConditionProgrammed) && string(cond.Status) == "True" {
 								programmed = true
@@ -202,6 +209,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 						break
 					}
 					if time.Since(startTime) > waitTimeout {
+						// 等待waypoint超时
 						errorMsg := fmt.Sprintf("timed out while waiting for waypoint %v/%v", gw.Namespace, gw.Name)
 						if err != nil {
 							errorMsg += fmt.Sprintf(": %s", err)
@@ -214,6 +222,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 
 			// If a user decides to enroll their namespace with a waypoint, label the namespace with the waypoint name
 			// after the waypoint has been applied.
+			// 如果用户决定注册他们的ns到一个waypoint，用waypoint name对ns进行label，在waypoint已经applied之后
 			if enrollNamespace {
 				err = labelNamespaceWithWaypoint(kubeClient, ns)
 				if err != nil {
@@ -232,6 +241,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 	)
 
 	waypointApplyCmd.PersistentFlags().BoolVarP(&enrollNamespace, "enroll-namespace", "", false,
+		// 如果设置，ns会被waypoint name进行labeled
 		"If set, the namespace will be labeled with the waypoint name")
 
 	waypointDeleteCmd := &cobra.Command{
@@ -266,6 +276,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 			ns := ctx.NamespaceOrDefault(ctx.Namespace())
 
 			// Delete all waypoints if the --all flag is set
+			// 删除所有的waypoints，如果设置了--all的flag
 			if deleteAll {
 				return deleteWaypoints(cmd, kubeClient, ns, nil)
 			}
@@ -297,6 +308,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 			} else {
 				ns = ctx.NamespaceOrDefault(ctx.Namespace())
 			}
+			// 对gateways进行list
 			gws, err := kubeClient.GatewayAPI().GatewayV1().Gateways(ns).
 				List(context.Background(), metav1.ListOptions{})
 			if err != nil {
@@ -384,10 +396,12 @@ func Cmd(ctx cli.Context) *cobra.Command {
 }
 
 // deleteWaypoints handles the deletion of waypoints based on the provided names, or all if names is nil
+// deleteWaypoints处理对于提供名字的waypoints的删除，当names为nil，则全部删除
 func deleteWaypoints(cmd *cobra.Command, kubeClient kube.CLIClient, namespace string, names []string) error {
 	var multiErr *multierror.Error
 	if names == nil {
 		// If names is nil, delete all waypoints
+		// 如果names为nil，删除所有的waypoints
 		waypoints, err := kubeClient.GatewayAPI().GatewayV1().Gateways(namespace).
 			List(context.Background(), metav1.ListOptions{})
 		if err != nil {
@@ -404,6 +418,7 @@ func deleteWaypoints(cmd *cobra.Command, kubeClient kube.CLIClient, namespace st
 		wg.Add(1)
 		go func(name string) {
 			defer wg.Done()
+			// 删除waypoints
 			if err := kubeClient.GatewayAPI().GatewayV1().Gateways(namespace).
 				Delete(context.Background(), name, metav1.DeleteOptions{}); err != nil {
 				if errors.IsNotFound(err) {

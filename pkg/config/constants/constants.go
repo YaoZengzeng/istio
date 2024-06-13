@@ -98,6 +98,7 @@ const (
 	IstioMeshGateway = "mesh"
 
 	// DefaultNamespaceWaypoint is the default name for a waypoint in a namespace.
+	// DefaultNamespaceWaypoint是一个ns中一个waypoint的默认名字
 	DefaultNamespaceWaypoint = "waypoint"
 
 	// The data name in the ConfigMap of each namespace storing the root cert of non-Kube CA.
@@ -178,6 +179,7 @@ const (
 	// DeprecatedGatewayNameLabel indicates the gateway managing a particular proxy instances. Only populated for Gateway API gateways
 	DeprecatedGatewayNameLabel = "istio.io/gateway-name"
 	// GatewayNameLabel indicates the gateway managing a particular proxy instances. Only populated for Gateway API gateways
+	// GatewayNameLabel表明gateway管理一个特定的proxy instances，只对Gateway API gateways填充
 	GatewayNameLabel = "gateway.networking.k8s.io/gateway-name"
 
 	// TODO formalize this API
@@ -186,10 +188,13 @@ const (
 	ListenerModeAutoPassthrough = "auto-passthrough"
 
 	// DataplaneMode namespace label for determining ambient mesh behavior
+	// DataplaneMode ns label用于决定ambient mesh的行为
 	DataplaneModeLabel = "istio.io/dataplane-mode"
 	// Set by users to indicate that the (namespace|pod) should be captured for ambient
+	// 由用户设置来表明（ns|pod）应该被ambient获取
 	DataplaneModeAmbient = "ambient"
 	// Set by users to indicate that the (namespace|pod) should NOT be captured for ambient
+	// 由用户设置来表明（ns|pod）不应该被ambient获取
 	DataplaneModeNone    = "none"
 	DataplaneModeInherit = "inherit" // TODO do we need this atm
 
@@ -216,11 +221,14 @@ const (
 	AmbientWaypointInboundBinding = "ambient.istio.io/waypoint-inbound-binding"
 
 	// ServiceTraffic indicates that service traffic should go through the intended waypoint.
+	// ServiceTraffic表明service traffic应该通过预期的waypoint
 	ServiceTraffic = "service"
 	// WorkloadTraffic indicates that workload traffic should go through the intended waypoint.
 	WorkloadTraffic = "workload"
 	// AllTraffic indicates that all traffic should go through the intended waypoint.
+	// AllTraffic表明所有的traffic应该通过预期的waypoint
 	AllTraffic = "all"
 	// NoTraffic indicates that no traffic should go through the intended waypoint.
+	// NoTraffic表明没有traffic应该通过期望的waypoint
 	NoTraffic = "none"
 )

@@ -100,6 +100,7 @@ func init() {
 }
 
 // GetRootCmd returns the root of the cobra command-tree.
+// GetRootCmd返回cobra command-tree的根
 func GetRootCmd(args []string) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:               "istioctl",

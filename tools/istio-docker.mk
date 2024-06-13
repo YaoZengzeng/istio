@@ -19,12 +19,17 @@
 
 ### Docker commands ###
 # Below provides various commands to build/push docker images.
+# 使用各种命令构建/推送 docker images
 # These are all wrappers around ./tools/docker, the binary that controls docker builds.
+# 这些都是对于./tools/docker的封装，二进制控制docker builds
 # Builds can also be done through direct ./tools/docker invocations.
+# Builds也能通过直接调用./tools/docker完成
 # When using these commands the flow is:
 #  1) make target calls ./tools/docker
 #  2) ./tools/docker calls `make build.docker.x` targets to compute the dependencies required
+#  2) ./tools/docker调用`make build.docker.x` targets来计算需要的依赖
 #  3) ./tools/docker triggers the actual docker commands required
+#  3) ./tools/docker触发真正需要的docker命令
 # As a result, there are two layers of make involved.
 
 docker: ## Build all docker images
@@ -53,6 +58,7 @@ dockerx: docker
 
 # Docker commands defines some convenience targets
 # Build individual docker image and push it. Ex: push.docker.pilot
+# 构建单独的docker image并且push它
 push.docker.%:
 	DOCKER_TARGETS=docker.$* ./tools/docker --push
 
