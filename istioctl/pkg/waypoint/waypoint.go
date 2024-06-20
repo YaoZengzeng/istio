@@ -152,6 +152,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 			// If a user decides to enroll their namespace with a waypoint, verify that they have labeled their namespace as ambient.
 			// If they don't, the user will be warned and be presented with the command to label their namespace as ambient if they
 			// choose to do so.
+			// 如果一个user决定用一个waypoint注册他们的ns
 			//
 			// NOTE: This is a warning and not an error because the user may not intend to label their namespace as ambient.
 			//

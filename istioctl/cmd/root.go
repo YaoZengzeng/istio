@@ -150,7 +150,8 @@ debug and diagnose their Istio mesh.
 	experimentalCmd := &cobra.Command{
 		Use:     "experimental",
 		Aliases: []string{"x", "exp"},
-		Short:   "Experimental commands that may be modified or deprecated",
+		// Experiment commands可能被修改或者遗弃
+		Short: "Experimental commands that may be modified or deprecated",
 	}
 
 	xdsBasedTroubleshooting := []*cobra.Command{
