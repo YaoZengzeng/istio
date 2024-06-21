@@ -24,11 +24,13 @@ import (
 )
 
 // Helm allows clients to interact with helm commands in their cluster
+// Helm允许clients在他们的集群里和helm commands进行交互
 type Helm struct {
 	kubeConfig string
 }
 
 // New returns a new instance of a helm object.
+// New返回一个helm对象的新实例
 func New(kubeConfig string) *Helm {
 	return &Helm{
 		kubeConfig: kubeConfig,
@@ -36,6 +38,7 @@ func New(kubeConfig string) *Helm {
 }
 
 // InstallChartWithValues installs the specified chart with its given name to the given namespace
+// InstallChartWithValues安装指定的chart，用给定的名字，到给定的ns
 func (h *Helm) InstallChartWithValues(name, chartPath, namespace string, values []string, timeout time.Duration) error {
 	command := fmt.Sprintf("helm install %s %s --namespace %s --kubeconfig %s --timeout %s %s",
 		name, chartPath, namespace, h.kubeConfig, timeout, strings.Join(values, " "))
@@ -44,6 +47,7 @@ func (h *Helm) InstallChartWithValues(name, chartPath, namespace string, values 
 }
 
 // InstallChart installs the specified chart with its given name to the given namespace
+// InstallChart安装指定的chart，用给定的name到给定的ns
 func (h *Helm) InstallChart(name, chartPath, namespace, overridesFile string, timeout time.Duration, args ...string) error {
 	command := fmt.Sprintf("helm install %s %s --namespace %s -f %s --kubeconfig %s --timeout %s %s ",
 		name, chartPath, namespace, overridesFile, h.kubeConfig, timeout, strings.Join(args, " "))

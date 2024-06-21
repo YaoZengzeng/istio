@@ -227,6 +227,7 @@ type NamespaceConfig interface {
 
 // InstallIstio install Istio using Helm charts with the provided
 // override values file and fails the tests on any failures.
+// InstallIstio使用Helm charts安装Istio，用提供的override values文件，有任何的failures都会失败
 func InstallIstio(t framework.TestContext, cs cluster.Cluster, h *helm.Helm, overrideValuesFile,
 	version string, installGateway bool, ambientProfile bool, nsConfig NamespaceConfig,
 ) {
@@ -291,6 +292,7 @@ func InstallIstio(t framework.TestContext, cs cluster.Cluster, h *helm.Helm, ove
 		}
 
 		// Install ztunnel chart
+		// 安装Ztunnel release
 		err = h.InstallChart(ZtunnelReleaseName, ztunnelChartPath, nsConfig.Get(ZtunnelReleaseName), overrideValuesFile, Timeout, versionArgs)
 		if err != nil {
 			t.Fatalf("failed to install istio %s chart: %v", ZtunnelChartsDir, err)

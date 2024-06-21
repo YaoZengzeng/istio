@@ -34,6 +34,7 @@ import (
 )
 
 // TestDefaultInstall tests Istio installation using Helm with default options
+// TestDefaultInstall测试Istio的安装，使用Helm以及默认的options
 func TestDefaultInstall(t *testing.T) {
 	overrideValuesStr := `
 global:
@@ -193,6 +194,7 @@ func baseSetup(overrideValuesStr string, isAmbient bool, config NamespaceConfig,
 			t.Fatal("failed to create test directory")
 		}
 		cs := t.Clusters().Default().(*kubecluster.Cluster)
+		// 构建一个新的helm
 		h := helm.New(cs.Filename())
 		s := t.Settings()
 		overrideValues := fmt.Sprintf(overrideValuesStr, s.Image.Hub, s.Image.Tag, s.Image.Variant)
