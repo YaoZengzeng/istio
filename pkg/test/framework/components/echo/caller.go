@@ -29,6 +29,7 @@ type CallResult struct {
 
 type Caller interface {
 	// Call from this Instance to a target Instance.
+	// 从这个Instance调用一个target Instance
 	Call(options CallOptions) (CallResult, error)
 	CallOrFail(t test.Failer, options CallOptions) CallResult
 }
@@ -36,6 +37,7 @@ type Caller interface {
 type Callers []Caller
 
 // Instances returns an Instances if all callers are Instance, otherwise returns nil.
+// Instances返回一个Instances，如果所有的callers是Instance，否则返回nil
 func (c Callers) Instances() Instances {
 	var out Instances
 	for _, caller := range c {

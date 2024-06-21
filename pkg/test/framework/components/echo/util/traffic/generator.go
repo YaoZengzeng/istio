@@ -36,6 +36,7 @@ type Config struct {
 	Options echo.CallOptions
 
 	// Interval between successive call operations. If not set, defaults to 1 second.
+	// 连续的call operations的时间间隔，如果没有设置，默认为1s
 	Interval time.Duration
 
 	// Maximum time to wait for traffic to complete after stopping. If not set, defaults to 15 seconds.
@@ -46,12 +47,16 @@ type Config struct {
 // (as defined by Config.Interval), a grpc request is sent to the source pod,
 // causing it to send a request to the destination echo server. Results are
 // captured for each request for later processing.
+// echo instances之间流量的生成器，每次time interval（通过Config.Interval定义），一个grpc请求被发送到source pod
+// 导致它发送一个请求到destination server，每次请求的Results被获取，用于后期处理
 type Generator interface {
 	// Start sending traffic.
+	// Start发送traffic
 	Start() Generator
 
 	// Stop sending traffic and wait for any in-flight requests to complete.
 	// Returns the Result
+	// Stop停止发送traffic并且等待in-flight requests完成，返回Results
 	Stop() Result
 }
 

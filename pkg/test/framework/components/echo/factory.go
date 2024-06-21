@@ -22,6 +22,7 @@ import (
 )
 
 // FactoryFunc can be used by a builder to produce instances from configs
+// FactoryFunc可以被一个builder使用，从configs生成instances
 type FactoryFunc func(ctx resource.Context, config []Config) (Instances, error)
 
 var factoryRegistry = map[cluster.Kind]FactoryFunc{}

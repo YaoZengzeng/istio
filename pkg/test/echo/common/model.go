@@ -25,10 +25,13 @@ type TLSSettings struct {
 	ClientCert string
 	Key        string
 	// If provided, override the host name used for the connection
+	// 如果提供了，覆盖hostname，用于连接
 	// This needed for integration tests, as we are connecting using a port-forward (127.0.0.1), so
 	// any DNS certs will not validate.
+	// 这用于集成测试，因为我们使用port-forward (127.0.0.1)连接，这样任何的DNS certs都不会校验
 	Hostname string
 	// If set to true, the cert will be provisioned by proxy, and extra cert volume will be mounted.
+	// 如果设置为true，cert会由proxy生成，并且抽取的cert volume会被挂载
 	ProxyProvision bool
 	// AcceptAnyALPN, if true, will make the server accept ANY ALPNs. This comes at the expense of
 	// allowing h2 negotiation and being able to detect the negotiated ALPN (as there is none), because
@@ -40,6 +43,7 @@ type TLSSettings struct {
 // Port represents a network port where a service is listening for
 // connections. The port should be annotated with the type of protocol
 // used by the port.
+// Port代表一个network port，一个service正在监听连接，port应该用这个端口使用的protocol类型注释
 type Port struct {
 	// Name ascribes a human readable name for the port object. When a
 	// service has multiple ports, the name field is mandatory
@@ -51,9 +55,11 @@ type Port struct {
 	Port int
 
 	// Protocol to be used for the port.
+	// 这个端口使用的protocol
 	Protocol protocol.Instance
 
 	// TLS determines if the port will use TLS.
+	// 这个端口是否使用TLS
 	TLS bool
 
 	// ServerFirst if a port will be server first

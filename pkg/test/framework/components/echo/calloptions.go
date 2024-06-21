@@ -30,6 +30,7 @@ import (
 )
 
 // HTTP settings
+// HTTP设置
 type HTTP struct {
 	// If true, h2c will be used in HTTP requests
 	HTTP2 bool
@@ -42,6 +43,7 @@ type HTTP struct {
 	Path string
 
 	// Method to send. Defaults to GET.
+	// 发送的Method，默认为GET
 	Method string
 
 	// Headers indicates headers that should be sent in the request. Ignored for WebSocket calls.
@@ -92,6 +94,7 @@ type HBONE struct {
 }
 
 // Retry settings
+// 重试的设置
 type Retry struct {
 	// NoRetry if true, no retry will be attempted.
 	NoRetry bool
@@ -143,10 +146,12 @@ type CallOptions struct {
 
 	// Scheme to be used when making the call. If not provided, the Scheme will be selected
 	// based on the Port.Protocol.
+	// 调用时使用的Scheme，如果没有提供，Sche会基于Port.Protocol选择
 	Scheme scheme.Instance
 
 	// Address specifies the host name or IP address to be used on the request. If not provided,
 	// an appropriate default is chosen for To.
+	// Address指定请求中使用的host name或者IP地址，如果没有提供，选择合适的默认值
 	Address string
 
 	// Count indicates the number of exchanges that should be made with the service endpoint.

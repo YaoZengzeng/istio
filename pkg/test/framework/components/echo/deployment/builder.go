@@ -118,6 +118,7 @@ type builder struct {
 	clusters cluster.Clusters
 
 	// configs contains configurations to be built, expanded per-cluster and grouped by cluster Kind.
+	// configs包含需要构建的配置，每个cluster扩展并且通过cluster Kind聚合
 	configs map[cluster.Kind][]echo.Config
 	// refs contains the references to assign built Instances to.
 	// The length of each refs slice should match the length of the corresponding cluster slice.
@@ -211,6 +212,7 @@ func (b builder) With(i *echo.Instance, cfg echo.Config) Builder {
 }
 
 // WithClusters will cause subsequent With calls to be applied to the given clusters.
+// WithClusters会导致后续的calls被应用到给定的cluster
 func (b builder) WithClusters(clusters ...cluster.Cluster) Builder {
 	next := b
 	next.clusters = clusters
@@ -273,6 +275,7 @@ func (b builder) injectionTemplates() (map[string]sets.String, error) {
 }
 
 // build inner allows assigning to b (assignment to receiver would be ineffective)
+// build inner允许赋值给b（赋值给receiver是不高效的）
 func build(b builder) (out echo.Instances, err error) {
 	start := time.Now()
 	scopes.Framework.Info("=== BEGIN: Deploy echo instances ===")
@@ -286,6 +289,7 @@ func build(b builder) (out echo.Instances, err error) {
 	}()
 
 	// load additional configs
+	// 加载额外的配置
 	for _, cfg := range *additionalConfigs {
 		// swap the namespace.Static for a namespace.kube
 		b, cfg.Namespace = b.getOrCreateNamespace(cfg.Namespace.Prefix())
@@ -298,9 +302,11 @@ func build(b builder) (out echo.Instances, err error) {
 		return nil, b.errs
 	}
 
+	// 部署svc
 	if err = b.deployServices(); err != nil {
 		return
 	}
+	// 部署deployment
 	if out, err = b.deployInstances(); err != nil {
 		return
 	}
@@ -322,16 +328,19 @@ func (b builder) getOrCreateNamespace(prefix string) (builder, namespace.Instanc
 
 // deployServices deploys the kubernetes Service to all clusters. Multicluster meshes should have "sameness"
 // per cluster. This avoids concurrent writes later.
+// deployServices部署k8s service到所有的clusters，Multicluster meshes应该每个cluster都是同样的，这避免了并发写
 func (b builder) deployServices() (err error) {
 	services := make(map[string]string)
 	for _, cfgs := range b.configs {
 		for _, cfg := range cfgs {
+			// 生成svc
 			svc, err := kube.GenerateService(cfg)
 			if err != nil {
 				return err
 			}
 			if existing, ok := services[cfg.ClusterLocalFQDN()]; ok {
 				// we've already run the generation for another echo instance's config, make sure things are the same
+				// 我们已经运行了另一个echo instance的config的生成，确保是相同的
 				if existing != svc {
 					return fmt.Errorf("inconsistency in %s Service definition:\n%s", cfg.Service, cmp.Diff(existing, svc))
 				}
@@ -341,6 +350,7 @@ func (b builder) deployServices() (err error) {
 	}
 
 	// Deploy the services to all clusters.
+	// 将services部署到所有的clusters
 	cfg := b.ctx.ConfigKube().New()
 	for svcNs, svcYaml := range services {
 		ns := strings.Split(svcNs, ".")[1]
@@ -355,6 +365,7 @@ func (b builder) deployInstances() (instances echo.Instances, err error) {
 	out := echo.Instances{}
 	g := multierror.Group{}
 	// run the builder func for each kind of config in parallel
+	// 并发运行builder func，对于各种config
 	for kind, configs := range b.configs {
 		kind := kind
 		configs := configs

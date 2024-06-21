@@ -74,6 +74,7 @@ func (i Instances) mustGetFirst() Instance {
 }
 
 // Callers is a convenience method to convert Instances into Callers.
+// Callers是一个方便的方法，将Instances转换为Callers
 func (i Instances) Callers() Callers {
 	var out Callers
 	for _, instance := range i {

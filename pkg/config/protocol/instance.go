@@ -17,6 +17,7 @@ package protocol
 import "strings"
 
 // Instance defines network protocols for ports
+// Instance定义了ports的network protocols
 type Instance string
 
 func (i Instance) String() string {

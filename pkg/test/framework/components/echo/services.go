@@ -22,6 +22,8 @@ import (
 // Services is a set of Instances that share the same FQDN. While an Instance contains
 // multiple deployments (a single service in a single cluster), Instances contains multiple
 // deployments that may contain multiple Services.
+// Services是一系列共享同一个FQDN的Instances，一个Instances包含多个deployments（一个svc在一个cluster）
+// 包含多个deployments的Instances可能包含多个Services
 type Services []Instances
 
 // GetByService finds the first Instances with the given Service name. It is possible to have multiple deployments

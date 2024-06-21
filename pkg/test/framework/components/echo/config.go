@@ -42,6 +42,7 @@ type Cluster interface {
 }
 
 // Configurable is and object that has Config.
+// Configurable是一个有Config的对象
 type Configurable interface {
 	Config() Config
 
@@ -184,6 +185,7 @@ type Config struct {
 	IncludeExtAuthz bool
 
 	// IPFamily for the service. This is optional field. Mainly is used for dual stack testing
+	// service的IPFamily，这是可选的字段，主要用于双栈测试
 	IPFamilies string
 
 	// IPFamilyPolicy. This is optional field. Mainly is used for dual stack testing.
@@ -403,6 +405,7 @@ func (c Config) IsSotw() bool {
 }
 
 // IsRegularPod returns true if the echo pod is not any of the following:
+// IsRegularPod返回true，如果echo pod不是以下任何一种
 // - VM
 // - Naked
 // - Headless
