@@ -87,6 +87,7 @@ type istioImpl struct {
 
 	mu sync.Mutex
 	// ingress components, indexed first by cluster name and then by gateway name.
+	// ingress组件，首先通过cluster name进行索引，之后是gateway name
 	ingress map[string]map[string]ingress.Instance
 	istiod  map[string]istiokube.PortForwarder
 	values  OperatorValues
@@ -381,6 +382,7 @@ func newKube(ctx resource.Context, cfg Config) (Instance, error) {
 		}
 
 		// remote clusters only need east-west gateway for multi-network purposes
+		// remote clusters只需要east-west gateway，对于multi-network purpose
 		if ctx.Environment().IsMultiNetwork() {
 			spec := i.remoteIOP.spec
 			if c.IsConfig() {
@@ -391,6 +393,7 @@ func newKube(ctx resource.Context, cfg Config) (Instance, error) {
 			}
 
 			// Wait for the eastwestgateway to have a public IP.
+			// 等待eastwest gateway又一个public IP
 			name := types.NamespacedName{Name: eastWestIngressServiceName, Namespace: i.cfg.SystemNamespace}
 			_ = i.CustomIngressFor(c, name, eastWestIngressIstioLabel).DiscoveryAddresses()
 		}
@@ -439,8 +442,10 @@ spec:
 }
 
 // installControlPlaneCluster installs the istiod control plane to the given cluster.
+// installControlPlaneCluster装置istiod control plane到给定的cluster
 // The cluster is considered a "primary" cluster if it is also a "config cluster", in which case components
 // like ingress will be installed.
+// cluster被认为是一个"primary" cluster，如果这也是一个"config cluster"，这种情况下，组件像ingress会被安装
 func (i *istioImpl) installControlPlaneCluster(c cluster.Cluster) error {
 	scopes.Framework.Infof("setting up %s as control-plane cluster", c.Name())
 

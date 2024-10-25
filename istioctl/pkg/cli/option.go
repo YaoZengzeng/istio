@@ -50,6 +50,7 @@ func AddRootFlags(flags *pflag.FlagSet) *RootFlags {
 		"Kubernetes configuration file")
 	flags.StringVar(r.configContext, FlagContext, "",
 		"Kubernetes configuration context")
+	// 构建root options，设置ns
 	flags.StringVarP(r.namespace, FlagNamespace, "n", v1.NamespaceAll,
 		"Kubernetes namespace")
 	flags.StringVarP(r.istioNamespace, FlagIstioNamespace, "i", viper.GetString(FlagIstioNamespace),
@@ -68,8 +69,10 @@ func (r *RootFlags) IstioNamespace() string {
 }
 
 // DefaultNamespace returns the default namespace to use.
+// 返回使用的default ns
 func (r *RootFlags) DefaultNamespace() string {
 	if r.defaultNamespace == "" {
+		// 配置default ns
 		r.configureDefaultNamespace()
 	}
 	return r.defaultNamespace
@@ -99,6 +102,7 @@ func (r *RootFlags) configureDefaultNamespace() {
 	}
 
 	// Use the namespace associated with the selected context as default, if the context has one
+	// 使用和选择的context相关的ns作为default，如果context有的话
 	context, ok := config.Contexts[selectedContext]
 	if !ok {
 		r.defaultNamespace = v1.NamespaceDefault

@@ -52,6 +52,7 @@ import (
 
 type InstallArgs struct {
 	// InFilenames is an array of paths to the input IstioOperator CR files.
+	// InFilenames是一个路径的array，到输入的IstioOperator的CR文件
 	InFilenames []string
 	// ReadinessTimeout is maximum time to wait for all Istio resources to be ready. wait must be true for this setting
 	// to take effect.

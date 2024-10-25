@@ -32,6 +32,7 @@ func (i Instances) Callers() echo.Callers {
 }
 
 // Instance represents a deployed Ingress Gateway instance.
+// Instance代表一个部署的Ingress Gateway实例
 type Instance interface {
 	echo.Caller
 	// HTTPAddresses returns the external HTTP (80) address of the ingress gateway ((or the NodePort address,
@@ -52,6 +53,7 @@ type Instance interface {
 
 	// PodID returns the name of the ingress gateway pod of index i. Returns error if failed to get the pod
 	// or the index is out of boundary.
+	// PodID返回index为i的ingress gateway pod的名字，返回error，如果获取pod名字失败，或者index越界
 	PodID(i int) (string, error)
 
 	// Cluster the ingress is deployed to

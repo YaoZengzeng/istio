@@ -62,6 +62,7 @@ func newKubeClientWithRevision(kubeconfig, configContext, revision string) (kube
 
 func NewCLIContext(rootFlags *RootFlags) Context {
 	if rootFlags == nil {
+		// 设置root Flags
 		rootFlags = &RootFlags{
 			kubeconfig:       ptr.Of[string](""),
 			configContext:    ptr.Of[string](""),
@@ -114,6 +115,7 @@ func (i *instance) NamespaceOrDefault(namespace string) string {
 }
 
 // handleNamespace returns the defaultNamespace if the namespace is empty
+// handleNamespace返回default namespace，如果ns为空
 func handleNamespace(ns, defaultNamespace string) string {
 	if ns == corev1.NamespaceAll {
 		ns = defaultNamespace

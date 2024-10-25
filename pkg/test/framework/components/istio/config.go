@@ -62,6 +62,7 @@ const (
 	IntegrationTestExternalIstiodConfigDefaultsIOP = "tests/integration/iop-externalistiod-config-integration-test-defaults.yaml"
 
 	// IntegrationTestAmbientDefaultsIOP is the path of the default IstioOperator for ambient
+	// IntegrationTestAmbientDefaultsIOP是对于ambient的默认IstioOperator的路径
 	IntegrationTestAmbientDefaultsIOP = "tests/integration/iop-ambient-test-defaults.yaml"
 
 	// IntegrationTestPeerMetadataDiscoveryDefaultsIOP is the path of the default IstioOperator to force WDS usage
@@ -262,6 +263,7 @@ func Indent(text, indent string) string {
 }
 
 // DefaultConfig creates a new Config from defaults, environments variables, and command-line parameters.
+// DefaultConfig创建一个新的Config，从默认值，环境变量以及命令行参数
 func DefaultConfig(ctx resource.Context) (Config, error) {
 	// Make a local copy.
 	s := *settingsFromCommandline

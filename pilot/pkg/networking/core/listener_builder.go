@@ -91,6 +91,7 @@ func NewListenerBuilder(node *model.Proxy, push *model.PushContext) *ListenerBui
 func (lb *ListenerBuilder) appendSidecarInboundListeners() *ListenerBuilder {
 	lb.inboundListeners = lb.buildInboundListeners()
 	if lb.node.EnableHBONEListen() {
+		// 构建inbound HBONE listener
 		lb.inboundListeners = append(lb.inboundListeners, lb.buildInboundHBONEListeners()...)
 	}
 

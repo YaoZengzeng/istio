@@ -205,12 +205,16 @@ const (
 	AmbientWaypointInboundBinding = "ambient.istio.io/waypoint-inbound-binding"
 
 	// ServiceTraffic indicates that service traffic should go through the intended waypoint.
+	// ServiceTraffic表明service traffic应该通过指定的waypoint
 	ServiceTraffic = "service"
 	// WorkloadTraffic indicates that workload traffic should go through the intended waypoint.
+	// WorkloadTraffic表明workload流量应该通过指定的waypoint
 	WorkloadTraffic = "workload"
 	// AllTraffic indicates that all traffic should go through the intended waypoint.
+	// AllTraffic表明所有流量都应该通过指定的waypoint
 	AllTraffic = "all"
 	// NoTraffic indicates that no traffic should go through the intended waypoint.
+	// NoTraffic表示没有流量应该通过指定的waypoint
 	NoTraffic = "none"
 
 	EnableV2AutoAllocationLabel = "networking.istio.io/enable-autoallocate-ip"

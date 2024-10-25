@@ -421,6 +421,7 @@ func (node *Proxy) IsZTunnel() bool {
 }
 
 // IsAmbient returns true if the proxy is acting as either a ztunnel or a waypoint proxy in an ambient mesh.
+// IsAmbient返回true，如果Proxy在ambient中是一个ztunnel或者一个waypoint proxy
 func (node *Proxy) IsAmbient() bool {
 	return node.IsWaypointProxy() || node.IsZTunnel()
 }

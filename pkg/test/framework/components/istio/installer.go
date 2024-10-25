@@ -76,6 +76,7 @@ func (i *installer) Install(c cluster.Cluster, args installArgs) error {
 		Revision:      args.Revision,
 	}
 	if i.ctx.Settings().Ambient {
+		// 如果设置Ambient
 		iArgs.InFilenames = append(iArgs.InFilenames, filepath.Join(testenv.IstioSrc, IntegrationTestAmbientDefaultsIOP))
 	}
 	if i.ctx.Settings().PeerMetadataDiscovery && len(args.ComponentName) == 0 {

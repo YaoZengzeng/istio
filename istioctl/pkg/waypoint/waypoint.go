@@ -245,6 +245,7 @@ func Cmd(ctx cli.Context) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			fmt.Printf("-- apply yaml is %s\n", string(b))
 			_, err = gwc.Patch(context.Background(), gw.Name, types.ApplyPatchType, b, metav1.PatchOptions{
 				Force:        nil,
 				FieldManager: "istioctl",

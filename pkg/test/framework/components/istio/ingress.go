@@ -140,6 +140,7 @@ func (c *ingressImpl) getAddressesInner(port int) ([]string, []int, error) {
 }
 
 // AddressForPort returns the externally reachable host and port of the component for the given port.
+// AddressForPort返回外部可访问的component的host以及port，对于给定的port
 func (c *ingressImpl) AddressesForPort(port int) ([]string, []int) {
 	addrs, ports, err := c.getAddressesInner(port)
 	if err != nil {
@@ -154,11 +155,13 @@ func (c *ingressImpl) Cluster() cluster.Cluster {
 }
 
 // HTTPAddresses returns the externally reachable HTTP hosts and port (80) of the component.
+// HTTPAddresses返回外部可访问的组件的HTTP hosts以及端口（80）
 func (c *ingressImpl) HTTPAddresses() ([]string, []int) {
 	return c.AddressesForPort(80)
 }
 
 // TCPAddresses returns the externally reachable TCP hosts and port (31400) of the component.
+// TCPAddresses返回外部可访问的组件的TCP hosts以及端口（31400）
 func (c *ingressImpl) TCPAddresses() ([]string, []int) {
 	return c.AddressesForPort(31400)
 }
@@ -262,6 +265,7 @@ func (c *ingressImpl) schemeFor(opts echo.CallOptions) (scheme.Instance, error) 
 }
 
 func (c *ingressImpl) PodID(i int) (string, error) {
+	// 确实会获取PodID
 	pods, err := c.env.Clusters().Default().PodsForSelector(context.TODO(), c.service.Namespace, c.labelSelector)
 	if err != nil {
 		return "", fmt.Errorf("unable to get ingressImpl gateway stats: %v", err)

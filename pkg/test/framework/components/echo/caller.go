@@ -28,6 +28,7 @@ type CallResult struct {
 
 type Caller interface {
 	// Call from this Instance to a target Instance.
+	// 从这个Instance调用一个target Instance
 	Call(options CallOptions) (CallResult, error)
 	CallOrFail(t test.Failer, options CallOptions) CallResult
 }

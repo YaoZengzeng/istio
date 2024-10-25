@@ -80,15 +80,19 @@ type Instance interface {
 
 	Settings() Config
 	// Ingresses returns all ingresses for "istio-ingressgateway" in each cluster.
+	// Ingresses返回所有的ingresses，对于每个集群中的"istio-ingressgateway"
 	Ingresses() ingress.Instances
 	// IngressFor returns an ingress used for reaching workloads in the given cluster.
+	// IngressFor返回一个ingress用于访问给定cluster中的workloads
 	// The ingress's service name will be "istio-ingressgateway" and the istio label will be "ingressgateway".
+	// ingress的service name会是"istio-ingressgateway"并且istio的label为"ingressgateway"
 	IngressFor(cluster cluster.Cluster) ingress.Instance
 	// EastWestGatewayFor returns an ingress used for east-west traffic and accessing the control plane
 	// from outside of the cluster.
 	EastWestGatewayFor(cluster cluster.Cluster) ingress.Instance
 	// CustomIngressFor returns an ingress with a specific service name and "istio" label used for reaching workloads
 	// in the given cluster.
+	// CustomIngressFor返回一个ingrss，有着特定的service name以及"istio" label用于访问给定集群的workloads
 	CustomIngressFor(cluster cluster.Cluster, service types.NamespacedName, istioLabel string) ingress.Instance
 
 	// RemoteDiscoveryAddressFor returns the external address of the discovery server that controls
@@ -147,6 +151,7 @@ func GetOrFail(t test.Failer, ctx resource.Context) Instance {
 
 // DefaultIngress returns the ingress installed in the default cluster. The ingress's service name
 // will be "istio-ingressgateway" and the istio label will be "ingressgateway".
+// DefaultIngress返回在默认集群安装的ingress，ingress的service name会是"istio-ingressgateay"，并且istio的label为"ingressgateway"
 func DefaultIngress(ctx resource.Context) (ingress.Instance, error) {
 	i, err := Get(ctx)
 	if err != nil {
@@ -156,6 +161,7 @@ func DefaultIngress(ctx resource.Context) (ingress.Instance, error) {
 }
 
 // DefaultIngressOrFail calls DefaultIngress and fails if an error is encountered.
+// DefaultIngressOrFail调用DefaultIngress并且fails如果遇到了错误
 func DefaultIngressOrFail(t test.Failer, ctx resource.Context) ingress.Instance {
 	t.Helper()
 	i, err := DefaultIngress(ctx)
@@ -166,6 +172,7 @@ func DefaultIngressOrFail(t test.Failer, ctx resource.Context) ingress.Instance 
 }
 
 // Ingresses returns all ingresses for "istio-ingressgateway" in each cluster.
+// Ingresses返回所有的ingress，对于"istio-ingressgateway"，在每个cluster
 func Ingresses(ctx resource.Context) (ingress.Instances, error) {
 	i, err := Get(ctx)
 	if err != nil {
@@ -185,6 +192,7 @@ func IngressesOrFail(t test.Failer, ctx resource.Context) ingress.Instances {
 }
 
 // Setup is a setup function that will deploy Istio on Kubernetes environment
+// Setup是一个setup函数，会在k8s环境部署Istio
 func Setup(i *Instance, cfn SetupConfigFn, ctxFns ...SetupContextFn) resource.SetupFn {
 	return func(ctx resource.Context) error {
 		cfg, err := DefaultConfig(ctx)

@@ -75,6 +75,7 @@ func (lb *ListenerBuilder) buildWaypointInbound() []*listener.Listener {
 	wls, wps := findWaypointResources(lb.node, lb.push)
 
 	listeners = append(listeners,
+		// 构建waypoint inbound时，默认构建inbound terminate
 		lb.buildWaypointInboundConnectTerminate(),
 		lb.buildWaypointInternal(wls, wps.orderedServices),
 		buildWaypointConnectOriginateListener())
@@ -148,6 +149,7 @@ func (lb *ListenerBuilder) buildHCMConnectTerminateChain(routes []*route.Route) 
 	}
 }
 
+// 构建connect terminate listener
 func (lb *ListenerBuilder) buildConnectTerminateListener(routes []*route.Route) *listener.Listener {
 	actualWildcard, _ := getWildcardsAndLocalHost(lb.node.GetIPMode())
 	bind := actualWildcard
@@ -343,8 +345,9 @@ func buildWaypointConnectOriginateListener() *listener.Listener {
 func buildConnectOriginateListener() *listener.Listener {
 	var headers []*core.HeaderValueOption
 	l := &listener.Listener{
-		Name:              ConnectOriginate,
-		UseOriginalDst:    wrappers.Bool(false),
+		Name:           ConnectOriginate,
+		UseOriginalDst: wrappers.Bool(false),
+		// 作为internal listener存在
 		ListenerSpecifier: &listener.Listener_InternalListener{InternalListener: &listener.Listener_InternalListenerConfig{}},
 		ListenerFilters: []*listener.ListenerFilter{
 			xdsfilters.OriginalDestination,

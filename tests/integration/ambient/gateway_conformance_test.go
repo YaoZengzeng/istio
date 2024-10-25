@@ -48,8 +48,10 @@ import (
 )
 
 // GatewayConformanceInputs defines inputs to the gateway conformance test.
+// GatewayConformanceInputs定义输入到gateway conformance test
 // The upstream build requires using `testing.T` types, which we cannot pass using our framework.
 // To workaround this, we set up the inputs it TestMain.
+// upstream build需要使用`testing.T`类型，不能使用我们的framework传递，为了workaround，我们在TestMain设置输入
 type GatewayConformanceInputs struct {
 	Client  kube.CLIClient
 	Cleanup bool

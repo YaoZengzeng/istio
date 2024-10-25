@@ -68,6 +68,7 @@ type Context interface {
 	CreateDirectory(name string) (string, error)
 
 	// CreateTmpDirectory creates a new temporary directory within this context.
+	// CreateTmpDirectory创建一个新的临时目录，在这个context之下
 	CreateTmpDirectory(prefix string) (string, error)
 
 	// ConfigKube returns a Context that writes config to the provided clusters. If

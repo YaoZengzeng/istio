@@ -32,11 +32,13 @@ var (
 	EnableHBONESend = registerAmbient(
 		"PILOT_ENABLE_SENDING_HBONE",
 		true, false,
+		// 如果使能的话，HBONE会在发送到destinations时被允许
 		"If enabled, HBONE will be allowed when sending to destinations.")
 
 	EnableSidecarHBONEListening = registerAmbient(
 		"PILOT_ENABLE_SIDECAR_LISTENING_HBONE",
 		true, false,
+		// 如果为enabled，HBONE可以配置支持proxies
 		"If enabled, HBONE support can be configured for proxies.")
 
 	// Not required for ambient, so disabled by default

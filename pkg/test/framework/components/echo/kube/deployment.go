@@ -120,8 +120,11 @@ func newDeployment(ctx resource.Context, cfg echo.Config) (*deployment, error) {
 }
 
 // Restart performs restarts of all the pod of the deployment.
+// Restart执行deployment中所有pod的重启
 // This is analogous to `kubectl rollout restart` on the echo deployment and waits for
 // `kubectl rollout status` to complete before returning, but uses direct API calls.
+// 这和`kubectl rollout restart`同义，在每个deployment，并且等待`kubectl rollout status`完成，在返回之前
+// 但是使用直接的API调用
 func (d *deployment) Restart() error {
 	var deploymentNames []string
 	for _, s := range d.cfg.Subsets {
@@ -174,6 +177,7 @@ func (d *deployment) Restart() error {
 						return err
 					}
 					if dep.Spec.Replicas == nil || !deploymentComplete(dep) {
+						// 确保重启完成
 						return fmt.Errorf("rollout is not yet done (updated replicas: %v)", dep.Status.UpdatedReplicas)
 					}
 				}
