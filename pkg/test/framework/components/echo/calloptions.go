@@ -115,6 +115,7 @@ type Target interface {
 }
 
 // CallOptions defines options for calling a Endpoint.
+// CallOptions定义了调用一个Endpoint的options
 type CallOptions struct {
 	// To is the Target to be called.
 	To Target
@@ -136,6 +137,7 @@ type CallOptions struct {
 
 	// Address specifies the host name or IP address to be used on the request. If not provided,
 	// an appropriate default is chosen for To.
+	// Address指定了请求的host name或者IP地址，如果没有提供的话，选择合适的默认值
 	Address string
 
 	// Count indicates the number of exchanges that should be made with the service endpoint.

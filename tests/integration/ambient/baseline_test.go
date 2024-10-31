@@ -2355,6 +2355,7 @@ func RunReachability(testCases []reachability.TestCase, t framework.TestContext)
 }
 
 func TestIngress(t *testing.T) {
+	// src是ingress.Instance
 	runIngressTest(t, func(t framework.TestContext, src ingress.Instance, dst echo.Instance, opt echo.CallOptions) {
 		if opt.Scheme != scheme.HTTP {
 			return

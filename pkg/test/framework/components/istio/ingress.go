@@ -73,7 +73,8 @@ func newIngress(ctx resource.Context, cfg ingressConfig) (i ingress.Instance) {
 		labelSelector: cfg.LabelSelector,
 		env:           ctx.Environment().(*kube.Environment),
 		cluster:       ctx.Clusters().GetOrDefault(cfg.Cluster),
-		caller:        common.NewCaller(),
+		// 创建新的caller
+		caller: common.NewCaller(),
 	}
 	return c
 }
@@ -93,6 +94,7 @@ func (c *ingressImpl) Close() error {
 
 // getAddressesInner returns the external addresses for the given port. When we don't have support for LoadBalancer,
 // the returned list will contain will have the externally reachable NodePort address and port.
+// getAddressesInner返回给定端口的外部地址，当我们不支持LoadBalancer时，返回的list会包含外部可访问的NodePort地址和端口
 func (c *ingressImpl) getAddressesInner(port int) ([]string, []int, error) {
 	attempts := 0
 	remoteAddrs, err := retry.UntilComplete(func() (addrs any, completed bool, err error) {
@@ -172,6 +174,7 @@ func (c *ingressImpl) HTTPSAddresses() ([]string, []int) {
 }
 
 // DiscoveryAddresses returns the externally reachable discovery addresses (15012) of the component.
+// DiscoveryAddresses返回外部可访问的组件的iscovery addresses (15012)
 func (c *ingressImpl) DiscoveryAddresses() []netip.AddrPort {
 	hosts, ports := c.AddressesForPort(discoveryPort)
 	var addrs []netip.AddrPort
@@ -218,6 +221,7 @@ func (c *ingressImpl) callEcho(opts echo.CallOptions) (echo.CallResult, error) {
 		opts.Scheme = s
 
 		// Default port based on protocol
+		// 基于协议的默认端口
 		switch s {
 		case scheme.HTTP:
 			addrs, ports = c.HTTPAddresses()
@@ -234,17 +238,21 @@ func (c *ingressImpl) callEcho(opts echo.CallOptions) (echo.CallResult, error) {
 	if addrs == nil || ports == nil {
 		scopes.Framework.Warnf("failed to get host and port for %s/%d", opts.Port.Protocol, opts.Port.ServicePort)
 	}
+	// 获取第一个地址
 	addr = addrs[0]
 	port = ports[0]
 	// Even if they set ServicePort, when load balancer is disabled, we may need to switch to NodePort, so replace it.
+	// 即使他们设置了ServicePort，当禁用load balancer时，我们可能需要切换到NodePort，因此替换他
 	opts.Port.ServicePort = port
 	if opts.HTTP.Headers == nil {
 		opts.HTTP.Headers = map[string][]string{}
 	}
 	if host := opts.GetHost(); len(host) > 0 {
+		// header里设置host
 		opts.HTTP.Headers.Set(headers.Host, host)
 	}
 	// Default address based on port
+	// 基于端口的默认地址
 	opts.Address = addr
 	if len(c.cluster.HTTPProxy()) > 0 && !c.cluster.ProxyKubectlOnly() {
 		opts.HTTP.HTTPProxy = c.cluster.HTTPProxy()

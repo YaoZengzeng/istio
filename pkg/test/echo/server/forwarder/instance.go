@@ -26,6 +26,7 @@ import (
 var _ io.Closer = &Instance{}
 
 // Instance is a client for forwarding requests to echo servers.
+// Instance是一个client实例用于转发请求到echo servers
 type Instance struct {
 	e           *executor
 	protocolMap map[scheme.Instance]protocol

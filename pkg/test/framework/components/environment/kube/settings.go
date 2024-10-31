@@ -36,6 +36,7 @@ type clusterTopology = map[clusterIndex]clusterIndex
 type ClientFactoryFunc func(kubeConfigs []string) ([]istioKube.CLIClient, error)
 
 // Settings provide kube-specific Settings from flags.
+// Settings提供kube-specific相关的设置，从flags
 type Settings struct {
 	// An array of paths to kube config files. Required if the environment is kubernetes.
 	KubeConfig []string
@@ -43,6 +44,8 @@ type Settings struct {
 	// Indicates that the LoadBalancer services can obtain a public IP. If not, NodePort be used as a workaround
 	// for ingress gateway. KinD will not support LoadBalancer out of the box and requires a workaround such as
 	// MetalLB.
+	// 表明LoadBalancer服务可以获取一个public IP，如果没有设置，NodePort会使用作为ingress gateway的workaround，KinD不会
+	// 默认支持LoadBalancer需要一个workaround，例如MetalLB
 	LoadBalancerSupported bool
 
 	// Architecture indicates the architecture of the cluster under test

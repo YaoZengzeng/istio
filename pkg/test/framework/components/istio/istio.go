@@ -131,6 +131,7 @@ type SetupConfigFn func(ctx resource.Context, cfg *Config)
 type SetupContextFn func(ctx resource.Context) error
 
 // Get returns the Istio component from the context. If there is none an error is returned.
+// Get返回Istio component，从context中，如果没有的话，返回None
 func Get(ctx resource.Context) (Instance, error) {
 	var i Instance
 	if err := ctx.GetResource(&i); err != nil {

@@ -125,6 +125,7 @@ func getRemoteServiceAddresses(s *kube.Settings, cluster cluster.Cluster, ns, la
 	}
 
 	// Otherwise, get the load balancer IP.
+	// 否则获取load balancer IP
 	svc, err := cluster.Kube().CoreV1().Services(ns).Get(context.TODO(), svcName, metav1.GetOptions{})
 	if err != nil {
 		return nil, false, err

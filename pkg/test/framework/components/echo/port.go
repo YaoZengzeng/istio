@@ -37,6 +37,7 @@ type Port struct {
 	// map to the corresponding port numbers for the instances behind the
 	// service. If zero (default), a service port will be automatically generated for this port.
 	// If set to NoServicePort, this port will be assumed to be a workload-only port.
+	// 如果设置了NoServicePort，这个端口会假设为workload-only的端口
 	ServicePort int
 
 	// WorkloadPort number where the workload is listening for connections.
