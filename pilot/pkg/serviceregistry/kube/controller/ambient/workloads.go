@@ -47,8 +47,11 @@ import (
 )
 
 // WorkloadsCollection builds out the core Workload object type used in ambient mode.
+// WorkloadsCollection构建核心的Workload对象类型，在ambient中使用
 // A Workload represents a single addressable unit of compute -- typically a Pod or a VM.
+// 一个Workload代表单个的可寻址的unit of compute - 一般是一个Pod或者一个VM
 // Workloads can come from a variety of sources; these are joined together to build one complete `Collection[WorkloadInfo]`.
+// Workloads可以来自多个sources；他们组合在一起来构建一个完整的`Collection[WorkloadInfo]`
 func (a *index) WorkloadsCollection(
 	pods krt.Collection[*v1.Pod],
 	nodes krt.Collection[*v1.Node],
@@ -65,6 +68,7 @@ func (a *index) WorkloadsCollection(
 	WorkloadServicesNamespaceIndex := krt.NewNamespaceIndex(workloadServices)
 	EndpointSlicesByIPIndex := endpointSliceAddressIndex(endpointSlices)
 	// Workloads coming from pods. There should be one workload for each (running) Pod.
+	// 来自pods的Workloads，这应该是每个（正在运行的）Pod，一个workload
 	PodWorkloads := krt.NewCollection(
 		pods,
 		a.podWorkloadBuilder(
@@ -201,6 +205,7 @@ func (a *index) podWorkloadBuilder(
 		// Pod Is Pending but have a pod IP should be a valid workload, we should build it ,
 		// Such as the pod have initContainer which is initialing.
 		// See https://github.com/istio/istio/issues/48854
+		// Pod是Pending但是有一个pod IP应该是一个合法的workload，我们应该构建它，例如pod有initContainer并且在初始化
 		if (!IsPodRunning(p) && !IsPodPending(p)) || p.Spec.HostNetwork {
 			return nil
 		}
@@ -220,6 +225,7 @@ func (a *index) podWorkloadBuilder(
 			return nil
 		}
 		meshCfg := krt.FetchOne(ctx, meshConfig.AsCollection())
+		// 构建workload policies
 		policies := a.buildWorkloadPolicies(ctx, authorizationPolicies, peerAuths, meshCfg, p.Labels, p.Namespace)
 		fo := []krt.FetchOption{krt.FilterIndex(workloadServicesNamespaceIndex, p.Namespace), krt.FilterSelectsNonEmpty(p.GetLabels())}
 		if !features.EnableServiceEntrySelectPods {
@@ -243,18 +249,22 @@ func (a *index) podWorkloadBuilder(
 		var targetWaypoint *Waypoint
 		if instancedWaypoint := fetchWaypointForInstance(ctx, waypoints, p.ObjectMeta); instancedWaypoint != nil {
 			// we're an instance of a waypoint, set inbound tunnel info
+			// 我们是一个waypoint的一个instance，设置inbound tunnel信息
 			appTunnel = &workloadapi.ApplicationTunnel{
 				Protocol: instancedWaypoint.DefaultBinding.Protocol,
 				Port:     instancedWaypoint.DefaultBinding.Port,
 			}
 		} else if waypoint := fetchWaypointForWorkload(ctx, waypoints, namespaces, p.ObjectMeta); waypoint != nil {
 			// there is a workload-attached waypoint, point there with a GatewayAddress
+			// 如果有一个worklaod关联的waypoint，指向一个GatewayAddress
 			targetWaypoint = waypoint
 		}
 
 		// enforce traversing waypoints
+		// 执行遍历waypoints
 		policies = append(policies, implicitWaypointPolicies(ctx, waypoints, targetWaypoint, services)...)
 
+		// 构建workload
 		w := &workloadapi.Workload{
 			Uid:                   a.generatePodUID(p),
 			Name:                  p.Name,

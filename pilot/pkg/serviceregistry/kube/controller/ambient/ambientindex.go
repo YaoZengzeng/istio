@@ -72,6 +72,7 @@ type servicesCollection struct {
 }
 
 // index maintains an index of ambient WorkloadInfo objects by various keys.
+// index维护一个关于ambient WorkloadInfo对象的索引，通过各种keys
 // These are intentionally pre-computed based on events such that lookups are efficient.
 type index struct {
 	services  servicesCollection
@@ -86,8 +87,10 @@ type index struct {
 	ClusterID       cluster.ID
 	XDSUpdater      model.XDSUpdater
 	// Network provides a way to lookup which network a given workload is running on
+	// Network提供了一种方法来查找哪个network，一个给定的workload在运行
 	Network LookupNetwork
 	// LookupNetworkGateways provides a function to lookup all the known network gateways in the system.
+	// LookupNetworkGateways提供了一个函数，来查找系统中所有已知的network gateways
 	LookupNetworkGateways LookupNetworkGateways
 }
 
@@ -270,8 +273,10 @@ func New(options Options) Index {
 }
 
 // Lookup finds all addresses associated with a given key. Many different key formats are supported; see inline comments.
+// Lookup查找所有和给定的key相关的所有地址，支持很多种格式的key
 func (a *index) Lookup(key string) []model.AddressInfo {
 	// 1. Workload UID
+	// 1. 通过Workload UID
 	if w := a.workloads.GetKey(krt.Key[model.WorkloadInfo](key)); w != nil {
 		return []model.AddressInfo{workloadToAddressInfo(w.Workload)}
 	}
@@ -284,6 +289,7 @@ func (a *index) Lookup(key string) []model.AddressInfo {
 	networkAddr := networkAddress{network: network, ip: ip}
 
 	// 2. Workload by IP
+	// 2. 通过IP查找Workload
 	if wls := a.workloads.ByAddress.Lookup(networkAddr); len(wls) > 0 {
 		// If there is just one, return it
 		if len(wls) == 1 {
@@ -301,6 +307,7 @@ func (a *index) Lookup(key string) []model.AddressInfo {
 	}
 
 	// 3. Service
+	// 3. 通过service查找
 	if svc := a.lookupService(key); svc != nil {
 		res := []model.AddressInfo{serviceToAddressInfo(svc.Service)}
 		for _, w := range a.workloads.ByServiceKey.Lookup(svc.ResourceName()) {
@@ -354,7 +361,9 @@ func (a *index) All() []model.AddressInfo {
 }
 
 // AddressInformation returns all AddressInfo's in the cluster.
+// AddressInformation返回cluster中所有的AddressInfo
 // This may be scoped to specific subsets by specifying a non-empty addresses field
+// 这可能限制于特定的subsets，通过指定一个非空的addresses字段
 func (a *index) AddressInformation(addresses sets.String) ([]model.AddressInfo, sets.String) {
 	if len(addresses) == 0 {
 		// Full update

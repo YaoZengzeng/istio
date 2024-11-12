@@ -39,13 +39,15 @@ type T struct {
 }
 
 // New creates a *T using the given applications as sources and destinations for each subtest.
+// New创建一个*T，使用给定的应用作为sources以及destinations，对于每个subtest
 func New(ctx framework.TestContext, instances echo.Instances) *T {
 	s, d := make(echo.Instances, len(instances)), make(echo.Instances, len(instances))
 	copy(s, instances)
 	copy(d, instances)
 	t := &T{
-		rootCtx:      ctx,
-		cfg:          config.New(ctx),
+		rootCtx: ctx,
+		cfg:     config.New(ctx),
+		// instances同时作为sources和destinations
 		sources:      s,
 		destinations: d,
 	}

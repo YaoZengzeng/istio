@@ -23,6 +23,7 @@ var (
 	EnableAmbient = env.Register(
 		"PILOT_ENABLE_AMBIENT",
 		false,
+		// 如果使能的话，ambient mode可以被使用，单个的flags配置能更好控制enablement，这必须使能，对于ambient功能
 		"If enabled, ambient mode can be used. Individual flags configure fine grained enablement; this must be enabled for any ambient functionality.").Get()
 
 	EnableAmbientWaypoints = registerAmbient("PILOT_ENABLE_AMBIENT_WAYPOINTS",

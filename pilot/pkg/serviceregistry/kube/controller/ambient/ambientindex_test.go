@@ -136,9 +136,12 @@ func TestAmbientIndex_WaypointForWorkloadTraffic(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			s := newAmbientTestServer(t, testC, testNW)
 			// These steps happen for every test regardless of traffic type.
+			// 这些步骤都会发生，对于每个测试，无论流量的类型
 			// It involves creating a waypoint for the specified traffic type
 			// then creating a workload and a service with no annotations set
 			// on these objects yet.
+			// 它包含创建一个waypoint，对于特定的流量类型，之后创建一个workload以及一个service
+			// 还没有annotations设置在这些对象
 			s.addWaypoint(t, "10.0.0.10", "test-wp", c.trafficType, true)
 			s.addPods(t, "127.0.0.1", "pod1", "sa1",
 				map[string]string{"app": "a"}, nil, true, corev1.PodRunning)
@@ -150,11 +153,13 @@ func TestAmbientIndex_WaypointForWorkloadTraffic(t *testing.T) {
 			s.assertEvent(t, s.svcXdsName("svc1"), s.podXdsName("pod1"))
 
 			// Label the pod and check that the correct event is produced.
+			// 对pod打label并且检查正确的事件被产生
 			s.labelPod(t, "pod1", testNS,
 				map[string]string{"app": "a", constants.AmbientUseWaypointLabel: "test-wp"})
 			c.podAssertion(s)
 
 			// Label the service and check that the correct event is produced.
+			// 对service进行label并且检查正确的event被产生
 			s.labelService(t, "svc1", testNS,
 				map[string]string{constants.AmbientUseWaypointLabel: "test-wp"})
 			c.svcAssertion(s)
@@ -376,8 +381,10 @@ func TestAmbientIndex_WaypointConfiguredOnlyWhenReady(t *testing.T) {
 	s.assertEvent(t, s.podXdsName("pod2"))
 
 	// make waypoint-sa1 ready
+	// 将waypoint-sa1设置为ready
 	s.addWaypoint(t, "10.0.0.1", "waypoint-sa1", constants.WorkloadTraffic, true)
 	// if waypoint-sa1 was configured when not ready "pod2" assertions should skip the "pod1" xds event and this should fail
+	// 如果waypoint-sa1被配置，当不为ready的时候，"pod2" assertions应该跳过"pod1" xds事件并且这应该fail
 	s.assertEvent(t, s.podXdsName("pod1"))
 }
 

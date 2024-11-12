@@ -46,6 +46,7 @@ type Waypoint struct {
 	// Addresses this Waypoint is reachable by. For stock Istio waypoints, this
 	// is is usually the VIP. Tere will always be at least one address in this
 	// list.
+	// 可以访问这个Waypoint的地址，对于Istio waypoints，这通常是VIP，这个list至少会有一个地址
 	Addresses []netip.Addr
 
 	// DefaultBinding for an inbound zTunnel to use to connect to a Waypoint it captures.
@@ -76,6 +77,7 @@ func fetchWaypointForInstance(ctx krt.HandlerContext, Waypoints krt.Collection[W
 }
 
 // fetchWaypointForTarget attempts to find the waypoint that should handle traffic for a given service or workload
+// fetchWaypointForTarget试着找到waypoint，能够处理流量，对于给定的service或者workload
 func fetchWaypointForTarget(
 	ctx krt.HandlerContext,
 	waypoints krt.Collection[Waypoint],
@@ -85,6 +87,7 @@ func fetchWaypointForTarget(
 	// namespace to be used when the annotation doesn't include a namespace
 	fallbackNamespace := o.Namespace
 	// try fetching the waypoint defined on the object itself
+	// 试着获取waypoint，定义在对象自己上
 	wp, isNone := getUseWaypoint(o, fallbackNamespace)
 	if isNone {
 		// we've got a local override here opting out of waypoint
@@ -106,6 +109,7 @@ func fetchWaypointForTarget(
 	}
 
 	// try fetching the namespace-defined waypoint
+	// 试着获取namespace级别的waypoint
 	namespace := ptr.OrEmpty[*v1.Namespace](krt.FetchOne[*v1.Namespace](ctx, namespaces, krt.FilterKey(o.Namespace)))
 	// this probably should never be nil. How would o exist in a namespace we know nothing about? maybe edge case of starting the controller or ns delete?
 	if namespace != nil {
@@ -155,6 +159,7 @@ func fetchWaypointForWorkload(ctx krt.HandlerContext, Waypoints krt.Collection[W
 			return w
 		}
 		// Waypoint does not support Workload traffic
+		// Waypoint不支持Workload traffic
 		log.Debugf("Unable to add waypoint %s/%s; traffic type %s not supported for %s/%s",
 			w.Namespace, w.Name, w.TrafficType, o.Namespace, o.Name)
 	}
@@ -162,7 +167,9 @@ func fetchWaypointForWorkload(ctx krt.HandlerContext, Waypoints krt.Collection[W
 }
 
 // getUseWaypoint takes objectMeta and a defaultNamespace
+// getUseWaypoint有objectMeta以及一个defaultNamespace
 // it looks for the istio.io/use-waypoint label and parses it
+// 它查找"istio.io/use-waypoint" label并且解析它
 // if there is no namespace provided in the label the default namespace will be used
 // defaultNamespace avoids the need to infer when object meta from a namespace was given
 func getUseWaypoint(meta metav1.ObjectMeta, defaultNamespace string) (named *krt.Named, isNone bool) {
@@ -198,6 +205,7 @@ func WaypointsCollection(
 		if len(gateway.Status.Addresses) == 0 {
 			// gateway.Status.Addresses should only be populated once the Waypoint's deployment has at least 1 ready pod, it should never be removed after going ready
 			// ignore Kubernetes Gateways which aren't waypoints
+			// gateway.Status.Addresses只应该被填充，当Waypoint的deployment有至少1个ready pod，它在ready之后，不应该被移除，忽略不是waypoints的K8S gateway
 			return nil
 		}
 
@@ -217,10 +225,12 @@ func WaypointsCollection(
 			log.Warnf("could not find GatewayClass %s for Gateway %s/%s", gateway.Spec.GatewayClassName, gateway.Namespace, gateway.Name)
 		} else if tt, found := gatewayClass.Labels[constants.AmbientWaypointForTrafficTypeLabel]; found {
 			// Check for a declared traffic type that is allowed to pass through the Waypoint's GatewayClass
+			// 检查声明的traffic类型，允许通过Waypoint的GatewayClass
 			trafficType = tt
 		}
 
 		// Check for a declared traffic type that is allowed to pass through the Waypoint
+		// 检查声明的允许通过这个Waypoint的流量类型
 		if tt, found := gateway.Labels[constants.AmbientWaypointForTrafficTypeLabel]; found {
 			trafficType = tt
 		}

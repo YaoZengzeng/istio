@@ -1821,6 +1821,7 @@ func TestServiceEntryInlinedWorkloadEntry(t *testing.T) {
 			}
 
 			// Configure a gateway with one app as the destination to be accessible through the ingress
+			// 配置一个gateway，将一个app作为destination，通过ingress访问
 			t.ConfigIstio().Eval(apps.Namespace.Name(), map[string]string{
 				"Destination": apps.Captured[0].Config().Service,
 			}, `apiVersion: networking.istio.io/v1alpha3
@@ -1853,6 +1854,7 @@ spec:
 `).ApplyOrFail(t)
 
 			// TODO(https://github.com/istio/istio/issues/51747) use a single SE instead of one for v4 and one for v6
+			// 使用单个的SE，而不是一个对V4，一个对V6
 			cfg := config.YAML(`
 {{ $to := .To }}
 apiVersion: networking.istio.io/v1beta1
@@ -1909,23 +1911,27 @@ spec:
 						echotest.
 							New(t, apps.All).
 							// TODO eventually we can do this for uncaptured -> l7
+							// 最后我们可以做uncaptured -> l7
 							FromMatch(match.Not(match.ServiceName(echo.NamespacedName{
 								Name:      "uncaptured",
 								Namespace: apps.Namespace,
 							}))).
 							Config(cfg.WithParams(param.Params{
-								"Resolution":      tc.resolution.String(),
-								"Location":        tc.location.String(),
+								"Resolution": tc.resolution.String(),
+								"Location":   tc.location.String(),
+								// 设定ingress IP以及Ingress HTTP端口
 								"IngressIp":       ip,
 								"IngressHttpPort": ports[i],
 							})).
 							Run(func(t framework.TestContext, from echo.Instance, to echo.Target) {
 								// TODO validate L7 processing/some headers indicating we reach the svc we wanted
 								if v4 {
+									// 从from进行调用
 									from.CallOrFail(t, echo.CallOptions{
 										Address: "240.240.240.255",
 										Port:    to.PortForName("http"),
 										// If request is sent before service is processed it will hit 10s timeout, so fail faster
+										// 如果请求被发送，在service被处理之前，它会达到10s的超时，因此失败更快
 										Timeout: time.Millisecond * 500,
 									})
 								}
@@ -1934,6 +1940,7 @@ spec:
 										Address: "2001:2::f0f0:255",
 										Port:    to.PortForName("http"),
 										// If request is sent before service is processed it will hit 10s timeout, so fail faster
+										// 如果请求在service被处理之前被发送，它会hit 10秒的超时，因此快速失败
 										Timeout: time.Millisecond * 500,
 									})
 								}
@@ -1950,6 +1957,7 @@ func getSupportedIPFamilies(t framework.TestContext) (v4 bool, v6 bool) {
 		ip, err := netip.ParseAddr(a)
 		assert.NoError(t, err)
 		if ip.Is4() {
+			// 返回支持ipv4还是ipv6
 			v4 = true
 		} else if ip.Is6() {
 			v6 = true

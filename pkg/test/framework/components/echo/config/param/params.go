@@ -15,6 +15,7 @@
 package param
 
 // Params for a Template.
+// 一个Template的参数
 type Params map[string]any
 
 // NewParams returns a new Params instance.

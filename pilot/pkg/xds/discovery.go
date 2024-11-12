@@ -59,8 +59,10 @@ type DebounceOptions struct {
 }
 
 // DiscoveryServer is Pilot's gRPC implementation for Envoy's xds APIs
+// DiscoveryServer是Pilot的gRPC实现，对于Envoy的xds API
 type DiscoveryServer struct {
 	// Env is the model environment.
+	// Env是model environment
 	Env *model.Environment
 
 	// Generators allow customizing the generated config, based on the client metadata.

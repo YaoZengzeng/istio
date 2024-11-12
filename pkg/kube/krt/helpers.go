@@ -47,6 +47,7 @@ func GetKey[O any](a O) Key[O] {
 
 // Named is a convenience struct. It is ideal to be embedded into a type that has a name and namespace,
 // and will automatically implement the various interfaces to return the name, namespace, and a key based on these two.
+// Named是一个方便的结构，它非常理想能嵌套在一个类型中，有name和namespace并且自动实现各种接口，返回name, namespace以及一个key，基于这两个类型
 type Named struct {
 	Name, Namespace string
 }

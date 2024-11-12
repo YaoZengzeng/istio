@@ -376,7 +376,9 @@ func WithStop(stop <-chan struct{}) CollectionOption {
 
 // NewCollection transforms a Collection[I] to a Collection[O] by applying the provided transformation function.
 // This applies for one-to-one relationships between I and O.
+// NewCollection转换一个Collection[I]到一个Collection[O]，通过应用提供的transformation函数，这施加一对一的转换，在I和O之间
 // For zero-to-one, use NewSingleton. For one-to-many, use NewManyCollection.
+// 对于zero-to-one，使用NewSingleton，对于one-to-many，使用NewManyCollection
 func NewCollection[I, O any](c Collection[I], hf TransformationSingle[I, O], opts ...CollectionOption) Collection[O] {
 	// For implementation simplicity, represent TransformationSingle as a TransformationMulti so we can share an implementation.
 	hm := func(ctx HandlerContext, i I) []O {

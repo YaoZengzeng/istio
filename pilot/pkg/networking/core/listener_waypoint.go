@@ -468,6 +468,7 @@ func buildWaypointInboundHTTPRouteConfig(lb *ListenerBuilder, svc *model.Service
 	// Typically we setup routes with the Host header match. However, for waypoint inbound we are actually using
 	// hostname purely to match to the Service VIP. So we only need a single VHost, with routes compute based on the VS.
 	// For destinations, we need to hit the inbound clusters if it is an internal destination, otherwise outbound.
+	// 通常我们设置routes，用Host header匹配，然而对于waypoint inbound，我们通常使用hostname，来匹配Service VIP，这样我们只需要单个VHost
 	routes, err := lb.waypointInboundRoute(vs, cc.port.Port)
 	if err != nil {
 		return buildSidecarInboundHTTPRouteConfig(lb, cc)

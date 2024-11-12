@@ -44,6 +44,7 @@ type waypointServices struct {
 }
 
 // findWaypointResources returns workloads and services associated with the waypoint proxy
+// findWaypointResources返回和给定的proxy相关的workloads和servcies
 func findWaypointResources(node *model.Proxy, push *model.PushContext) ([]model.WorkloadInfo, *waypointServices) {
 	key := model.WaypointKeyForProxy(node)
 	workloads := push.WorkloadsForWaypoint(key)

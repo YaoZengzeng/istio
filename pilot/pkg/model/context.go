@@ -96,6 +96,7 @@ func NewEnvironment() *Environment {
 // Environment provides an aggregate environmental API for Pilot
 type Environment struct {
 	// Discovery interface for listing services and instances.
+	// Discovery接口用于遍历services和instances
 	ServiceDiscovery
 
 	// Config interface for listing routing rules
@@ -341,6 +342,7 @@ type Proxy struct {
 	PrevMergedGateway *PrevMergedGateway
 
 	// ServiceTargets contains a list of all Services associated with the proxy, contextualized for this particular proxy.
+	// ServiceTargets包含一系列和这个proxy相关的Services
 	// These are unique to this proxy, as the port information is specific to it - while a ServicePort is shared with the
 	// service, the target port may be distinct per-endpoint. So this maintains a view specific to this proxy.
 	// ServiceTargets will maintain a list entry for each Service-port, so if we have 2 services each with 3 ports, we

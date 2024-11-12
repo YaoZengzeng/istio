@@ -56,6 +56,7 @@ func (e WorkloadGenerator) GenerateDeltas(
 	var addresses sets.String
 	if isReq {
 		// this is from request, we only send response for the subscribed address
+		// 这来自request，我们只发送reponse到订阅的地址
 		// At t0, a client request A, we only send A and additional resources back to the client.
 		// At t1, a client request B, we only send B and additional resources back to the client, no A here.
 		addresses = req.Delta.Subscribed
