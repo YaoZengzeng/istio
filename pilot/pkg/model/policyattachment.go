@@ -127,13 +127,19 @@ func (p WorkloadPolicyMatcher) ShouldAttachPolicy(kind config.GroupVersionKind,
 	gatewayName, isGatewayAPI := workloadGatewayName(p.WorkloadLabels)
 	targetRefs := GetTargetRefs(policy)
 
+	log.Infof("Policy attachment check: policy=%s/%s kind=%s/%s isGatewayAPI=%v isWaypoint=%v gatewayName=%s workloadNamespace=%s rootNamespace=%s targetRefs=%d",
+		policyName.Namespace, policyName.Name, kind.Group, kind.Kind, isGatewayAPI, p.IsWaypoint, gatewayName, p.WorkloadNamespace, p.RootNamespace, len(targetRefs))
+
 	// non-gateway: use selector
 	if !isGatewayAPI {
 		// if targetRef is specified, ignore the policy altogether
 		if len(targetRefs) > 0 {
+			log.Infof("Policy %s/%s rejected: non-gateway workload with targetRefs specified", policyName.Namespace, policyName.Name)
 			return false
 		}
-		return p.isSelected(policy)
+		selected := p.isSelected(policy)
+		log.Infof("Policy %s/%s non-gateway selector match: %v", policyName.Namespace, policyName.Name, selected)
+		return selected
 	}
 
 	// gateway with no targetRefs: (sometimes) fallback to selector
@@ -141,62 +147,88 @@ func (p WorkloadPolicyMatcher) ShouldAttachPolicy(kind config.GroupVersionKind,
 		// gateways require the feature flag for selector-based policy
 		// waypoints never use selector
 		if p.IsWaypoint || !features.EnableSelectorBasedK8sGatewayPolicy {
-			log.Debugf("Ignoring workload-scoped %s/%s %s for gateway %s.%s because it has no targetRef",
-				kind.Group, kind.Kind, policyName, gatewayName, p.WorkloadNamespace)
+			log.Infof("Ignoring workload-scoped %s/%s %s for gateway %s.%s because it has no targetRef (isWaypoint=%v, selectorBasedPolicy=%v)",
+				kind.Group, kind.Kind, policyName, gatewayName, p.WorkloadNamespace, p.IsWaypoint, features.EnableSelectorBasedK8sGatewayPolicy)
 			return false
 		}
-		return p.isSelected(policy)
+		selected := p.isSelected(policy)
+		log.Infof("Policy %s/%s gateway selector match: %v", policyName.Namespace, policyName.Name, selected)
+		return selected
 	}
 
-	for _, targetRef := range targetRefs {
+	for i, targetRef := range targetRefs {
 		target := targetRef.GetName()
+		log.Infof("Policy %s/%s checking targetRef[%d]: group=%s kind=%s name=%s namespace=%s",
+			policyName.Namespace, policyName.Name, i, targetRef.GetGroup(), targetRef.GetKind(), target, targetRef.GetNamespace())
 
 		// Service attached
 		if p.IsWaypoint && matchesGroupKind(targetRef, gvk.Service) {
+			log.Infof("Policy %s/%s targetRef[%d] is Service type, checking against %d services", policyName.Namespace, policyName.Name, i, len(p.Services))
 			for _, svc := range p.Services {
+				log.Infof("  Checking service: name=%s namespace=%s registry=%s (target=%s policyNs=%s)", svc.Name, svc.Namespace, svc.Registry, target, policyName.Namespace)
 				if target == svc.Name &&
 					policyName.Namespace == svc.Namespace &&
 					svc.Registry == provider.Kubernetes {
+					log.Infof("Policy %s/%s ATTACHED via Service targetRef: %s", policyName.Namespace, policyName.Name, target)
 					return true
 				}
 			}
+			log.Infof("Policy %s/%s Service targetRef[%d] did not match any services", policyName.Namespace, policyName.Name, i)
 		}
 
 		// ServiceEntry attached
 		if p.IsWaypoint && matchesGroupKind(targetRef, gvk.ServiceEntry) {
+			log.Infof("Policy %s/%s targetRef[%d] is ServiceEntry type, checking against %d services", policyName.Namespace, policyName.Name, i, len(p.Services))
 			for _, svc := range p.Services {
+				log.Infof("  Checking service entry: name=%s namespace=%s registry=%s (target=%s policyNs=%s)", svc.Name, svc.Namespace, svc.Registry, target, policyName.Namespace)
 				if target == svc.Name &&
 					policyName.Namespace == svc.Namespace &&
 					svc.Registry == provider.External {
+					log.Infof("Policy %s/%s ATTACHED via ServiceEntry targetRef: %s", policyName.Namespace, policyName.Name, target)
 					return true
 				}
 			}
+			log.Infof("Policy %s/%s ServiceEntry targetRef[%d] did not match any service entries", policyName.Namespace, policyName.Name, i)
 		}
 
 		// Is p.IsWaypoint good enough or do we specifically need to check that it is an istio-waypoint?
-		if policyName.Namespace == p.RootNamespace &&
-			p.IsWaypoint &&
-			matchesGroupKind(targetRef, gvk.GatewayClass) &&
-			targetRef.GetName() == constants.WaypointGatewayClassName {
-			return true
+		if matchesGroupKind(targetRef, gvk.GatewayClass) {
+			log.Infof("Policy %s/%s targetRef[%d] is GatewayClass type: name=%s, checking conditions: policyNs=%s rootNs=%s isWaypoint=%v waypointClassName=%s",
+				policyName.Namespace, policyName.Name, i, target, policyName.Namespace, p.RootNamespace, p.IsWaypoint, constants.WaypointGatewayClassName)
+			if policyName.Namespace == p.RootNamespace &&
+				p.IsWaypoint &&
+				targetRef.GetName() == constants.WaypointGatewayClassName {
+				log.Infof("Policy %s/%s ATTACHED via GatewayClass targetRef", policyName.Namespace, policyName.Name)
+				return true
+			}
+			log.Infof("Policy %s/%s GatewayClass targetRef[%d] conditions not met: policyNs==rootNs=%v, isWaypoint=%v, name==istio-waypoint=%v",
+				policyName.Namespace, policyName.Name, i, policyName.Namespace == p.RootNamespace, p.IsWaypoint, targetRef.GetName() == constants.WaypointGatewayClassName)
 		}
 
 		// Namespace does not match
 		if p.WorkloadNamespace != policyName.Namespace {
 			// Policy is not in the same namespace
+			log.Infof("Policy %s/%s targetRef[%d] skipped: workload namespace %s != policy namespace %s", policyName.Namespace, policyName.Name, i, p.WorkloadNamespace, policyName.Namespace)
 			continue
 		}
 		if !(targetRef.GetNamespace() == "" || targetRef.GetNamespace() == p.WorkloadNamespace) {
 			// Policy references a different namespace (which is unsupported; it will never match anything)
+			log.Infof("Policy %s/%s targetRef[%d] skipped: targetRef namespace %s does not match workload namespace %s", policyName.Namespace, policyName.Name, i, targetRef.GetNamespace(), p.WorkloadNamespace)
 			continue
 		}
 
 		// Gateway attached
-		if matchesGroupKind(targetRef, gvk.KubernetesGateway) && target == gatewayName {
-			return true
+		if matchesGroupKind(targetRef, gvk.KubernetesGateway) {
+			log.Infof("Policy %s/%s targetRef[%d] is Gateway type: target=%s gatewayName=%s", policyName.Namespace, policyName.Name, i, target, gatewayName)
+			if target == gatewayName {
+				log.Infof("Policy %s/%s ATTACHED via Gateway targetRef: %s", policyName.Namespace, policyName.Name, target)
+				return true
+			}
+			log.Infof("Policy %s/%s Gateway targetRef[%d] name mismatch: %s != %s", policyName.Namespace, policyName.Name, i, target, gatewayName)
 		}
 	}
 
+	log.Infof("Policy %s/%s NOT ATTACHED: no matching targetRefs found", policyName.Namespace, policyName.Name)
 	return false
 }
 

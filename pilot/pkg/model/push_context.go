@@ -880,7 +880,7 @@ func (ps *PushContext) GatewayServices(proxy *Proxy, patches *MergedEnvoyFilterW
 			hostsFromGateways.Merge(ps.virtualServiceIndex.destinationsByGateway[gw])
 		}
 	}
-	log.Debugf("GatewayServices: gateway %v is exposing these hosts:%v", proxy.ID, hostsFromGateways)
+	log.Infof("GatewayServices: gateway %v is exposing these hosts:%v", proxy.ID, hostsFromGateways)
 
 	gwSvcs := make([]*Service, 0, len(svcs))
 
@@ -894,7 +894,7 @@ func (ps *PushContext) GatewayServices(proxy *Proxy, patches *MergedEnvoyFilterW
 		}
 	}
 
-	log.Debugf("GatewayServices: gateways len(services)=%d, len(filtered)=%d", len(svcs), len(gwSvcs))
+	log.Infof("GatewayServices: gateways len(services)=%d, len(filtered)=%d", len(svcs), len(gwSvcs))
 
 	return gwSvcs
 }
@@ -1555,7 +1555,7 @@ func (ps *PushContext) initServiceRegistry(env *Environment, configsUpdate sets.
 		// "domain squatting" on the hostname before a Kubernetes Service is created.
 		if existing := ps.ServiceIndex.HostnameAndNamespace[s.Hostname][s.Attributes.Namespace]; existing != nil &&
 			!(existing.Attributes.ServiceRegistry != provider.Kubernetes && s.Attributes.ServiceRegistry == provider.Kubernetes) {
-			log.Debugf("Service %s/%s from registry %s ignored by %s/%s/%s", s.Attributes.Namespace, s.Hostname, s.Attributes.ServiceRegistry,
+			log.Infof("Service %s/%s from registry %s ignored by %s/%s/%s", s.Attributes.Namespace, s.Hostname, s.Attributes.ServiceRegistry,
 				existing.Attributes.ServiceRegistry, existing.Attributes.Namespace, existing.Hostname)
 		} else {
 			ps.ServiceIndex.HostnameAndNamespace[s.Hostname][s.Attributes.Namespace] = s
